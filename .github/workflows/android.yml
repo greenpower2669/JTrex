@@ -10,7 +10,9 @@ permissions:
 
 jobs:
   build-android:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+
     steps:
       - name: Checkout build files
         uses: actions/checkout@v4
@@ -53,17 +55,43 @@ jobs:
           test -f app/main.py
           du -sh app
 
+      - name: Install Buildozer system dependencies
+        run: |
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            git zip unzip openjdk-17-jdk python3-pip python3-virtualenv \
+            autoconf libtool pkg-config zlib1g-dev libncurses5-dev \
+            libncursesw5-dev libtinfo6 cmake libffi-dev libssl-dev \
+            automake autopoint gettext
+          java -version
+          python3 --version
+
+      - name: Install Buildozer
+        run: |
+          python3 -m venv .venv
+          . .venv/bin/activate
+          python -m pip install --upgrade pip wheel
+          python -m pip install git+https://github.com/kivy/buildozer
+          python -m pip install setuptools cython==0.29.34
+          buildozer --version
+
       - name: Build APK with Buildozer
-        uses: ArtemSBulgakov/buildozer-action@v1
-        id: buildozer
-        with:
-          command: buildozer android debug
-          workdir: app
-          buildozer_version: stable
+        working-directory: app
+        run: |
+          set -euo pipefail
+          . ../.venv/bin/activate
+          yes | buildozer -v android debug
+
+      - name: Show APK
+        if: success()
+        run: |
+          find app/bin -maxdepth 1 -type f -print -exec ls -lh {} \;
 
       - name: Upload APK
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: JuneTrex-APK
-          path: ${{ steps.buildozer.outputs.filename }}
+          path: app/bin/*.apk
           if-no-files-found: error
+          compression-level: 0
