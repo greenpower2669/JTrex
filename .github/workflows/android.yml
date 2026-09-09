@@ -5,19 +5,60 @@ on:
   push:
     branches: [ main ]
 
+permissions:
+  contents: read
+
 jobs:
   build-android:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout build files
         uses: actions/checkout@v4
+
+      - name: Download JuneTrex.zip from release binary
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          ASSET_URL=$(curl -fsSL \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases?per_page=100" \
+            | jq -r '[.[] | .assets[] | select(.name == "JuneTrex.zip")][0].url')
+          if [ -z "$ASSET_URL" ] || [ "$ASSET_URL" = "null" ]; then
+            echo "JuneTrex.zip introuvable dans les Releases" >&2
+            exit 1
+          fi
+          curl -fL --retry 3 \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/octet-stream" \
+            "$ASSET_URL" -o JuneTrex.zip
+          ls -lh JuneTrex.zip
+
+      - name: Prepare game sources
+        run: |
+          set -euo pipefail
+          rm -rf payload app
+          mkdir -p payload app
+          unzip -q JuneTrex.zip -d payload
+          MAIN=$(find payload -type f -name main.py -print -quit)
+          if [ -z "$MAIN" ]; then
+            echo "main.py introuvable dans JuneTrex.zip" >&2
+            exit 1
+          fi
+          ROOT=$(dirname "$MAIN")
+          echo "Racine du jeu: $ROOT"
+          rsync -a "$ROOT"/ app/
+          cp buildozer.spec app/buildozer.spec
+          test -f app/main.py
+          du -sh app
 
       - name: Build APK with Buildozer
         uses: ArtemSBulgakov/buildozer-action@v1
         id: buildozer
         with:
           command: buildozer android debug
-          workdir: .
+          workdir: app
           buildozer_version: stable
 
       - name: Upload APK
@@ -25,3 +66,4 @@ jobs:
         with:
           name: JuneTrex-APK
           path: ${{ steps.buildozer.outputs.filename }}
+          if-no-files-found: error
