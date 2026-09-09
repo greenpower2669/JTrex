@@ -2,6 +2,10 @@ name: Build June T-Rex APK
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/android.yml'
+      - 'buildozer.spec'
   release:
     types: [published]
 
@@ -76,13 +80,37 @@ jobs:
           python -m pip install git+https://github.com/kivy/buildozer
           python -m pip install setuptools cython==0.29.34
           buildozer --version
+          python -m pip freeze | sort
 
       - name: Build APK with Buildozer
+        id: build_apk
         working-directory: app
+        shell: bash
         run: |
-          set -euo pipefail
+          set -uo pipefail
           . ../.venv/bin/activate
-          yes | buildozer -v android debug
+          echo "===== June T-Rex Android diagnostic build ====="
+          python --version
+          java -version
+          buildozer --version
+          set +e
+          buildozer -v android debug 2>&1 | tee ../buildozer.log
+          STATUS=${PIPESTATUS[0]}
+          set -e
+          echo "===== LAST 300 BUILDOZER LINES ====="
+          tail -n 300 ../buildozer.log || true
+          echo "buildozer_exit_code=$STATUS"
+          exit "$STATUS"
+
+      - name: Upload Buildozer diagnostic log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: JuneTrex-Buildozer-Log
+          path: buildozer.log
+          if-no-files-found: warn
+          retention-days: 7
+          compression-level: 6
 
       - name: Show APK
         if: success()
