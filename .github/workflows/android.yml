@@ -18,23 +18,12 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download JuneTrex.zip from release binary
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          ASSET_URL=$(curl -fsSL \
-            -H "Authorization: Bearer $GH_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases?per_page=100" \
-            | jq -r '[.[] | .assets[] | select(.name == "JuneTrex.zip")][0].url')
-          if [ -z "$ASSET_URL" ] || [ "$ASSET_URL" = "null" ]; then
-            echo "JuneTrex.zip introuvable dans les Releases" >&2
-            exit 1
-          fi
           curl -fL --retry 3 \
-            -H "Authorization: Bearer $GH_TOKEN" \
-            -H "Accept: application/octet-stream" \
-            "$ASSET_URL" -o JuneTrex.zip
+            "https://github.com/greenpower2669/JTrex/releases/download/untagged-d894260ee70197dabdea/JuneTrex.zip" \
+            -o JuneTrex.zip
+          test -s JuneTrex.zip
           ls -lh JuneTrex.zip
 
       - name: Prepare game sources
