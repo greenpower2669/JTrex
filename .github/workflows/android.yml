@@ -2,8 +2,8 @@ name: Build June T-Rex APK
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ main ]
+  release:
+    types: [published]
 
 permissions:
   contents: read
@@ -17,12 +17,25 @@ jobs:
       - name: Checkout build files
         uses: actions/checkout@v4
 
-      - name: Download JuneTrex.zip from release binary
+      - name: Download JuneTrex.zip from published release
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          ASSET_URL=$(curl -fsSL \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/latest" \
+            | jq -r '.assets[] | select(.name == "JuneTrex.zip") | .url' \
+            | head -n 1)
+          if [ -z "$ASSET_URL" ] || [ "$ASSET_URL" = "null" ]; then
+            echo "JuneTrex.zip introuvable dans la dernière Release publiée" >&2
+            exit 1
+          fi
           curl -fL --retry 3 \
-            "https://github.com/greenpower2669/JTrex/releases/download/untagged-d894260ee70197dabdea/JuneTrex.zip" \
-            -o JuneTrex.zip
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/octet-stream" \
+            "$ASSET_URL" -o JuneTrex.zip
           test -s JuneTrex.zip
           ls -lh JuneTrex.zip
 
