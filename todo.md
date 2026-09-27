@@ -130,3 +130,21 @@ Le prochain geste autorisable est une phase de validation d'exécution de la ré
 - [ ] Publier une préversion de test seulement après contrôles.
 
 Prochain geste : transmettre à Astra le dossier ciblé JT-ANDROID-001. Aucun gameplay ne doit être modifié.
+
+
+## JT-ANDROID-001 — patch Astra appliqué
+
+- [x] Ajouter `tools/prepare_android.py`.
+- [x] Figer la release source `JTrex` et la racine `JuneTrex`.
+- [x] Vérifier archive et main historique par empreintes avant adaptation.
+- [x] Préparer les corrections de casse uniquement sur la copie de compilation.
+- [x] Passer le candidat à version 1.0.1 / numeric version 101.
+- [x] Configurer l'icône provisoire `pter/pter0.png`.
+- [x] Conserver JT-OBS-003 sans remplacement d'image.
+- [x] Remplacer le workflow par le build APK ciblé et diagnostics bornés.
+- [ ] Examiner le résultat réel de GitHub Actions.
+- [ ] Relever Buildozer et python-for-android réellement utilisés.
+- [ ] Si APK produit : vérifier taille, SHA-256, package/version/architectures/signature avec les outils disponibles.
+- [ ] Rapporter à Astra les logs/diagnostics et le commit exact.
+- [ ] Validation téléphone par Fab.
+- [ ] AAB après stabilisation APK.

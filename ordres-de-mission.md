@@ -183,3 +183,14 @@ Source de jeu : asset `JuneTrex.zip` de la release/tag `JTrex`, racine explicite
 Adaptations autorisées : compatibilité Android, chemins/casse des ressources, configuration/workflow, identité/version/icône, diagnostics bornés et corrections ciblées d'un blocage Android démontré.
 
 La branche ne doit pas être fusionnée automatiquement dans main avant retour de Fab.
+
+
+### JT-ANDROID-001 — proposition Astra appliquée
+
+La proposition Astra reçue après le commit de préparation `609c38b7c0994337fdc5bc22dbb519ff326ce5ec` est autorisée sur `port/android-first-apk`.
+
+Elle ajoute le préparateur contrôlé, fige la source sur la release/tag `JTrex`, corrige uniquement les références de casse dans la copie de compilation, passe le candidat à 1.0.1, ajoute l'icône provisoire issue de `pter/pter0.png` et deux traces bornées de démarrage.
+
+`horseg2ko/chargetrwin_83.jpeg` reste absente et aucune image n'est fabriquée.
+
+La chaîne de compilation reste à qualifier après build ; aucune promesse de reproductibilité intégrale n'est faite tant que Buildozer/python-for-android ne sont pas verrouillés sur des révisions vérifiées.

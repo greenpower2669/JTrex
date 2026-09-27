@@ -425,3 +425,23 @@ Workflow actuel à corriger avant usage de référence :
 - dépend de `releases/latest` ;
 - recherche le premier `main.py` trouvé après extraction.
 Ces deux points sont incompatibles avec JT-ANDROID-001, qui exige le tag/source figés et la racine explicite `JuneTrex`.
+
+
+## 20. JT-ANDROID-001 — préparation appliquée
+
+Nouveaux/anciens fichiers de contrôle :
+- `tools/prepare_android.py` : prépare une copie de compilation vérifiée ; bibliothèque standard Python uniquement ;
+- `buildozer.spec` : version 1.0.1, numeric version 101, icône provisoire `pter/pter0.png` ;
+- `.github/workflows/android.yml` : téléchargement figé sur la release/tag `JTrex`, préparation explicite puis build debug.
+
+La préparation refuse :
+- une archive de taille/hash différents ;
+- une racine sans `JuneTrex/main.py` ;
+- un `main.py` au hash historique différent ;
+- un nombre d'occurrences inattendu pour les corrections de casse ;
+- une destination déjà existante ;
+- une identité Buildozer différente de `com.junedady.junetrex`.
+
+`horseg2ko/chargetrwin_83.jpeg` reste une ressource connue manquante. Aucun fallback n'est créé dans cette étape.
+
+La chaîne n'est pas encore déclarée entièrement reproductible : Buildozer est installé depuis Git et python-for-android n'est pas encore verrouillé. Les révisions réellement utilisées doivent être relevées après le build.

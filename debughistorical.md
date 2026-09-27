@@ -204,3 +204,21 @@ Le workflow actuel sélectionne le premier `main.py` trouvé. La mission exige e
 ### JT-PORT-004 — Aucun journal de build exploitable retrouvé dans les contrôles accessibles
 Statut : ÉTAT DE PRÉPARATION.
 Aucun run/log antérieur exploitable n'a été obtenu par les accès disponibles à Sol. Ne pas en déduire qu'aucun build historique n'a jamais été tenté.
+
+
+## JT-ANDROID-001 — application du patch Astra
+
+### JT-PORT-005 — Version Android candidate
+Statut : DÉCISION DE BRANCHE.
+Le dépôt GitHub public ne contient qu'une release historique avec `JuneTrex.zip` et aucun APK/AAB antérieur visible. `versionName=1.0.1` et `android.numeric_version=101` sont retenus pour ce candidat. Cela ne constitue pas une vérification de l'historique éventuel du Play Console.
+
+### JT-PORT-006 — Icône provisoire
+Statut : À VALIDER VISUELLEMENT.
+`pter/pter0.png` est utilisée sans transformation comme icône provisoire. Son rendu dans le lanceur Android reste à contrôler.
+
+### JT-PORT-007 — Reproductibilité partielle
+Statut : OUVERT.
+Archive, racine, main historique et transformations sont figés par empreintes. Buildozer et python-for-android ne sont pas encore verrouillés à des révisions déterminées ; relever les versions/révisions du build avant toute affirmation de reproductibilité complète.
+
+### JT-OBS-003
+Reste OUVERT. `horseg2ko/chargetrwin_83.jpeg` n'est ni créée, ni remplacée, ni contournée par décalage d'indice.

@@ -2,10 +2,15 @@
 title = June T-Rex
 package.name = junetrex
 package.domain = com.junedady
+
 source.dir = .
 source.include_exts = py,kv,png,jpg,jpeg,gif,wav
-source.exclude_dirs = .kivy,bin,.buildozer
-version = 1.0
+source.exclude_dirs = .kivy,bin,.buildozer,__pycache__
+
+version = 1.0.1
+android.numeric_version = 101
+icon.filename = %(source.dir)s/pter/pter0.png
+
 requirements = python3,kivy
 orientation = landscape
 fullscreen = 1

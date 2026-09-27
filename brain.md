@@ -730,3 +730,16 @@ La mission JT-ANDROID-001 autorise uniquement les adaptations nécessaires pour 
 Pendant cette mission, préserver notamment : formule cubique des scores, seuil d'égalité 20 000, lettres séparées du score, asymétries historiques, vie, dégâts, énergie >60, coût 60, pouvoir unique par combat, tapotements, indices d'impact, IA, chronomètres et séquences d'images.
 
 La validation d'un build ou d'un lancement Android ne vaut pas validation du gameplay par Fab.
+
+
+## 22. JT-ANDROID-001 — adaptation APK appliquée à la copie de compilation
+
+La préparation Android ne modifie pas la source historique dans l'archive. `tools/prepare_android.py` vérifie d'abord la taille et le SHA-256 de `JuneTrex.zip`, sélectionne explicitement la racine `JuneTrex`, puis vérifie le SHA-256 historique de `main.py`.
+
+Sur la copie de compilation seulement, quatre catégories d'adaptation sont autorisées et appliquées :
+- `a.png` → `A.png` pour 4 références ;
+- `boutbleu0.png` → `boutBleu0.png` pour 4 références ;
+- version runtime `1.0.1` et titre `June T-Rex` ;
+- deux traces bornées de démarrage `JT-BOOT` et `JT-START`.
+
+Aucune règle de score, dégâts, énergie, pouvoir, tapotement, IA ou chronomètre n'est modifiée.
