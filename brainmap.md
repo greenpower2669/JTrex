@@ -609,3 +609,10 @@ Point de contrôle connu avant run : `tools/prepare_android.py` vérifie encore 
 Chaîne attendue : `buildozer.spec (python3/hostpython3 3.12.14)` → `tools/prepare_android.py (garde 3.12.14 active + rapport python_target=3.12.14)` → p4a figé → ffpyplayer 4.5.1 → compilation ABI.
 
 Le champ `python_target` du rapport est déclaratif ; seules les traces p4a peuvent établir les versions réellement construites.
+
+
+### Run #14 — chemin observé
+
+`garde prepare_android.py 3.12.14` ✅ → `p4a python3/hostpython3 3.12.14 demandés + sources v3.12.14` ✅ → `hostpython3 construit` → `python3 armeabi-v7a` ❌ dans `Modules/grpmodule.c` (`setgrent/getgrent/endgrent`) → `python3 arm64-v8a` non atteint → `ffpyplayer` non atteint → APK non produit.
+
+Incohérence à conserver pour analyse Astra : le workflow exporte encore `VERSION_hostpython3=3.11.13`, alors que p4a demande et télécharge explicitement hostpython3 3.12.14.

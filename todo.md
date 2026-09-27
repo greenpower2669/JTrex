@@ -301,3 +301,15 @@ Commande interne associée :
 - [ ] Vérifier disparition/persistance de `_PyLong_AsByteArray` et `_PyGen_SetStopIterationValue`.
 - [ ] En cas d'échec, consigner uniquement la première nouvelle erreur discriminante ; ne pas ajouter un second correctif dans la même tentative.
 - [ ] Annoncer l'APK 📦 1.0.2 uniquement s'il est réellement produit, avec SHA-256.
+
+
+### Après run #14
+
+- [x] Garde préparation 3.12.14 franchie.
+- [x] Confirmer dans p4a les versions demandées : python3 3.12.14 et hostpython3 3.12.14.
+- [x] Confirmer téléchargement des deux sources CPython v3.12.14.
+- [x] Isoler la première nouvelle erreur : `Modules/grpmodule.c` sous armeabi-v7a, fonctions `setgrent/getgrent/endgrent` indisponibles/non déclarées.
+- [x] Confirmer que ffpyplayer n'est pas encore compilé et que arm64-v8a n'est pas atteint pour python3.
+- [x] Consigner l'export workflow hérité `VERSION_hostpython3=3.11.13` sans le modifier dans cette tentative.
+- [ ] Transmettre le run #14 à Astra pour analyse et prochaine correction mono-hypothèse.
+- [ ] Ne pas annoncer d'APK 📦 1.0.2 tant qu'il n'existe pas réellement.

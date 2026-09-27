@@ -839,3 +839,18 @@ Le test suivant conserve le même p4a et la même recette FFmpeg 6.1.2, mais fix
 - `buildozer.spec` reste inchangé : `python3==3.12.14,hostpython3==3.12.14,kivy,ffpyplayer`.
 - Cette modification ne prouve pas encore la version Python effectivement compilée ; la preuve doit venir des journaux p4a du prochain run.
 - Aucun changement de ffpyplayer, FFmpeg, p4a, Cython, médias, runtime ou gameplay.
+
+
+### Résultat réel du run #14 — 2026-09-28
+
+- Commit construit : `393e1612fa98d04cd5d69c33eae140caf693c8d2`.
+- GitHub Actions : run #14, ID `36356865568`, job `108726222221`.
+- `Verify and prepare JuneTrex sources` : SUCCÈS ; la garde 3.12.14 est franchie.
+- p4a demande explicitement `python3 3.12.14` et `hostpython3 3.12.14`, puis télécharge pour les deux le tag CPython `v3.12.14.tar.gz`.
+- Le workflow conserve toutefois une variable d'environnement héritée `VERSION_hostpython3=3.11.13` ; elle est consignée comme incohérence de diagnostic, sans correction dans ce run. Les traces p4a de recette/source indiquent bien 3.12.14 pour hostpython3.
+- p4a prévoit les architectures `armeabi-v7a, arm64-v8a` et commence par construire Python cible pour `armeabi-v7a`.
+- Premier nouveau blocage : CPython 3.12.14 échoue dans `Modules/grpmodule.c` sur Android/armeabi-v7a : `setgrent`, `getgrent` et `endgrent` sont non déclarées ; `getgrent` entraîne aussi une conversion int→pointeur invalide.
+- `python3` pour `arm64-v8a` n'est pas atteint ; la compilation de `ffpyplayer` n'est pas atteinte.
+- Les erreurs historiques `_PyLong_AsByteArray` et `_PyGen_SetStopIterationValue` n'apparaissent pas dans ce run, mais leur disparition dans ffpyplayer n'est pas prouvée puisque ffpyplayer n'a pas été compilé.
+- Aucun APK 1.0.2 produit. Artefact diagnostic : `JuneTrex-Android-Diagnostics`, ID `10944283554`.
+- Aucun correctif supplémentaire appliqué conformément à FAB-DEBUG-001.

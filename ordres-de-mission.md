@@ -303,3 +303,8 @@ Le test FAB-DEBUG-001 est **incomplet** : la préparation s'arrête avant p4a su
 ### 2026-09-28 — JT-MEDIA-001 / FAB-DEBUG-001 — alignement préparation Python 3.12.14
 
 Astra autorise la suite du run #13 sous forme d'un essai séparé : modifier uniquement les quatre occurrences prévues dans `tools/prepare_android.py` afin d'aligner la garde et le rapport sur Python 3.12.14. Le contrôle reste actif. `buildozer.spec`, ffpyplayer 4.5.1, FFmpeg 6.1.2, le p4a figé, Cython, les médias, le runtime et le gameplay restent inchangés. Le prochain run doit mesurer la première erreur réelle sans empiler de correction.
+
+
+### Clôture du run #14
+
+L'alignement de préparation est validé, mais le test Python 3.12.14 / ffpyplayer reste incomplet : la compilation s'arrête d'abord dans CPython 3.12.14 pour `armeabi-v7a`, `Modules/grpmodule.c`, sur `setgrent/getgrent/endgrent`. Aucun second correctif ne doit être empilé. Astra doit recevoir ce blocage avec la note que p4a demande/télécharge hostpython3 3.12.14 alors que le workflow exporte encore une variable héritée `VERSION_hostpython3=3.11.13`.
