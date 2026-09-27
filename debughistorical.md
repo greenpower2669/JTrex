@@ -252,3 +252,27 @@ Statut : HYPOTHÈSE EN TEST.
 Astra propose l'ajout de `libltdl-dev` au runner Ubuntu, car `ltdl.m4` fournit la macro `LT_SYS_SYMBOL_USCORE` manquante lors du run #7.
 
 Le test doit modifier uniquement cette dépendance et relancer le même scénario. Si l'erreur persiste, vérifier le chemin aclocal avant toute autre correction.
+
+
+### JT-PORT-010 — libltdl-dev valide l'hypothèse du run #7
+Statut : CONFIRMÉ PAR BUILD.
+
+Run #8 : `36322734005`.
+L'erreur `LT_SYS_SYMBOL_USCORE` n'apparaît plus. Le build franchit donc le blocage Autoconf/libffi identifié au run #7.
+
+### JT-PORT-011 — Nouveau blocage pip interne python-for-android
+Statut : CONFIRMÉ PAR BUILD.
+
+Première nouvelle erreur discriminante du run #8 :
+
+`ImportError: cannot import name 'BuildDependencyInstallError' from 'pip._internal.exceptions'`
+
+Le traceback provient du venv interne situé sous :
+`build/venv/lib/python3.14/site-packages/pip/`
+
+La commande en échec rapportée est :
+`source venv/bin/activate && pip install -U pip`
+
+Le host Python construit par la chaîne indique Python 3.14.2.
+
+Aucune correction n'est autorisée ici sans nouvelle proposition Astra. Ne pas attribuer ce blocage au gameplay JTrex.

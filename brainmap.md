@@ -482,3 +482,24 @@ devient
 Hypothèse : `libltdl-dev` fournit `ltdl.m4`, contenant la macro libtool requise par l'étape Autoconf de libffi.
 
 Critère de réussite : l'étape `autoreconf` de libffi franchit l'erreur `LT_SYS_SYMBOL_USCORE`. Toute nouvelle erreur ultérieure sera traitée séparément.
+
+
+## 23. JT-ANDROID-001 — run #8
+
+Run GitHub Actions : `36322734005`.
+Commit : `808268924af4c09ea5218e549e77bde9bcf73242`.
+
+Résultat discriminant :
+- `libltdl-dev` installé avec succès ;
+- aucune occurrence de `LT_SYS_SYMBOL_USCORE` dans le journal ;
+- Buildozer et python-for-android inchangés :
+  - Buildozer `a153097b3c534bea8a17da2abf1369d67c8cbfcb`
+  - python-for-android `58d21141f17c889bf8585f5665921d72028f8831`
+- la préparation JuneTrex est identique au run #7 ;
+- la compilation a progressé jusqu'à la construction d'un environnement Python 3.14.2 interne à python-for-android.
+
+Nouveau blocage :
+`ImportError: cannot import name 'BuildDependencyInstallError' from 'pip._internal.exceptions'`.
+
+Le contexte montre l'échec lors de la commande interne :
+`source venv/bin/activate && pip install -U pip`.

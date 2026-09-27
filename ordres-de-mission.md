@@ -211,3 +211,13 @@ Aucune correction autonome de gameplay ou de main.py n'est autorisée en répons
 Astra autorise un essai FAB-DEBUG-001 unique : ajouter `libltdl-dev` aux dépendances Ubuntu du workflow. Aucun autre changement n'est inclus dans cet essai.
 
 Succès attendu : disparition de l'erreur `LT_SYS_SYMBOL_USCORE` à l'étape `autoreconf` de libffi. Une erreur ultérieure éventuelle devient un blocage distinct.
+
+
+### JT-ANDROID-001 — résultat essai libltdl-dev
+
+L'essai FAB-DEBUG-001 n°1 est concluant pour son objectif : `LT_SYS_SYMBOL_USCORE` est franchi.
+
+Le nouveau blocage est distinct et concerne le pip interne de python-for-android sous Python 3.14.2 :
+`ImportError: cannot import name 'BuildDependencyInstallError' from 'pip._internal.exceptions'`.
+
+La correction suivante doit rester mono-hypothèse et préparée par Astra. Aucun changement de gameplay ou de main.py n'est autorisé.

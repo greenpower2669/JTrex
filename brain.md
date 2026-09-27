@@ -757,3 +757,10 @@ Aucun élément de gameplay n'a été exécuté ou invalidé par cet échec.
 Pour traiter l'échec natif `LT_SYS_SYMBOL_USCORE`, une seule modification de chaîne est autorisée pour le prochain essai : ajouter le paquet Ubuntu `libltdl-dev` aux dépendances du workflow.
 
 Cette modification ne touche ni le gameplay, ni main.py, ni les médias, ni buildozer.spec.
+
+
+## 25. JT-ANDROID-001 — résultat de l'essai libltdl-dev
+
+L'ajout de `libltdl-dev` a permis au build de franchir le blocage `LT_SYS_SYMBOL_USCORE`. Cette erreur n'apparaît plus dans le run #8.
+
+Le build a ensuite progressé jusqu'à un nouveau blocage interne de la chaîne Python/pip de python-for-android. Aucun comportement du jeu n'a été exécuté ni modifié.

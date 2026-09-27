@@ -174,3 +174,21 @@ Prochain geste : transmettre à Astra le run #7, les révisions d'outillage et c
 - [ ] Relancer le même build.
 - [ ] Vérifier si `autoreconf` franchit `LT_SYS_SYMBOL_USCORE`.
 - [ ] Si nouvelle erreur : consigner uniquement la première nouvelle erreur discriminante.
+
+
+## JT-ANDROID-001 — résultat FAB-DEBUG-001 essai n°1
+
+- [x] `libltdl-dev` installé.
+- [x] Blocage `LT_SYS_SYMBOL_USCORE` franchi.
+- [x] Versions Buildozer/python-for-android comparées : inchangées.
+- [x] Nouveau blocage isolé.
+- [ ] Transmettre à Astra l'erreur pip interne Python 3.14.2.
+- [ ] Recevoir une seule correction ciblée.
+- [ ] Relancer le même scénario.
+- [ ] Produire l'APK 📦.
+
+Nouvelle première erreur :
+`ImportError: cannot import name 'BuildDependencyInstallError' from 'pip._internal.exceptions'`.
+
+Commande interne associée :
+`source venv/bin/activate && pip install -U pip`.
