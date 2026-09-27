@@ -399,3 +399,29 @@ Cette cartographie ne constitue pas une validation du build.
 - L'inventaire signale des variantes de noms et des fichiers de sauvegarde dans la famille horseg2ko ; chargetrwin_83.jpeg reste absent et aucune variante ne doit être substituée automatiquement.
 - Le hash SHA-256 documenté concerne JuneTrex/main.py seulement. L'archive JuneTrex.zip entière n'a pas été téléchargée puis rehachée dans l'audit Astra.
 - L'analyse n'a pas comparé les onze main.py historiques ni inspecté visuellement chaque image de chaque série.
+
+
+## 19. JT-ANDROID-001 — point de départ technique
+
+Branche de travail : `port/android-first-apk`.
+SHA de départ : `379ae278f2199cad26f1746c418512f47e04d106`.
+
+Release source figée : tag `JTrex`, asset `JuneTrex.zip`.
+Métadonnées GitHub vérifiées par Sol :
+- taille : 327 992 765 octets ;
+- digest publié : `sha256:f73ca1fd5e96ca6e11df5987bda8b2e59ebac26b1beb23fe34883b15bee66647`.
+
+Le hash historique `3673fb85d12bea18276e485c5956530b4b8c0dda283cacb022e784bfe8c35231` de `JuneTrex/main.py` reste la référence issue de l'audit Astra. Sol n'a pas pu rematérialiser l'archive binaire dans son environnement courant et ne prétend donc pas avoir recalculé ce hash.
+
+Configuration actuelle observée :
+- June T-Rex / com.junedady.junetrex / version 1.0 ;
+- Python + Kivy, SDL2 ;
+- API 36, min API 21, NDK 28c ;
+- arm64-v8a + armeabi-v7a ;
+- APK debug, AAB release ;
+- aucune icône Android explicite dans buildozer.spec.
+
+Workflow actuel à corriger avant usage de référence :
+- dépend de `releases/latest` ;
+- recherche le premier `main.py` trouvé après extraction.
+Ces deux points sont incompatibles avec JT-ANDROID-001, qui exige le tag/source figés et la racine explicite `JuneTrex`.

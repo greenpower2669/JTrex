@@ -109,3 +109,24 @@ Le prochain geste autorisable est une phase de validation d'exécution de la ré
 - [x] Consigner les variantes/sauvegardes horseg2ko sans substitution automatique.
 - [x] Conserver les nuances du suivi tactile hérité.
 - [x] Confirmer qu'aucune correction de code ni validation d'exécution n'a été effectuée.
+
+
+## JT-ANDROID-001 — Premier APK installable
+
+État : DOSSIER ASTRA EN PRÉPARATION / AUCUN CODE MODIFIÉ.
+
+- [x] Lire les cinq mémoires à la référence actuelle.
+- [x] Vérifier que main est sur `379ae278f2199cad26f1746c418512f47e04d106`.
+- [x] Créer `port/android-first-apk` depuis cette référence.
+- [x] Lire le buildozer.spec actuel.
+- [x] Lire le workflow Android actuel.
+- [x] Vérifier les métadonnées de la release/tag JTrex et le digest de JuneTrex.zip.
+- [x] Confirmer que le workflow actuel dépend de `releases/latest` et du premier `main.py`.
+- [ ] Faire valider/proposer par Astra les modifications Android ciblées.
+- [ ] Appliquer uniquement les modifications proposées et justifiées.
+- [ ] Construire l'APK 📦.
+- [ ] Installer/exécuter si un environnement compatible est disponible ; sinon marquer « à valider par Fab ».
+- [ ] Préparer l'AAB 📦 si la chaîne le permet.
+- [ ] Publier une préversion de test seulement après contrôles.
+
+Prochain geste : transmettre à Astra le dossier ciblé JT-ANDROID-001. Aucun gameplay ne doit être modifié.

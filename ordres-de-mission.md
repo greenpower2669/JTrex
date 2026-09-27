@@ -159,3 +159,27 @@ Après création initiale des mémoires, une relecture croisée avec le relais A
 Les détails qui restaient implicites ont été rendus explicites dans brain.md et brainmap.md, notamment le suivi tactile choixidh/choixidb, colv[7..9], les limites exactes du hash et de l'inventaire, les variantes de ressources horseg2ko et certaines nuances de l'héritage tactile.
 
 Ce contrôle reste strictement documentaire : aucun code, média, build, workflow ou comportement n'a été modifié.
+
+
+## JT-ANDROID-001 — Premier APK installable de June T-Rex
+
+### Statut
+MISSION ACTIVE SUR BRANCHE DÉDIÉE — PHASE 1 : DOSSIER ASTRA.
+
+Branche : `port/android-first-apk`
+SHA de départ : `379ae278f2199cad26f1746c418512f47e04d106`
+
+Objectif : produire un premier APK 📦 installable et fidèle au jeu historique, puis un AAB 📦 distinct si la chaîne le permet. La validation finale du gameplay appartient à Fab sur téléphone.
+
+Rôles :
+- Fab dirige, arbitre les changements de comportement et teste sur téléphone.
+- Astra analyse les extraits/données ciblés et prépare les corrections nécessaires.
+- Sol prépare les sources, applique les corrections validées, gère Git, build, livraison et mémoires.
+
+Invariants : ne pas réécrire le jeu, ne pas rééquilibrer, ne pas moderniser globalement, ne pas ajouter d'IA de tapotement, ne pas remplacer les séquences par des vidéos et ne pas supprimer le moteur Air Hockey hérité sans preuve et ordre distinct.
+
+Source de jeu : asset `JuneTrex.zip` de la release/tag `JTrex`, racine explicitement `JuneTrex`. Ne jamais dépendre de « latest » ni du premier `main.py` trouvé.
+
+Adaptations autorisées : compatibilité Android, chemins/casse des ressources, configuration/workflow, identité/version/icône, diagnostics bornés et corrections ciblées d'un blocage Android démontré.
+
+La branche ne doit pas être fusionnée automatiquement dans main avant retour de Fab.

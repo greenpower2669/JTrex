@@ -185,3 +185,22 @@ Statut : DOCUMENTATION COMPLÉTÉE.
 Une relecture croisée du relais Astra et des cinq mémoires a identifié quelques détails qui étaient seulement implicites dans la première transcription : rôle de choixidh/choixidb, colv[7..9], portée du hash, limites de l'inventaire visuel, variantes horseg2ko et nuances du suivi tactile hérité.
 
 Ces éléments ont été ajoutés à brain.md et brainmap.md. Cette opération n'est pas une validation en exécution et ne transforme aucune JT-OBS en correction.
+
+
+## JT-ANDROID-001 — observations de préparation
+
+### JT-PORT-001 — Archive binaire non rematérialisée par Sol
+Statut : LIMITE D'ENVIRONNEMENT.
+Le téléchargement binaire direct de l'asset de 327 992 765 octets n'a pas pu être matérialisé dans l'environnement Sol courant. Le digest de l'asset a été vérifié via les métadonnées GitHub, mais le SHA-256 de `JuneTrex/main.py` n'a pas été recalculé par Sol. La valeur de référence reste celle de l'audit Astra.
+
+### JT-PORT-002 — Workflow source non reproductible
+Statut : CONSTAT STATIQUE.
+Le workflow actuel dépend de la « dernière release », alors que la mission exige la release/tag `JTrex` explicitement identifiée.
+
+### JT-PORT-003 — Sélection ambiguë de la racine
+Statut : CONSTAT STATIQUE.
+Le workflow actuel sélectionne le premier `main.py` trouvé. La mission exige explicitement `JuneTrex/main.py`.
+
+### JT-PORT-004 — Aucun journal de build exploitable retrouvé dans les contrôles accessibles
+Statut : ÉTAT DE PRÉPARATION.
+Aucun run/log antérieur exploitable n'a été obtenu par les accès disponibles à Sol. Ne pas en déduire qu'aucun build historique n'a jamais été tenté.

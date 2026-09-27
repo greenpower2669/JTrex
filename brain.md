@@ -721,3 +721,12 @@ Ces précisions complètent la transcription afin qu'aucun détail fonctionnel s
 - La durée réelle de car est aussi influencée par les animations et par l'attente qui suit la fin de saisie d'un camp ; car n'est pas une horloge murale continue.
 - L'analyse source n'a pas recalculé le hash global de JuneTrex.zip, n'a pas comparé les onze variantes historiques de main.py et n'a pas vérifié visuellement chaque image de chaque séquence.
 - Le comportement décrit reste celui lu dans le code de référence. Toute manifestation exacte à l'écran doit être confrontée au jeu exécuté avant de qualifier une asymétrie ou une anomalie de bug.
+
+
+## 21. Portage Android JT-ANDROID-001 — invariants
+
+La mission JT-ANDROID-001 autorise uniquement les adaptations nécessaires pour rendre June T-Rex installable et testable sur Android. Elle ne modifie pas les règles décrites dans ce brain.
+
+Pendant cette mission, préserver notamment : formule cubique des scores, seuil d'égalité 20 000, lettres séparées du score, asymétries historiques, vie, dégâts, énergie >60, coût 60, pouvoir unique par combat, tapotements, indices d'impact, IA, chronomètres et séquences d'images.
+
+La validation d'un build ou d'un lancement Android ne vaut pas validation du gameplay par Fab.
