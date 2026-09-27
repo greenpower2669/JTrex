@@ -276,3 +276,13 @@ La commande en échec rapportée est :
 Le host Python construit par la chaîne indique Python 3.14.2.
 
 Aucune correction n'est autorisée ici sans nouvelle proposition Astra. Ne pas attribuer ce blocage au gameplay JTrex.
+
+
+### JT-PORT-012 — Hypothèse venv p4a réutilisé
+Statut : HYPOTHÈSE EN TEST.
+
+Astra relie le traceback `BuildDependencyInstallError` à un possible mélange de modules pip dans le venv temporaire commun aux architectures.
+
+Test unique : patch local de python-for-android au SHA `58d21141f17c889bf8585f5665921d72028f8831`, ajoutant uniquement `--clear` à la création du venv.
+
+Ne pas pinner une version de pip ni changer Python 3.14.2 pendant ce test. Si la même erreur persiste, examiner l'origine réelle des modules importés avant une nouvelle correction.

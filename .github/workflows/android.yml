@@ -7,6 +7,7 @@ on:
       - '.github/workflows/android.yml'
       - 'buildozer.spec'
       - 'tools/prepare_android.py'
+      - 'tools/patches/p4a-venv-clear.patch'
   release:
     types: [published]
 
@@ -68,6 +69,29 @@ jobs:
           buildozer --version
           python -m pip freeze | sort | tee toolchain.txt
 
+      - name: Prepare pinned patched python-for-android
+        shell: bash
+        run: |
+          set -euo pipefail
+          P4A_DIR="app/.buildozer/android/platform/python-for-android"
+          rm -rf "$P4A_DIR"
+          mkdir -p "$(dirname "$P4A_DIR")"
+          git clone --branch master --single-branch \
+            https://github.com/kivy/python-for-android.git "$P4A_DIR"
+          git -C "$P4A_DIR" reset --hard \
+            58d21141f17c889bf8585f5665921d72028f8831
+          test "$(git -C "$P4A_DIR" rev-parse HEAD)" = \
+            "58d21141f17c889bf8585f5665921d72028f8831"
+          git -C "$P4A_DIR" apply --check \
+            "$GITHUB_WORKSPACE/tools/patches/p4a-venv-clear.patch"
+          git -C "$P4A_DIR" apply \
+            "$GITHUB_WORKSPACE/tools/patches/p4a-venv-clear.patch"
+          echo "p4a_base=$(git -C "$P4A_DIR" rev-parse HEAD)" | tee p4a-patch.txt
+          echo "p4a_branch=$(git -C "$P4A_DIR" branch --show-current)" | tee -a p4a-patch.txt
+          echo "===== EFFECTIVE P4A DIFF =====" | tee -a p4a-patch.txt
+          git -C "$P4A_DIR" diff --check
+          git -C "$P4A_DIR" diff | tee -a p4a-patch.txt
+
       - name: Build debug APK
         working-directory: app
         shell: bash
@@ -125,6 +149,7 @@ jobs:
             preparation.log
             buildozer.log
             toolchain.txt
+            p4a-patch.txt
             app/android-preparation.json
           if-no-files-found: warn
           retention-days: 7

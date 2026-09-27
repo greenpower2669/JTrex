@@ -221,3 +221,10 @@ Le nouveau blocage est distinct et concerne le pip interne de python-for-android
 `ImportError: cannot import name 'BuildDependencyInstallError' from 'pip._internal.exceptions'`.
 
 La correction suivante doit rester mono-hypothèse et préparée par Astra. Aucun changement de gameplay ou de main.py n'est autorisé.
+
+
+### JT-ANDROID-001 — essai ciblé p4a venv --clear
+
+Astra autorise un second test FAB-DEBUG-001 mono-hypothèse : conserver le commit p4a `58d21141f17c889bf8585f5665921d72028f8831` et appliquer localement un patch ajoutant uniquement `--clear` à la création du venv dans `run_pymodules_install()`.
+
+La mise à jour de pip interne reste volontairement inchangée. Aucun autre composant de chaîne, gameplay, main.py ou média n'est modifié dans cet essai.

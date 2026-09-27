@@ -192,3 +192,15 @@ Nouvelle première erreur :
 
 Commande interne associée :
 `source venv/bin/activate && pip install -U pip`.
+
+
+## JT-ANDROID-001 — FAB-DEBUG-001 essai n°2
+
+- [x] Vérifier la ligne exacte dans `pythonforandroid/build.py` au SHA p4a utilisé.
+- [x] Ajouter le patch versionné `p4a-venv-clear.patch`.
+- [x] Préparer le workflow pour utiliser exactement la base p4a `58d2114…` puis appliquer le patch.
+- [x] Conserver `pip install -U pip`, Python 3.14.2 et le reste de la chaîne inchangés.
+- [ ] Relancer le même build.
+- [ ] Vérifier dans le journal la commande `python -m venv --clear venv`.
+- [ ] Vérifier si `pip install -U pip` termine avec code 0 sur les deux architectures.
+- [ ] Si nouvelle erreur : isoler uniquement la première nouvelle erreur discriminante.

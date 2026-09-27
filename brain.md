@@ -764,3 +764,10 @@ Cette modification ne touche ni le gameplay, ni main.py, ni les médias, ni buil
 L'ajout de `libltdl-dev` a permis au build de franchir le blocage `LT_SYS_SYMBOL_USCORE`. Cette erreur n'apparaît plus dans le run #8.
 
 Le build a ensuite progressé jusqu'à un nouveau blocage interne de la chaîne Python/pip de python-for-android. Aucun comportement du jeu n'a été exécuté ni modifié.
+
+
+## 26. JT-ANDROID-001 — hypothèse FAB-DEBUG-001 n°2
+
+Le test suivant conserve toute la chaîne du run #8 et modifie uniquement la création du venv temporaire de python-for-android : ajout de `--clear` à `python -m venv`.
+
+Le but est de tester l'hypothèse Astra d'un mélange de fichiers pip entre passages successifs par architecture. Aucune version de pip ou de Python n'est changée pour cet essai.

@@ -503,3 +503,21 @@ Nouveau blocage :
 
 Le contexte montre l'échec lors de la commande interne :
 `source venv/bin/activate && pip install -U pip`.
+
+
+## 24. JT-ANDROID-001 — patch p4a venv --clear
+
+Base p4a figée pour le test :
+`58d21141f17c889bf8585f5665921d72028f8831`.
+
+Patch conservé dans :
+`tools/patches/p4a-venv-clear.patch`.
+
+Le workflow préclone `python-for-android` sur la branche `master`, remet le dépôt exactement au SHA de base, vérifie `git apply --check`, applique le patch puis enregistre le diff effectif dans `p4a-patch.txt`.
+
+Buildozer conserve sa configuration actuelle et réutilise ce dépôt p4a déjà présent dans son répertoire de plateforme. Le seul changement de comportement p4a est :
+`python -m venv venv`
+→
+`python -m venv --clear venv`.
+
+La commande `pip install -U pip` reste inchangée pour rendre le test discriminant.
