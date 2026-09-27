@@ -750,3 +750,10 @@ Aucune règle de score, dégâts, énergie, pouvoir, tapotement, IA ou chronomè
 Le premier build Android ciblé a atteint la compilation native après validation complète de la préparation des sources. Il a échoué dans la chaîne de compilation native avant production d'un APK.
 
 Aucun élément de gameplay n'a été exécuté ou invalidé par cet échec.
+
+
+## 24. JT-ANDROID-001 — hypothèse FAB-DEBUG-001 n°1
+
+Pour traiter l'échec natif `LT_SYS_SYMBOL_USCORE`, une seule modification de chaîne est autorisée pour le prochain essai : ajouter le paquet Ubuntu `libltdl-dev` aux dépendances du workflow.
+
+Cette modification ne touche ni le gameplay, ni main.py, ni les médias, ni buildozer.spec.

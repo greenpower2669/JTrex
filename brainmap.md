@@ -470,3 +470,15 @@ Outillage réellement relevé :
 - NDK Buildozer r28c.
 
 Échec : phase native python-for-android/libffi pendant `autoreconf`, avant packaging APK.
+
+
+## 22. JT-ANDROID-001 — essai libltdl-dev
+
+Modification ciblée du workflow :
+`autoconf libtool pkg-config ...`
+devient
+`autoconf libtool libltdl-dev pkg-config ...`.
+
+Hypothèse : `libltdl-dev` fournit `ltdl.m4`, contenant la macro libtool requise par l'étape Autoconf de libffi.
+
+Critère de réussite : l'étape `autoreconf` de libffi franchit l'erreur `LT_SYS_SYMBOL_USCORE`. Toute nouvelle erreur ultérieure sera traitée séparément.

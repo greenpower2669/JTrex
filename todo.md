@@ -165,3 +165,12 @@ Blocage actuel précis :
 `configure.ac:215: error: possibly undefined macro: LT_SYS_SYMBOL_USCORE`.
 
 Prochain geste : transmettre à Astra le run #7, les révisions d'outillage et cette première erreur pertinente.
+
+
+## JT-ANDROID-001 — FAB-DEBUG-001 essai n°1
+
+- [x] Hypothèse unique reçue : ajouter `libltdl-dev`.
+- [x] Limiter la modification à `.github/workflows/android.yml`.
+- [ ] Relancer le même build.
+- [ ] Vérifier si `autoreconf` franchit `LT_SYS_SYMBOL_USCORE`.
+- [ ] Si nouvelle erreur : consigner uniquement la première nouvelle erreur discriminante.

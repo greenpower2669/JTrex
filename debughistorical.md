@@ -244,3 +244,11 @@ Révisions relevées :
 - python-for-android : `58d21141f17c889bf8585f5665921d72028f8831`
 
 Le diagnostic `JuneTrex-Android-Diagnostics` a été produit avec succès.
+
+
+### JT-PORT-009 — Hypothèse libltdl-dev
+Statut : HYPOTHÈSE EN TEST.
+
+Astra propose l'ajout de `libltdl-dev` au runner Ubuntu, car `ltdl.m4` fournit la macro `LT_SYS_SYMBOL_USCORE` manquante lors du run #7.
+
+Le test doit modifier uniquement cette dépendance et relancer le même scénario. Si l'erreur persiste, vérifier le chemin aclocal avant toute autre correction.

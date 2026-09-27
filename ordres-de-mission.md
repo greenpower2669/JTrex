@@ -204,3 +204,10 @@ Erreur discriminante :
 `configure.ac:215: error: possibly undefined macro: LT_SYS_SYMBOL_USCORE`.
 
 Aucune correction autonome de gameplay ou de main.py n'est autorisée en réponse à cet échec. Le prochain changement doit être une correction de chaîne ciblée préparée par Astra selon FAB-DEBUG-001.
+
+
+### JT-ANDROID-001 — correction ciblée libltdl-dev
+
+Astra autorise un essai FAB-DEBUG-001 unique : ajouter `libltdl-dev` aux dépendances Ubuntu du workflow. Aucun autre changement n'est inclus dans cet essai.
+
+Succès attendu : disparition de l'erreur `LT_SYS_SYMBOL_USCORE` à l'étape `autoreconf` de libffi. Une erreur ultérieure éventuelle devient un blocage distinct.
