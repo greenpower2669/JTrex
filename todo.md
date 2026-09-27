@@ -239,3 +239,22 @@ Commande interne associée :
 
 ### Inspection légère
 - [x] Ajouter un workflow séparé d'inspection média/source, sans compilation APK, afin de récupérer rapidement les preuves avant intégration.
+
+
+## JT-MEDIA-001 — intégration candidate 1.0.2
+
+- [x] Confirmer codecs/durations des 4 vidéos.
+- [x] Confirmer `indexa=1 / dinos1 / vv` comme attente aller-retour historique.
+- [x] Préparer intro aléatoire unique avec audio original et blocage des touches.
+- [x] Différer jtrm0.wav jusqu'à la fin de l'intro.
+- [x] Préparer vidéo d'attente en texture du Rectangle historique, audio vidéo muet.
+- [x] Préserver le moteur et les JPEG comme repli.
+- [x] Configurer JtrexIcon.png.
+- [x] Passer à 1.0.2 / versionCode 102.
+- [x] Ajouter MP4 aux extensions.
+- [x] Ajouter ffpyplayer et recette FFmpeg 6.1.2 compatible candidate.
+- [ ] Faire passer la préparation sur GitHub Actions.
+- [ ] Faire passer le build APK.
+- [ ] Vérifier inclusion MP4, ABIs et signature.
+- [ ] Livrer l'APK direct à Fab.
+- [ ] Validation téléphone : intro, son, icône, attente vidéo, attaque, retour attente, pause/reprise.

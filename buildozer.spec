@@ -4,14 +4,14 @@ package.name = junetrex
 package.domain = com.junedady
 
 source.dir = .
-source.include_exts = py,kv,png,jpg,jpeg,gif,wav
+source.include_exts = py,kv,png,jpg,jpeg,gif,wav,mp4
 source.exclude_dirs = .kivy,bin,.buildozer,__pycache__
 
-version = 1.0.1
-android.numeric_version = 101
-icon.filename = %(source.dir)s/pter/pter0.png
+version = 1.0.2
+android.numeric_version = 102
+icon.filename = %(source.dir)s/assets/icon/JtrexIcon.png
 
-requirements = python3,kivy
+requirements = python3,kivy,ffpyplayer
 orientation = landscape
 fullscreen = 1
 

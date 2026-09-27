@@ -262,3 +262,22 @@ Contraintes structurantes :
 - validation réelle vidéo sur téléphone par Fab.
 
 Phase actuelle : intake/inspection. Les médias sont importés dans la branche mais pas encore activés dans l'application.
+
+
+### JT-MEDIA-001 — implémentation candidate 1.0.2
+
+Version de test : `1.0.2`, versionCode `102`.
+
+Décisions d'intégration :
+- une intro aléatoire parmi trois, une seule fois par lancement ;
+- intro en letterbox noir, audio original, touches absorbées et gameplay non planifié ;
+- repli automatique vers le jeu en cas de lecture réellement indisponible ;
+- icône Android `assets/icon/JtrexIcon.png` ;
+- `StegVsTrexvaetviensremolace.mp4` affectée exclusivement à l'attente `indexa=1` ;
+- lecture de cette vidéo en boucle normale, sans reverse calculé ;
+- piste audio de l'attente vidéo muette afin de préserver la bande-son historique ;
+- sortie de l'attente arrête/libère le lecteur sans attendre la fin du fichier ;
+- gameplay, impacts, scores, énergie, IA et timers restent pilotés par le moteur historique ;
+- JPEG historiques conservés comme fallback.
+
+La chaîne vidéo candidate utilise ffpyplayer 4.5.1 avec la recette FFmpeg 6.1.2 de p4a historique, à confirmer par build réel avant toute déclaration de compatibilité téléphone.

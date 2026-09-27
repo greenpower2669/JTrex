@@ -794,3 +794,12 @@ Fab a fourni cinq nouvelles ressources sur `main`, à importer sans fusion globa
 La mission autorise trois évolutions ciblées : une intro aléatoire unique par lancement, le remplacement de l'icône provisoire, et un premier essai vidéo sur une attente historique clairement identifiée.
 
 Le point fonctionnel candidat pour la vidéo Steg/T-Rex est l'état `indexa=1`, seule séquence historique documentée en mode `vv` aller-retour (`dinos1/dinos_`). Ce rattachement doit être confirmé par inspection du code et du média avant remplacement effectif.
+
+
+## 29. JT-MEDIA-001 — intégration vidéo candidate 1.0.2
+
+L'intégration autorisée conserve le moteur historique et remplace seulement l'affichage de l'attente `indexa=1` par la vidéo fournie. La logique `anim_1` continue de progresser ; les orbes, scores, timers, dégâts et transitions ne dépendent pas du média.
+
+Au lancement de l'application, une seule intro est choisie uniformément parmi les trois MP4. Les callbacks de gameplay ne sont planifiés qu'après sa fin ou après un repli de sécurité. La musique historique du menu est différée jusqu'à cette transition afin de ne pas se superposer à l'audio de l'intro.
+
+La vidéo d'attente conserve le son historique du jeu : sa propre piste audio est muette. Les images JPEG historiques restent empaquetées et servent de repli si le lecteur vidéo ne fournit pas de frame.

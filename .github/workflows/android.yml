@@ -7,6 +7,8 @@ on:
       - '.github/workflows/android.yml'
       - 'buildozer.spec'
       - 'tools/prepare_android.py'
+      - 'tools/jtrex_media_runtime.py'
+      - 'tools/p4a-ffmpeg-6.1.2.py'
       - 'tools/patches/p4a-venv-clear.patch'
       - 'assets/**'
   release:
@@ -162,6 +164,10 @@ jobs:
             "$GITHUB_WORKSPACE/tools/patches/p4a-venv-clear.patch"
           git -C "$P4A_DIR" apply \
             "$GITHUB_WORKSPACE/tools/patches/p4a-venv-clear.patch"
+          cp "$GITHUB_WORKSPACE/tools/p4a-ffmpeg-6.1.2.py" \
+            "$P4A_DIR/pythonforandroid/recipes/ffmpeg/__init__.py"
+          echo "ffmpeg_recipe_source=p4a@541fe992ea86b3902f0e0f776167555da6dbca01" \
+            >> p4a-patch.txt
           echo "p4a_base=$(git -C "$P4A_DIR" rev-parse HEAD)" | tee p4a-patch.txt
           echo "p4a_branch=$(git -C "$P4A_DIR" branch --show-current)" | tee -a p4a-patch.txt
           echo "===== EFFECTIVE P4A DIFF =====" | tee -a p4a-patch.txt
@@ -212,9 +218,9 @@ jobs:
             exit 1
           fi
           mkdir -p artifacts
-          cp "${apks[0]}" artifacts/JuneT-Rex-1.0.1-debug.apk
+          cp "${apks[0]}" artifacts/JuneT-Rex-1.0.2-debug.apk
           cd artifacts
-          sha256sum JuneT-Rex-1.0.1-debug.apk > SHA256SUMS.txt
+          sha256sum JuneT-Rex-1.0.2-debug.apk > SHA256SUMS.txt
 
       - name: Upload diagnostic files
         if: always()
@@ -237,9 +243,9 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: JuneT-Rex-1.0.1-debug
+          name: JuneT-Rex-1.0.2-debug
           path: |
-            artifacts/JuneT-Rex-1.0.1-debug.apk
+            artifacts/JuneT-Rex-1.0.2-debug.apk
             artifacts/SHA256SUMS.txt
           if-no-files-found: error
           compression-level: 0

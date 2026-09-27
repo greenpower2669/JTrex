@@ -562,3 +562,18 @@ Ressources importées dans la branche Android sans fusion de `main` :
 Avant intégration, le workflow relève les métadonnées avec ffprobe, extrait des images début/milieu/fin et capture les zones pertinentes du `main.py` préparé dans `main-hooks.txt`.
 
 Aucune de ces vidéos n'est encore copiée dans `app/` ni activée par le moteur à ce stade d'intake.
+
+
+## 27. JT-MEDIA-001 — architecture runtime vidéo
+
+Le préparateur copie les cinq nouveaux médias et `jtrex_media_runtime.py` dans la racine de compilation vérifiée.
+
+`mainApp.on_start` :
+intro aléatoire → overlay Kivy noir/letterbox → fin/erreur/timeout → activation unique des callbacks historiques et de jtrm0.wav.
+
+`mc1` synchronise seulement l'état visuel avec le contrôleur média :
+- `indexa=1` → CoreVideo en boucle sur `StegVsTrexvaetviensremolace.mp4` ;
+- sortie de `indexa=1` → unload immédiat, restauration du Rectangle historique ;
+- `anim_1` continue toute sa logique mais n'écrase pas la texture du Rectangle tant que la vidéo d'attente fournit les frames.
+
+Provider visé : Kivy ffpyplayer. La chaîne p4a reste figée sur `58d2114…`, avec recette FFmpeg 6.1.2 issue de p4a `541fe992…` pour éviter l'incompatibilité publique ffpyplayer 4.5.1 / FFmpeg 8.0.1.

@@ -312,3 +312,16 @@ Kivy 2.3.1 expose notamment les fournisseurs vidéo ffmpeg et ffpyplayer, mais l
 Le commit p4a actuellement figé contient une recette ffpyplayer 4.5.1 dépendant de FFmpeg 8.0.1. Un signalement public amont décrit une incompatibilité de compilation ffpyplayer 4.5.1 / FFmpeg 8.0.1. Ne pas ajouter cette dépendance sans test ciblé ou solution compatible documentée.
 
 L'intake média utilise le ffprobe du runner uniquement pour inspection ; cela n'ajoute pas FFmpeg à l'APK.
+
+
+### JT-MEDIA-002 — Compatibilité ffpyplayer / FFmpeg
+Statut : CORRECTION DE CHAÎNE CANDIDATE À TESTER.
+
+Le p4a figé utilise ffpyplayer 4.5.1 et FFmpeg 8.0.1, combinaison pour laquelle un échec de compilation public existe (avfft.h supprimé). Le candidat 1.0.2 conserve le même p4a mais remplace uniquement sa recette FFmpeg par la recette 6.1.2 provenant du commit p4a `541fe992ea86b3902f0e0f776167555da6dbca01`.
+
+Ce changement est motivé uniquement par le décodage MP4 H.264/AAC requis par JT-MEDIA-001. Il doit être validé par build réel.
+
+### JT-MEDIA-003 — Repli vidéo
+Statut : PAR CONCEPTION.
+
+Si l'intro ne produit pas de lecture valide, un timeout borné libère le lecteur et donne accès au jeu. Si la vidéo d'attente ne produit aucune frame en 4 s, elle est libérée et les JPEG historiques reprennent. Aucun événement de vidéo ne déclenche dégâts ou changements de phase.
