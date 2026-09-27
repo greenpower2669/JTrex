@@ -830,3 +830,12 @@ Le test suivant conserve le même p4a et la même recette FFmpeg 6.1.2, mais fix
 - Artefact disponible : `JuneTrex-Android-Diagnostics` (ID `10943932232`).
 - Aucun APK 1.0.2 produit. Lecture vidéo et gameplay non testés.
 - Conformément à FAB-DEBUG-001, aucune seconde correction fonctionnelle n'est ajoutée à ce run.
+
+
+## 2026-09-28 — JT-MEDIA-001 / FAB-DEBUG-001 — alignement préparation Python 3.12.14
+
+- Suite autorisée après le run #13 : la garde de préparation et son reporting sont alignés de Python 3.11.13 vers Python 3.12.14.
+- La garde reste active : elle exige toujours explicitement la présence du pin attendu dans `requirements` et lève une exception en cas d'écart.
+- `buildozer.spec` reste inchangé : `python3==3.12.14,hostpython3==3.12.14,kivy,ffpyplayer`.
+- Cette modification ne prouve pas encore la version Python effectivement compilée ; la preuve doit venir des journaux p4a du prochain run.
+- Aucun changement de ffpyplayer, FFmpeg, p4a, Cython, médias, runtime ou gameplay.

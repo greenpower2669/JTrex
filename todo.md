@@ -288,3 +288,16 @@ Commande interne associée :
 - [x] Ne pas ajouter de seconde correction dans le run #13.
 - [ ] Prochain ordre de mission : décider séparément si la garde/reporting 3.11.13 du préparateur doit être alignée sur 3.12.14 pour permettre au test d'atteindre p4a.
 - [ ] Après cette décision seulement, relancer et relever les preuves p4a/ffpyplayer demandées.
+
+
+## 2026-09-28 — JT-MEDIA-001 / FAB-DEBUG-001 — alignement préparation Python 3.12.14
+
+- [x] Aligner la garde `requirements` de `tools/prepare_android.py` sur `python3==3.12.14`.
+- [x] Aligner le message d'exception sur 3.12.14.
+- [x] Aligner `python_target` du rapport sur 3.12.14.
+- [x] Aligner la ligne descriptive du rapport sur 3.12.14.
+- [ ] Vérifier que le prochain run franchit `Verify and prepare JuneTrex sources`.
+- [ ] Relever dans p4a les versions effectives de python3 et hostpython3, ffpyplayer et le résultat par architecture.
+- [ ] Vérifier disparition/persistance de `_PyLong_AsByteArray` et `_PyGen_SetStopIterationValue`.
+- [ ] En cas d'échec, consigner uniquement la première nouvelle erreur discriminante ; ne pas ajouter un second correctif dans la même tentative.
+- [ ] Annoncer l'APK 📦 1.0.2 uniquement s'il est réellement produit, avec SHA-256.

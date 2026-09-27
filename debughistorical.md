@@ -362,3 +362,10 @@ Hypothèse suivante : conserver p4a/FFmpeg mais fixer python3 + hostpython3 à 3
 - Artefact disponible : `JuneTrex-Android-Diagnostics` (ID `10943932232`).
 - Aucun APK 1.0.2 produit. Lecture vidéo et gameplay non testés.
 - Conformément à FAB-DEBUG-001, aucune seconde correction fonctionnelle n'est ajoutée à ce run.
+
+
+## 2026-09-28 — JT-MEDIA-001 / FAB-DEBUG-001 — alignement préparation Python 3.12.14
+
+- Cause du blocage du run #13 conservée dans l'historique : `tools/prepare_android.py` imposait encore Python 3.11.13 alors que `buildozer.spec` testait 3.12.14.
+- Correction autorisée : quatre remplacements exacts dans le préparateur, uniquement 3.11.13 → 3.12.14 pour la garde et le reporting.
+- Le test de compatibilité natif Python 3.12.14 / ffpyplayer 4.5.1 reste à réaliser ; aucun succès n'est présumé.

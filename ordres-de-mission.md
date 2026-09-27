@@ -298,3 +298,8 @@ Appliquer un seul essai fonctionnel : Python 3.12.14 pour `python3` et `hostpyth
 ### Clôture du run #13
 
 Le test FAB-DEBUG-001 est **incomplet** : la préparation s'arrête avant p4a sur une assertion héritée imposant Python 3.11.13. Aucun second patch n'est autorisé dans ce run. Le prochain ordre de mission devra traiter explicitement cette garde s'il veut poursuivre le test 3.12.14.
+
+
+### 2026-09-28 — JT-MEDIA-001 / FAB-DEBUG-001 — alignement préparation Python 3.12.14
+
+Astra autorise la suite du run #13 sous forme d'un essai séparé : modifier uniquement les quatre occurrences prévues dans `tools/prepare_android.py` afin d'aligner la garde et le rapport sur Python 3.12.14. Le contrôle reste actif. `buildozer.spec`, ffpyplayer 4.5.1, FFmpeg 6.1.2, le p4a figé, Cython, les médias, le runtime et le gameplay restent inchangés. Le prochain run doit mesurer la première erreur réelle sans empiler de correction.

@@ -272,8 +272,8 @@ def prepare(archive, destination, spec, media_root, runtime):
         "ffpyplayer absent des requirements.",
     )
     require(
-        "python3==3.11.13" in requirements,
-        "Python cible doit rester figé sur 3.11.13 pour ffpyplayer.",
+        "python3==3.12.14" in requirements,
+        "Python cible doit rester figé sur 3.12.14 pour ffpyplayer.",
     )
 
     destination.parent.mkdir(parents=True, exist_ok=True)
@@ -402,7 +402,7 @@ def prepare(archive, destination, spec, media_root, runtime):
             "version": VERSION,
             "numeric_version": NUMERIC_VERSION,
             "package": "com.junedady.junetrex",
-            "python_target": "3.11.13",
+            "python_target": "3.12.14",
             "archive_sha256": ARCHIVE_SHA256,
             "historical_main_sha256": MAIN_SHA256,
             "prepared_main_sha256": digest(main),
@@ -416,7 +416,7 @@ def prepare(archive, destination, spec, media_root, runtime):
                 "a.png -> A.png: 4 références",
                 "boutbleu0.png -> boutBleu0.png: 4 références",
                 "version 1.0.2 / versionCode 102",
-                "Python cible 3.11.13 pour compatibilité ffpyplayer",
+                "Python cible 3.12.14 pour compatibilité ffpyplayer",
                 "titre June T-Rex",
                 "menu music deferred until intro end",
                 "one random intro per process launch",

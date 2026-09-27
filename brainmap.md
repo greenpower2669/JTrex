@@ -602,3 +602,10 @@ Point de contrôle connu avant run : `tools/prepare_android.py` vérifie encore 
 ### Run #13 — résultat
 
 `buildozer.spec 3.12.14` → **blocage dans prepare_android.py (garde 3.11.13)** → p4a non atteint → ffpyplayer non atteint → APK non produit.
+
+
+## 2026-09-28 — JT-MEDIA-001 / FAB-DEBUG-001 — alignement préparation Python 3.12.14
+
+Chaîne attendue : `buildozer.spec (python3/hostpython3 3.12.14)` → `tools/prepare_android.py (garde 3.12.14 active + rapport python_target=3.12.14)` → p4a figé → ffpyplayer 4.5.1 → compilation ABI.
+
+Le champ `python_target` du rapport est déclaratif ; seules les traces p4a peuvent établir les versions réellement construites.
