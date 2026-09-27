@@ -707,3 +707,17 @@ Le futur portage devra partir de cette référence avant toute simplification.
 - séries d'images actuelles tant que les vidéos originales n'ont pas été retrouvées et validées.
 
 Les observations techniques doivent être confirmées par exécution avant toute correction. Voir debughistorical.md.
+
+
+## 20. Compléments de fidélité issus de l'audit Astra
+
+Ces précisions complètent la transcription afin qu'aucun détail fonctionnel significatif du relais Astra ne reste implicite :
+
+- Au tout premier chargement, jtrm0.wav démarre immédiatement, est bouclé et reçoit initialement un volume de 0,5.
+- colv[7], colv[8] et colv[9] suivent une notion de temps dans le programme, mais cette information n'est pas utilisée pour normaliser le déplacement des orbes au temps réellement écoulé.
+- choixidh et choixidb servent au suivi tactile hérité ; ils ne constituent pas un verrou général limitant tous les boutons à un seul doigt par camp.
+- Les remises à zéro de tapg et tapd provoquées par certains appuis hors phase peuvent être atteintes indirectement parce que des zones tactiles restent testées même lorsque leur rectangle est graphiquement masqué.
+- La famille horseg2ko contient des variantes de noms et des fichiers de sauvegarde ; l'absence de chargetrwin_83.jpeg ne doit donc pas être « réparée » par simple renommage sans contrôle visuel.
+- La durée réelle de car est aussi influencée par les animations et par l'attente qui suit la fin de saisie d'un camp ; car n'est pas une horloge murale continue.
+- L'analyse source n'a pas recalculé le hash global de JuneTrex.zip, n'a pas comparé les onze variantes historiques de main.py et n'a pas vérifié visuellement chaque image de chaque séquence.
+- Le comportement décrit reste celui lu dans le code de référence. Toute manifestation exacte à l'écran doit être confrontée au jeu exécuté avant de qualifier une asymétrie ou une anomalie de bug.

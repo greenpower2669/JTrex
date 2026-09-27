@@ -150,3 +150,12 @@ Certaines asymétries peuvent être volontaires. Une observation ne devient un b
 - aucun code n'a été touché.
 
 Toute phase suivante exige un nouvel ordre explicite de Fab.
+
+
+### Contrôle de complétude documentaire
+
+Après création initiale des mémoires, une relecture croisée avec le relais Astra a été effectuée pour vérifier la fidélité de transcription.
+
+Les détails qui restaient implicites ont été rendus explicites dans brain.md et brainmap.md, notamment le suivi tactile choixidh/choixidb, colv[7..9], les limites exactes du hash et de l'inventaire, les variantes de ressources horseg2ko et certaines nuances de l'héritage tactile.
+
+Ce contrôle reste strictement documentaire : aucun code, média, build, workflow ou comportement n'a été modifié.

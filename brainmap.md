@@ -388,3 +388,14 @@ Point critique : plusieurs main.py existent dans l'archive. Le workflow ne séle
 Configuration actuelle : Android API 36, min API 21, NDK 28c, arm64-v8a + armeabi-v7a, SDL2, APK debug, AAB release.
 
 Cette cartographie ne constitue pas une validation du build.
+
+
+## 18. Compléments de cartographie issus de l'audit de complétude
+
+- L'essentiel de l'état actif est stocké dans des variables globales et des dictionnaires ; la future architecture ne doit pas supposer un état déjà encapsulé.
+- choixidh / choixidb appartiennent au suivi tactile historique. Ils ne constituent pas un verrou global « un doigt par camp ».
+- colv[7], colv[8] et colv[9] suivent une notion temporelle, mais colvv n'utilise pas cette information pour convertir les pas des orbes en vitesse normalisée au delta temps.
+- Le suivi tactile hérité emploie les conventions h/b et certaines conditions diffèrent entre on_touch_down et on_touch_move ; ne pas homogénéiser ces chemins sans validation.
+- L'inventaire signale des variantes de noms et des fichiers de sauvegarde dans la famille horseg2ko ; chargetrwin_83.jpeg reste absent et aucune variante ne doit être substituée automatiquement.
+- Le hash SHA-256 documenté concerne JuneTrex/main.py seulement. L'archive JuneTrex.zip entière n'a pas été téléchargée puis rehachée dans l'audit Astra.
+- L'analyse n'a pas comparé les onze main.py historiques ni inspecté visuellement chaque image de chaque série.

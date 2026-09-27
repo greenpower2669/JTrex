@@ -175,3 +175,13 @@ Aucune entrée de ce fichier n'est une autorisation de correction. Avant de modi
 3. faire valider l'intention par Fab ;
 4. préparer un ordre de mission séparé ;
 5. préserver le gameplay historique tant que la correction n'est pas explicitement autorisée.
+
+
+## Audit de complétude documentaire
+
+### JT-DOC-001 — Vérification de transcription du relais Astra
+Statut : DOCUMENTATION COMPLÉTÉE.
+
+Une relecture croisée du relais Astra et des cinq mémoires a identifié quelques détails qui étaient seulement implicites dans la première transcription : rôle de choixidh/choixidb, colv[7..9], portée du hash, limites de l'inventaire visuel, variantes horseg2ko et nuances du suivi tactile hérité.
+
+Ces éléments ont été ajoutés à brain.md et brainmap.md. Cette opération n'est pas une validation en exécution et ne transforme aucune JT-OBS en correction.

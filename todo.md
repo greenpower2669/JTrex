@@ -98,3 +98,14 @@ Après stabilisation du portage seulement :
 Ne rien coder à partir de cette seule reconstruction.
 
 Le prochain geste autorisable est une phase de validation d'exécution de la référence historique ou un nouvel ordre de mission explicite de Fab.
+
+
+## Audit de complétude du relais Astra
+
+- [x] Relire le relais Astra contre les cinq mémoires.
+- [x] Rendre explicites choixidh/choixidb.
+- [x] Rendre explicite le rôle temporel non normalisant de colv[7..9].
+- [x] Conserver les limites de provenance : hash main.py seulement, variantes historiques non comparées, séries non toutes vérifiées visuellement.
+- [x] Consigner les variantes/sauvegardes horseg2ko sans substitution automatique.
+- [x] Conserver les nuances du suivi tactile hérité.
+- [x] Confirmer qu'aucune correction de code ni validation d'exécution n'a été effectuée.
