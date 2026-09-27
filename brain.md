@@ -818,3 +818,15 @@ Le test suivant conserve le même p4a et la même recette FFmpeg 6.1.2, mais fix
 - Requirement attendu : `python3==3.12.14,hostpython3==3.12.14,kivy,ffpyplayer`.
 - ffpyplayer 4.5.1, FFmpeg 6.1.2 et le commit p4a existant restent inchangés.
 - Le préparateur Android contient encore une garde héritée imposant Python 3.11.13 ; conformément au protocole mono-correction, elle n'est pas modifiée dans ce run. Le résultat réel du workflow doit déterminer le prochain ordre de mission.
+
+
+### Résultat réel du run #13 — 2026-09-28
+
+- Commit construit : `0f73b3d31d4dc242daecb102f4c18579c8413627`.
+- GitHub Actions : run #13, ID `36355762409`, job `108723048564`.
+- Échec à l'étape `Verify and prepare JuneTrex sources`, avant installation Buildozer/p4a et avant compilation ffpyplayer.
+- Erreur discriminante : `RuntimeError: Python cible doit rester figé sur 3.11.13 pour ffpyplayer.`
+- Le pin 3.12.14 présent dans `buildozer.spec` n'a donc pas encore été transmis à p4a ; les versions effectives python3/hostpython3 3.12.14 et le Cython isolé ne peuvent pas être prouvés sur ce run.
+- Artefact disponible : `JuneTrex-Android-Diagnostics` (ID `10943932232`).
+- Aucun APK 1.0.2 produit. Lecture vidéo et gameplay non testés.
+- Conformément à FAB-DEBUG-001, aucune seconde correction fonctionnelle n'est ajoutée à ce run.

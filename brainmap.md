@@ -597,3 +597,8 @@ Le pin python3 est transmis par les requirements p4a ; hostpython3 est fixé exp
 `buildozer.spec` → Python cible/host 3.12.14 → préparation Android existante → p4a figé → ffpyplayer 4.5.1 → APK 1.0.2 si toute la chaîne passe.
 
 Point de contrôle connu avant run : `tools/prepare_android.py` vérifie encore explicitement 3.11.13 ; ne pas le corriger dans le même essai.
+
+
+### Run #13 — résultat
+
+`buildozer.spec 3.12.14` → **blocage dans prepare_android.py (garde 3.11.13)** → p4a non atteint → ffpyplayer non atteint → APK non produit.

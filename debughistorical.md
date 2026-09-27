@@ -350,3 +350,15 @@ Hypothèse suivante : conserver p4a/FFmpeg mais fixer python3 + hostpython3 à 3
 - Un commit intermédiaire `04a539992baabe25a5cea218636c7bedb4928585` avait tenté `python3==3.11.13`.
 - Nouvel essai ciblé : `python3==3.12.14` + `hostpython3==3.12.14`, sans autre changement fonctionnel.
 - Risque identifié avant relance : le préparateur contient une assertion 3.11.13 et peut arrêter le workflow avant ffpyplayer. Si cela se produit, le test 3.12.14 sera classé incomplet et aucune deuxième correction ne sera ajoutée à ce run.
+
+
+### Résultat réel du run #13 — 2026-09-28
+
+- Commit construit : `0f73b3d31d4dc242daecb102f4c18579c8413627`.
+- GitHub Actions : run #13, ID `36355762409`, job `108723048564`.
+- Échec à l'étape `Verify and prepare JuneTrex sources`, avant installation Buildozer/p4a et avant compilation ffpyplayer.
+- Erreur discriminante : `RuntimeError: Python cible doit rester figé sur 3.11.13 pour ffpyplayer.`
+- Le pin 3.12.14 présent dans `buildozer.spec` n'a donc pas encore été transmis à p4a ; les versions effectives python3/hostpython3 3.12.14 et le Cython isolé ne peuvent pas être prouvés sur ce run.
+- Artefact disponible : `JuneTrex-Android-Diagnostics` (ID `10943932232`).
+- Aucun APK 1.0.2 produit. Lecture vidéo et gameplay non testés.
+- Conformément à FAB-DEBUG-001, aucune seconde correction fonctionnelle n'est ajoutée à ce run.

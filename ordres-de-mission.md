@@ -293,3 +293,8 @@ Critère de réussite : ffpyplayer compile sans les erreurs d'API CPython 3.14 e
 ## 2026-09-28 — FAB-DEBUG-001 / JT-MEDIA-001
 
 Appliquer un seul essai fonctionnel : Python 3.12.14 pour `python3` et `hostpython3` dans `buildozer.spec`. Ne modifier ni ffpyplayer 4.5.1, ni FFmpeg 6.1.2, ni p4a, ni le runtime/médias/gameplay. Relancer le workflow proprement. Si un blocage antérieur à ffpyplayer apparaît, rapporter ce blocage seul et ne pas empiler de seconde correction.
+
+
+### Clôture du run #13
+
+Le test FAB-DEBUG-001 est **incomplet** : la préparation s'arrête avant p4a sur une assertion héritée imposant Python 3.11.13. Aucun second patch n'est autorisé dans ce run. Le prochain ordre de mission devra traiter explicitement cette garde s'il veut poursuivre le test 3.12.14.

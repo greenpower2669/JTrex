@@ -279,3 +279,12 @@ Commande interne associée :
 - [ ] Vérifier si la préparation franchit la garde héritée 3.11.13 ; sinon classer l'hypothèse comme non testée/incomplète.
 - [ ] Si ffpyplayer est atteint, relever requirements p4a, Python/hostpython, Cython isolé si visible, et résultat sur arm64-v8a puis armeabi-v7a.
 - [ ] Si un APK est produit, relever SHA-256 et artefact `JuneT-Rex-1.0.2-debug.apk` ; la validation vidéo/gameplay reste à Fab sur téléphone.
+
+
+### Après run #13
+
+- [x] Run #13 identifié : `36355762409`, commit `0f73b3d31d4dc242daecb102f4c18579c8413627`.
+- [x] Premier nouveau blocage relevé : garde 3.11.13 dans `tools/prepare_android.py`.
+- [x] Ne pas ajouter de seconde correction dans le run #13.
+- [ ] Prochain ordre de mission : décider séparément si la garde/reporting 3.11.13 du préparateur doit être alignée sur 3.12.14 pour permettre au test d'atteindre p4a.
+- [ ] Après cette décision seulement, relancer et relever les preuves p4a/ffpyplayer demandées.
