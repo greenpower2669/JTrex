@@ -743,3 +743,10 @@ Sur la copie de compilation seulement, quatre catégories d'adaptation sont auto
 - deux traces bornées de démarrage `JT-BOOT` et `JT-START`.
 
 Aucune règle de score, dégâts, énergie, pouvoir, tapotement, IA ou chronomètre n'est modifiée.
+
+
+## 23. JT-ANDROID-001 — premier build réel
+
+Le premier build Android ciblé a atteint la compilation native après validation complète de la préparation des sources. Il a échoué dans la chaîne de compilation native avant production d'un APK.
+
+Aucun élément de gameplay n'a été exécuté ou invalidé par cet échec.

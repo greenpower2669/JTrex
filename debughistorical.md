@@ -222,3 +222,25 @@ Archive, racine, main historique et transformations sont figés par empreintes. 
 
 ### JT-OBS-003
 Reste OUVERT. `horseg2ko/chargetrwin_83.jpeg` n'est ni créée, ni remplacée, ni contournée par décalage d'indice.
+
+
+### JT-PORT-008 — Run #7 : échec libffi / Autoconf
+Statut : CONFIRMÉ PAR BUILD.
+
+Run : `36319044247`.
+Commit : `e702da7c07e63ee760dbfe677a9d9062f6c7d587`.
+
+La préparation historique passe intégralement. L'échec survient pendant la compilation native de python-for-android/libffi :
+
+`configure.ac:215: error: possibly undefined macro: LT_SYS_SYMBOL_USCORE`
+`autoreconf: error: /usr/bin/autoconf failed with exit status: 1`
+
+Aucun APK n'a été produit. La collecte APK a été ignorée après cet échec.
+
+Ce constat pointe la chaîne native/autotools et non une erreur démontrée dans le gameplay JTrex. Ne pas modifier main.py pour traiter cette erreur sans preuve.
+
+Révisions relevées :
+- Buildozer : `a153097b3c534bea8a17da2abf1369d67c8cbfcb`
+- python-for-android : `58d21141f17c889bf8585f5665921d72028f8831`
+
+Le diagnostic `JuneTrex-Android-Diagnostics` a été produit avec succès.

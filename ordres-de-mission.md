@@ -194,3 +194,13 @@ Elle ajoute le préparateur contrôlé, fige la source sur la release/tag `JTrex
 `horseg2ko/chargetrwin_83.jpeg` reste absente et aucune image n'est fabriquée.
 
 La chaîne de compilation reste à qualifier après build ; aucune promesse de reproductibilité intégrale n'est faite tant que Buildozer/python-for-android ne sont pas verrouillés sur des révisions vérifiées.
+
+
+### JT-ANDROID-001 — retour run #7
+
+Le premier run ciblé a validé la préparation de JuneTrex mais a échoué avant création de l'APK dans la compilation native libffi/python-for-android.
+
+Erreur discriminante :
+`configure.ac:215: error: possibly undefined macro: LT_SYS_SYMBOL_USCORE`.
+
+Aucune correction autonome de gameplay ou de main.py n'est autorisée en réponse à cet échec. Le prochain changement doit être une correction de chaîne ciblée préparée par Astra selon FAB-DEBUG-001.

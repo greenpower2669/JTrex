@@ -445,3 +445,28 @@ La préparation refuse :
 `horseg2ko/chargetrwin_83.jpeg` reste une ressource connue manquante. Aucun fallback n'est créé dans cette étape.
 
 La chaîne n'est pas encore déclarée entièrement reproductible : Buildozer est installé depuis Git et python-for-android n'est pas encore verrouillé. Les révisions réellement utilisées doivent être relevées après le build.
+
+
+## 21. JT-ANDROID-001 — chaîne réellement observée au run #7
+
+Run GitHub Actions : `36319044247`.
+Commit : `e702da7c07e63ee760dbfe677a9d9062f6c7d587`.
+
+Préparation :
+- archive SHA-256 vérifiée ;
+- main historique SHA-256 vérifié ;
+- 3186 fichiers extraits ;
+- main préparé SHA-256 : `29e6dabe2625778a36812652c16d227541aa9e6e002bc8ae493957fd87bf0034` ;
+- buildozer.spec SHA-256 : `bf0089328295fb19637d0fa04a68c383172d9682af5d32947d674cbd444ef2cd`.
+
+Outillage réellement relevé :
+- Buildozer commit `a153097b3c534bea8a17da2abf1369d67c8cbfcb` ;
+- python-for-android commit `58d21141f17c889bf8585f5665921d72028f8831` ;
+- Cython 0.29.34 ;
+- setuptools 84.0.0 ;
+- wheel 0.48.0 ;
+- runner Ubuntu 24.04 ;
+- Java 17 ;
+- NDK Buildozer r28c.
+
+Échec : phase native python-for-android/libffi pendant `autoreconf`, avant packaging APK.

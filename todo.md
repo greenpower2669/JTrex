@@ -148,3 +148,20 @@ Prochain geste : transmettre à Astra le dossier ciblé JT-ANDROID-001. Aucun ga
 - [ ] Rapporter à Astra les logs/diagnostics et le commit exact.
 - [ ] Validation téléphone par Fab.
 - [ ] AAB après stabilisation APK.
+
+
+## JT-ANDROID-001 — résultat run #7
+
+- [x] Préparation archive/main vérifiée.
+- [x] Buildozer et python-for-android réellement identifiés.
+- [x] Diagnostic complet récupéré.
+- [ ] Corriger l'échec native libffi/autoreconf uniquement après proposition Astra.
+- [ ] Relancer un scénario identique après une seule correction discriminante.
+- [ ] Produire l'APK 📦.
+- [ ] Vérifier statiquement package/version/architectures/signature.
+- [ ] Faire valider sur téléphone par Fab.
+
+Blocage actuel précis :
+`configure.ac:215: error: possibly undefined macro: LT_SYS_SYMBOL_USCORE`.
+
+Prochain geste : transmettre à Astra le run #7, les révisions d'outillage et cette première erreur pertinente.
