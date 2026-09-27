@@ -288,3 +288,8 @@ La chaîne vidéo candidate utilise ffpyplayer 4.5.1 avec la recette FFmpeg 6.1.
 Le run #11 démontre un blocage natif ffpyplayer 4.5.1 / Python 3.14.2. La correction suivante ne modifie ni le runtime JTrex ni les médias : elle fixe uniquement python3 et hostpython3 à 3.11.13 tout en gardant le p4a `58d2114…`, `venv --clear`, FFmpeg 6.1.2, NDK r28c et les deux architectures.
 
 Critère de réussite : ffpyplayer compile sans les erreurs d'API CPython 3.14 et le build poursuit vers l'APK.
+
+
+## 2026-09-28 — FAB-DEBUG-001 / JT-MEDIA-001
+
+Appliquer un seul essai fonctionnel : Python 3.12.14 pour `python3` et `hostpython3` dans `buildozer.spec`. Ne modifier ni ffpyplayer 4.5.1, ni FFmpeg 6.1.2, ni p4a, ni le runtime/médias/gameplay. Relancer le workflow proprement. Si un blocage antérieur à ffpyplayer apparaît, rapporter ce blocage seul et ne pas empiler de seconde correction.

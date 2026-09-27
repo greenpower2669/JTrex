@@ -342,3 +342,11 @@ Erreurs discriminantes :
 Un ticket ffpyplayer Python 3.14 est encore ouvert. Aucun APK 1.0.2 n'a été produit par ce run.
 
 Hypothèse suivante : conserver p4a/FFmpeg mais fixer python3 + hostpython3 à 3.11.13, sans modifier le C de ffpyplayer.
+
+
+## 2026-09-28 — FAB-DEBUG-001 / JT-MEDIA-001
+
+- Run #11 (commit `e11a37fb88417d9e0cf102a3604374a86a97f950`) : ffpyplayer échoue avec des appels C incompatibles avec CPython 3.14.
+- Un commit intermédiaire `04a539992baabe25a5cea218636c7bedb4928585` avait tenté `python3==3.11.13`.
+- Nouvel essai ciblé : `python3==3.12.14` + `hostpython3==3.12.14`, sans autre changement fonctionnel.
+- Risque identifié avant relance : le préparateur contient une assertion 3.11.13 et peut arrêter le workflow avant ffpyplayer. Si cela se produit, le test 3.12.14 sera classé incomplet et aucune deuxième correction ne sera ajoutée à ce run.

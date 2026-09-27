@@ -810,3 +810,11 @@ La vidéo d'attente conserve le son historique du jeu : sa propre piste audio es
 Le run #11 a confirmé que le candidat vidéo atteint la compilation de ffpyplayer, mais ffpyplayer 4.5.1 échoue contre les API C de Python 3.14.2. Le gameplay JTrex n'est pas en cause.
 
 Le test suivant conserve le même p4a et la même recette FFmpeg 6.1.2, mais fixe le Python cible à 3.11.13, version stable historique de la même lignée p4a et adaptée au code C généré de ffpyplayer 4.5.1.
+
+
+## 2026-09-28 — FAB-DEBUG-001 / JT-MEDIA-001
+
+- Décision Astra appliquée sur la branche `port/android-first-apk` : cible Android et host Python figés ensemble sur 3.12.14.
+- Requirement attendu : `python3==3.12.14,hostpython3==3.12.14,kivy,ffpyplayer`.
+- ffpyplayer 4.5.1, FFmpeg 6.1.2 et le commit p4a existant restent inchangés.
+- Le préparateur Android contient encore une garde héritée imposant Python 3.11.13 ; conformément au protocole mono-correction, elle n'est pas modifiée dans ce run. Le résultat réel du workflow doit déterminer le prochain ordre de mission.

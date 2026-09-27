@@ -590,3 +590,10 @@ Configuration candidate :
 - FFmpeg : recette 6.1.2 issue de `541fe992…`.
 
 Le pin python3 est transmis par les requirements p4a ; hostpython3 est fixé explicitement dans l'environnement du build afin de respecter la garde p4a exigeant les deux versions identiques.
+
+
+## 2026-09-28 — FAB-DEBUG-001 / JT-MEDIA-001
+
+`buildozer.spec` → Python cible/host 3.12.14 → préparation Android existante → p4a figé → ffpyplayer 4.5.1 → APK 1.0.2 si toute la chaîne passe.
+
+Point de contrôle connu avant run : `tools/prepare_android.py` vérifie encore explicitement 3.11.13 ; ne pas le corriger dans le même essai.

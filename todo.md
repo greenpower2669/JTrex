@@ -270,3 +270,12 @@ Commande interne associée :
 - [ ] Relancer exactement le candidat 1.0.2.
 - [ ] Vérifier disparition des erreurs `_PyLong_AsByteArray` / `_PyGen_SetStopIterationValue`.
 - [ ] Si build vert : récupérer et contrôler l'APK.
+
+
+## 2026-09-28 — FAB-DEBUG-001 / JT-MEDIA-001
+
+- [x] Remplacer le pin intermédiaire Python 3.11.13 par `python3==3.12.14,hostpython3==3.12.14` dans le seul `buildozer.spec` racine.
+- [ ] Relever le run GitHub Actions déclenché par ce commit et son commit construit.
+- [ ] Vérifier si la préparation franchit la garde héritée 3.11.13 ; sinon classer l'hypothèse comme non testée/incomplète.
+- [ ] Si ffpyplayer est atteint, relever requirements p4a, Python/hostpython, Cython isolé si visible, et résultat sur arm64-v8a puis armeabi-v7a.
+- [ ] Si un APK est produit, relever SHA-256 et artefact `JuneT-Rex-1.0.2-debug.apk` ; la validation vidéo/gameplay reste à Fab sur téléphone.

@@ -11,7 +11,7 @@ version = 1.0.2
 android.numeric_version = 102
 icon.filename = %(source.dir)s/assets/icon/JtrexIcon.png
 
-requirements = python3==3.11.13,kivy,ffpyplayer
+requirements = python3==3.12.14,hostpython3==3.12.14,kivy,ffpyplayer
 orientation = landscape
 fullscreen = 1
 
