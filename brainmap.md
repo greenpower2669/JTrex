@@ -521,3 +521,30 @@ Buildozer conserve sa configuration actuelle et réutilise ce dépôt p4a déjà
 `python -m venv --clear venv`.
 
 La commande `pip install -U pip` reste inchangée pour rendre le test discriminant.
+
+
+## 25. JT-ANDROID-001 — run #9 réussi
+
+Run GitHub Actions : `36330526427`.
+Commit : `716093bbea45766c7ee6d28ae0bb15b5512d943a`.
+
+Résultat :
+- étape p4a patchée : succès ;
+- `Build debug APK` : succès ;
+- collecte APK : succès ;
+- upload APK : succès.
+
+Artefact Actions APK :
+- nom : `JuneT-Rex-1.0.1-debug`
+- artifact ID : `10935915514`
+- fichier : `JuneT-Rex-1.0.1-debug.apk`
+- taille : 297060998 octets
+- SHA-256 APK : `e9ca9935c79616868969dfe249a4a3afcd945c06d37392fb7ab3d8055057011c`
+- ABIs présents : `arm64-v8a`, `armeabi-v7a`
+- intégrité ZIP APK : OK.
+
+Signature observée :
+- certificat : `Android Debug`
+- SHA-256 certificat : `C0:EE:36:F2:D9:D5:48:A7:CB:86:F2:F2:ED:71:FE:62:F9:E6:61:83:15:40:EF:AC:A3:39:27:08:B9:38:0D:63`.
+
+Cette signature debug est propre au candidat de test et ne doit pas être présentée comme une signature de distribution pérenne.

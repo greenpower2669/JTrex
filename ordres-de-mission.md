@@ -228,3 +228,14 @@ La correction suivante doit rester mono-hypothèse et préparée par Astra. Aucu
 Astra autorise un second test FAB-DEBUG-001 mono-hypothèse : conserver le commit p4a `58d21141f17c889bf8585f5665921d72028f8831` et appliquer localement un patch ajoutant uniquement `--clear` à la création du venv dans `run_pymodules_install()`.
 
 La mise à jour de pip interne reste volontairement inchangée. Aucun autre composant de chaîne, gameplay, main.py ou média n'est modifié dans cet essai.
+
+
+### JT-ANDROID-001 — jalon APK atteint
+
+Le run #9 a produit `JuneT-Rex-1.0.1-debug.apk` avec succès.
+
+Statut : **APK compilé et contrôlé statiquement ; installation et fonctionnement à valider par Fab**.
+
+Le fichier est signé avec un certificat Android Debug. Il ne constitue pas encore une version de distribution ni une validation du gameplay.
+
+La prochaine validation appartient à Fab sur téléphone selon la fiche de test courte prévue par JT-ANDROID-001.

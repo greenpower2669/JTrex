@@ -204,3 +204,20 @@ Commande interne associée :
 - [ ] Vérifier dans le journal la commande `python -m venv --clear venv`.
 - [ ] Vérifier si `pip install -U pip` termine avec code 0 sur les deux architectures.
 - [ ] Si nouvelle erreur : isoler uniquement la première nouvelle erreur discriminante.
+
+
+## JT-ANDROID-001 — run #9 réussi
+
+- [x] Patch p4a `venv --clear` appliqué au SHA de base.
+- [x] Build debug APK réussi.
+- [x] APK collecté.
+- [x] SHA-256 calculé.
+- [x] Architectures arm64-v8a et armeabi-v7a confirmées.
+- [x] Signature debug identifiée.
+- [ ] Fab installe et ouvre l'APK sur téléphone.
+- [ ] Vérifier nom, icône, paysage, menu et Start.
+- [ ] Vérifier les 3 orbes des deux camps.
+- [ ] Vérifier première confrontation et retour au menu.
+- [ ] Selon retour Fab, corriger uniquement les problèmes observés.
+- [ ] Publier ensuite une préversion GitHub stable si l'outil de publication est disponible.
+- [ ] AAB 📦 après stabilisation APK.

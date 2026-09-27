@@ -771,3 +771,12 @@ Le build a ensuite progressé jusqu'à un nouveau blocage interne de la chaîne 
 Le test suivant conserve toute la chaîne du run #8 et modifie uniquement la création du venv temporaire de python-for-android : ajout de `--clear` à `python -m venv`.
 
 Le but est de tester l'hypothèse Astra d'un mélange de fichiers pip entre passages successifs par architecture. Aucune version de pip ou de Python n'est changée pour cet essai.
+
+
+## 27. JT-ANDROID-001 — premier APK construit
+
+Le run #9 a produit avec succès le premier APK Android de validation de June T-Rex.
+
+Ce succès valide la chaîne de compilation utilisée pour ce candidat, mais pas encore l'exécution réelle ni le gameplay sur le téléphone de Fab.
+
+APK : `JuneT-Rex-1.0.1-debug.apk`.

@@ -286,3 +286,19 @@ Astra relie le traceback `BuildDependencyInstallError` à un possible mélange d
 Test unique : patch local de python-for-android au SHA `58d21141f17c889bf8585f5665921d72028f8831`, ajoutant uniquement `--clear` à la création du venv.
 
 Ne pas pinner une version de pip ni changer Python 3.14.2 pendant ce test. Si la même erreur persiste, examiner l'origine réelle des modules importés avant une nouvelle correction.
+
+
+### JT-PORT-013 — Run #9 : premier APK produit
+Statut : CONFIRMÉ PAR BUILD.
+
+Run `36330526427` : succès complet.
+
+Le patch p4a `venv --clear` permet de franchir le blocage pip du run #8 et la compilation Android aboutit à `JuneT-Rex-1.0.1-debug.apk`.
+
+APK :
+- taille : 297060998 octets ;
+- SHA-256 : `e9ca9935c79616868969dfe249a4a3afcd945c06d37392fb7ab3d8055057011c` ;
+- architectures : arm64-v8a + armeabi-v7a ;
+- signature : certificat Android Debug, vérification JAR sans erreur fatale dans l'environnement Sol.
+
+Aucune installation/exécution téléphone n'a encore été réalisée par Sol. Statut fonctionnel : APK compilé et contrôlé statiquement ; installation et fonctionnement à valider par Fab.
