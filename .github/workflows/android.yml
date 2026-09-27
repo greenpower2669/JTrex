@@ -8,6 +8,7 @@ on:
       - 'buildozer.spec'
       - 'tools/prepare_android.py'
       - 'tools/patches/p4a-venv-clear.patch'
+      - 'assets/**'
   release:
     types: [published]
 
@@ -43,6 +44,47 @@ jobs:
             --spec buildozer.spec \
             2>&1 | tee preparation.log
 
+      - name: Inspect historical integration hooks
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY' > main-hooks.txt
+          from pathlib import Path
+
+          path = Path("app/main.py")
+          lines = path.read_text(encoding="utf-8").splitlines()
+          markers = (
+              "def on_touch_down",
+              "def mc1",
+              "def anim_1",
+              "def on_start",
+              "namea",
+              "longanim1",
+              "genrea",
+              "sona",
+              "indexa=",
+              "indexa =",
+              "jtrm0.wav",
+              "Clock.schedule_interval",
+          )
+          hits = []
+          for i, line in enumerate(lines):
+              if any(marker in line for marker in markers):
+                  hits.append(i)
+
+          emitted = set()
+          for i in hits:
+              start = max(0, i - 8)
+              end = min(len(lines), i + 18)
+              key = (start, end)
+              if key in emitted:
+                  continue
+              emitted.add(key)
+              print(f"===== lines {start + 1}-{end} =====")
+              for n in range(start, end):
+                  print(f"{n + 1:05d}: {lines[n]}")
+          PY
+
       - name: Install Buildozer system dependencies
         shell: bash
         run: |
@@ -53,9 +95,43 @@ jobs:
             python3-venv \
             autoconf libtool libltdl-dev pkg-config zlib1g-dev libncurses5-dev \
             libncursesw5-dev libtinfo6 cmake libffi-dev libssl-dev \
-            automake autopoint gettext
+            automake autopoint gettext ffmpeg
           java -version
           python3 --version
+
+      - name: Inspect JTrex media
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p media-inspection
+          : > media-inspection/media-inspection.txt
+
+          inspect_video() {
+            src="$1"
+            stem="$2"
+            echo "===== $src =====" | tee -a media-inspection/media-inspection.txt
+            ffprobe -v error \
+              -show_entries format=filename,duration,size,bit_rate \
+              -show_entries stream=index,codec_name,codec_type,width,height,r_frame_rate,avg_frame_rate,sample_rate,channels \
+              -of json "$src" | tee -a media-inspection/media-inspection.txt
+
+            duration="$(ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 "$src")"
+            middle="$(python3 -c 'import sys; print(max(0.0, float(sys.argv[1]) / 2.0))' "$duration")"
+
+            ffmpeg -y -v error -ss 0 -i "$src" -frames:v 1 "media-inspection/$stem-first.png"
+            ffmpeg -y -v error -ss "$middle" -i "$src" -frames:v 1 "media-inspection/$stem-middle.png"
+            ffmpeg -y -v error -sseof -0.10 -i "$src" -frames:v 1 "media-inspection/$stem-last.png"
+          }
+
+          inspect_video assets/intro/JTrexintro1.mp4 intro1
+          inspect_video assets/intro/JTrexintro2.mp4 intro2
+          inspect_video assets/intro/JTrexintro3.mp4 intro3
+          inspect_video assets/combat/StegVsTrexvaetviensremolace.mp4 steg-vs-trex
+
+          echo "===== assets/icon/JtrexIcon.png =====" | tee -a media-inspection/media-inspection.txt
+          ffprobe -v error -show_entries stream=codec_name,codec_type,width,height -of json \
+            assets/icon/JtrexIcon.png | tee -a media-inspection/media-inspection.txt
+          cp assets/icon/JtrexIcon.png media-inspection/JtrexIcon.png
 
       - name: Install Buildozer and record Python dependencies
         shell: bash
@@ -150,6 +226,8 @@ jobs:
             buildozer.log
             toolchain.txt
             p4a-patch.txt
+            main-hooks.txt
+            media-inspection/
             app/android-preparation.json
           if-no-files-found: warn
           retention-days: 7

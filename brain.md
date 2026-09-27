@@ -780,3 +780,17 @@ Le run #9 a produit avec succès le premier APK Android de validation de June T-
 Ce succès valide la chaîne de compilation utilisée pour ce candidat, mais pas encore l'exécution réelle ni le gameplay sur le téléphone de Fab.
 
 APK : `JuneT-Rex-1.0.1-debug.apk`.
+
+
+## 28. Mission vidéo / icône — intake médias
+
+Fab a fourni cinq nouvelles ressources sur `main`, à importer sans fusion globale :
+- `JtrexIcon.png` ;
+- `JTrexintro1.mp4` ;
+- `JTrexintro2.mp4` ;
+- `JTrexintro3.mp4` ;
+- `StegVsTrexvaetviensremolace.mp4`.
+
+La mission autorise trois évolutions ciblées : une intro aléatoire unique par lancement, le remplacement de l'icône provisoire, et un premier essai vidéo sur une attente historique clairement identifiée.
+
+Le point fonctionnel candidat pour la vidéo Steg/T-Rex est l'état `indexa=1`, seule séquence historique documentée en mode `vv` aller-retour (`dinos1/dinos_`). Ce rattachement doit être confirmé par inspection du code et du média avant remplacement effectif.

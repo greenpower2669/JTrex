@@ -302,3 +302,13 @@ APK :
 - signature : certificat Android Debug, vérification JAR sans erreur fatale dans l'environnement Sol.
 
 Aucune installation/exécution téléphone n'a encore été réalisée par Sol. Statut fonctionnel : APK compilé et contrôlé statiquement ; installation et fonctionnement à valider par Fab.
+
+
+### JT-MEDIA-001 — Fournisseur vidéo Android à qualifier
+Statut : EN COURS.
+
+Kivy 2.3.1 expose notamment les fournisseurs vidéo ffmpeg et ffpyplayer, mais le fournisseur réellement disponible dans l'APK actuel n'est pas encore un lecteur vidéo exploitable : aucun backend vidéo supplémentaire n'est inclus dans `requirements = python3,kivy`.
+
+Le commit p4a actuellement figé contient une recette ffpyplayer 4.5.1 dépendant de FFmpeg 8.0.1. Un signalement public amont décrit une incompatibilité de compilation ffpyplayer 4.5.1 / FFmpeg 8.0.1. Ne pas ajouter cette dépendance sans test ciblé ou solution compatible documentée.
+
+L'intake média utilise le ffprobe du runner uniquement pour inspection ; cela n'ajoute pas FFmpeg à l'APK.

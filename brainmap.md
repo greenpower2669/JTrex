@@ -548,3 +548,17 @@ Signature observée :
 - SHA-256 certificat : `C0:EE:36:F2:D9:D5:48:A7:CB:86:F2:F2:ED:71:FE:62:F9:E6:61:83:15:40:EF:AC:A3:39:27:08:B9:38:0D:63`.
 
 Cette signature debug est propre au candidat de test et ne doit pas être présentée comme une signature de distribution pérenne.
+
+
+## 26. Mission vidéo — organisation des nouveaux médias
+
+Ressources importées dans la branche Android sans fusion de `main` :
+- `assets/icon/JtrexIcon.png`
+- `assets/intro/JTrexintro1.mp4`
+- `assets/intro/JTrexintro2.mp4`
+- `assets/intro/JTrexintro3.mp4`
+- `assets/combat/StegVsTrexvaetviensremolace.mp4`
+
+Avant intégration, le workflow relève les métadonnées avec ffprobe, extrait des images début/milieu/fin et capture les zones pertinentes du `main.py` préparé dans `main-hooks.txt`.
+
+Aucune de ces vidéos n'est encore copiée dans `app/` ni activée par le moteur à ce stade d'intake.

@@ -239,3 +239,26 @@ Statut : **APK compilé et contrôlé statiquement ; installation et fonctionnem
 Le fichier est signé avec un certificat Android Debug. Il ne constitue pas encore une version de distribution ni une validation du gameplay.
 
 La prochaine validation appartient à Fab sur téléphone selon la fiche de test courte prévue par JT-ANDROID-001.
+
+
+## JT-MEDIA-001 — Intros aléatoires, icône et premier essai vidéo
+
+Mission autorisée par Fab sur `port/android-first-apk`.
+
+Ressources source fournies sur `main` : `JtrexIcon.png`, `JTrexintro1.mp4`, `JTrexintro2.mp4`, `JTrexintro3.mp4`, `StegVsTrexvaetviensremolace.mp4`.
+
+Contraintes structurantes :
+- importer uniquement ces ressources, sans fusion de `main` ;
+- ranger sous `assets/icon`, `assets/intro`, `assets/combat` ;
+- une seule intro tirée uniformément au hasard par lancement d'application ;
+- aucune relance d'intro par manche ou reprise ;
+- conserver le son d'intro et éviter le chevauchement avec la musique du jeu ;
+- utiliser `JtrexIcon.png` comme icône Android ;
+- la vidéo Steg/T-Rex est lue normalement et boucle telle quelle, sans inversion temps réel ;
+- ne remplacer qu'une attente historique clairement correspondante ;
+- conserver score, dégâts, énergie, pouvoirs, timers, IA, tapotements et Air Hockey ;
+- ne pas remplacer `horseg2ko/chargetrwin_83.jpeg` ;
+- préserver les images historiques comme solution de repli ;
+- validation réelle vidéo sur téléphone par Fab.
+
+Phase actuelle : intake/inspection. Les médias sont importés dans la branche mais pas encore activés dans l'application.

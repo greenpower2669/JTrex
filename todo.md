@@ -221,3 +221,17 @@ Commande interne associée :
 - [ ] Selon retour Fab, corriger uniquement les problèmes observés.
 - [ ] Publier ensuite une préversion GitHub stable si l'outil de publication est disponible.
 - [ ] AAB 📦 après stabilisation APK.
+
+
+## Mission vidéo / icône — intake
+
+- [x] Vérifier les cinq fichiers à la racine de `main`.
+- [x] Importer leurs blobs uniquement dans `assets/` sur `port/android-first-apk`.
+- [x] Préparer l'inspection ffprobe + images début/milieu/fin.
+- [x] Préparer l'extraction des hooks historiques de `main.py`.
+- [ ] Confirmer visuellement/techniquement le rôle de `StegVsTrexvaetviensremolace.mp4`.
+- [ ] Choisir un fournisseur vidéo Android compatible avec la chaîne p4a figée.
+- [ ] Passer à une version/versionCode supérieure pour le premier APK qui active les vidéos.
+- [ ] Intégrer l'intro aléatoire et l'icône.
+- [ ] Brancher la vidéo d'attente uniquement après confirmation du point d'intégration.
+- [ ] Construire et livrer l'APK installable direct.
