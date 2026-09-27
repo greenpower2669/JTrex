@@ -235,3 +235,7 @@ Commande interne associée :
 - [ ] Intégrer l'intro aléatoire et l'icône.
 - [ ] Brancher la vidéo d'attente uniquement après confirmation du point d'intégration.
 - [ ] Construire et livrer l'APK installable direct.
+
+
+### Inspection légère
+- [x] Ajouter un workflow séparé d'inspection média/source, sans compilation APK, afin de récupérer rapidement les preuves avant intégration.

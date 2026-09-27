@@ -1,0 +1,129 @@
+name: Inspect June T-Rex media and hooks
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/inspect-jtrex-media.yml'
+      - 'assets/**'
+      - 'tools/prepare_android.py'
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+
+      - name: Download fixed historical archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 \
+            --output JuneTrex.zip \
+            'https://github.com/greenpower2669/JTrex/releases/download/JTrex/JuneTrex.zip'
+          test -s JuneTrex.zip
+
+      - name: Prepare historical app copy
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/prepare_android.py \
+            --archive JuneTrex.zip \
+            --output app \
+            --spec buildozer.spec \
+            > preparation.log 2>&1
+
+      - name: Capture main.py hooks
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY' > main-hooks.txt
+          from pathlib import Path
+
+          lines = Path("app/main.py").read_text(encoding="utf-8").splitlines()
+          markers = (
+              "def on_touch_down",
+              "def mc1",
+              "def anim_1",
+              "def on_start",
+              "Rectangle(",
+              "Image(",
+              ".source",
+              "namea",
+              "longanim1",
+              "genrea",
+              "sona",
+              "indexa",
+              "jtrm0.wav",
+              "Clock.schedule_interval",
+          )
+          hits = [i for i, line in enumerate(lines)
+                  if any(marker in line for marker in markers)]
+          ranges = []
+          for i in hits:
+              start = max(0, i - 10)
+              end = min(len(lines), i + 22)
+              if ranges and start <= ranges[-1][1] + 3:
+                  ranges[-1] = (ranges[-1][0], max(ranges[-1][1], end))
+              else:
+                  ranges.append((start, end))
+          for start, end in ranges:
+              print(f"===== lines {start + 1}-{end} =====")
+              for n in range(start, end):
+                  print(f"{n + 1:05d}: {lines[n]}")
+          PY
+
+      - name: Install ffmpeg for inspection only
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y ffmpeg
+
+      - name: Inspect media
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p media-inspection
+          : > media-inspection/media-inspection.txt
+
+          inspect_video() {
+            src="$1"
+            stem="$2"
+            echo "===== $src =====" | tee -a media-inspection/media-inspection.txt
+            ffprobe -v error \
+              -show_entries format=filename,duration,size,bit_rate \
+              -show_entries stream=index,codec_name,codec_type,width,height,r_frame_rate,avg_frame_rate,sample_rate,channels \
+              -of json "$src" | tee -a media-inspection/media-inspection.txt
+            duration="$(ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 "$src")"
+            middle="$(python3 -c 'import sys; print(max(0.0, float(sys.argv[1]) / 2.0))' "$duration")"
+            ffmpeg -y -v error -ss 0 -i "$src" -frames:v 1 "media-inspection/$stem-first.png"
+            ffmpeg -y -v error -ss "$middle" -i "$src" -frames:v 1 "media-inspection/$stem-middle.png"
+            ffmpeg -y -v error -sseof -0.10 -i "$src" -frames:v 1 "media-inspection/$stem-last.png"
+          }
+
+          inspect_video assets/intro/JTrexintro1.mp4 intro1
+          inspect_video assets/intro/JTrexintro2.mp4 intro2
+          inspect_video assets/intro/JTrexintro3.mp4 intro3
+          inspect_video assets/combat/StegVsTrexvaetviensremolace.mp4 steg-vs-trex
+
+          ffprobe -v error -show_entries stream=codec_name,codec_type,width,height -of json \
+            assets/icon/JtrexIcon.png > media-inspection/icon.json
+          cp assets/icon/JtrexIcon.png media-inspection/JtrexIcon.png
+
+      - name: Upload inspection
+        uses: actions/upload-artifact@v4
+        with:
+          name: JuneTrex-Media-Inspection
+          path: |
+            preparation.log
+            main-hooks.txt
+            media-inspection/
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 6
