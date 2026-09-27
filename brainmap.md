@@ -577,3 +577,16 @@ intro aléatoire → overlay Kivy noir/letterbox → fin/erreur/timeout → acti
 - `anim_1` continue toute sa logique mais n'écrase pas la texture du Rectangle tant que la vidéo d'attente fournit les frames.
 
 Provider visé : Kivy ffpyplayer. La chaîne p4a reste figée sur `58d2114…`, avec recette FFmpeg 6.1.2 issue de p4a `541fe992…` pour éviter l'incompatibilité publique ffpyplayer 4.5.1 / FFmpeg 8.0.1.
+
+
+## 28. JT-MEDIA-001 — test Python 3.11.13
+
+Configuration candidate :
+- p4a base : `58d21141f17c889bf8585f5665921d72028f8831` ;
+- patch p4a : `venv --clear` conservé ;
+- Python cible : `python3==3.11.13` ;
+- hostpython3 : `VERSION_hostpython3=3.11.13` ;
+- ffpyplayer : recette p4a 4.5.1 ;
+- FFmpeg : recette 6.1.2 issue de `541fe992…`.
+
+Le pin python3 est transmis par les requirements p4a ; hostpython3 est fixé explicitement dans l'environnement du build afin de respecter la garde p4a exigeant les deux versions identiques.

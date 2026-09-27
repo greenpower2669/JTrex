@@ -180,6 +180,8 @@ jobs:
         run: |
           set -uo pipefail
           . ../.venv/bin/activate
+          export VERSION_hostpython3=3.11.13
+          echo "VERSION_hostpython3=$VERSION_hostpython3" | tee -a ../toolchain.txt
           python --version
           java -version
           buildozer --version

@@ -281,3 +281,10 @@ Décisions d'intégration :
 - JPEG historiques conservés comme fallback.
 
 La chaîne vidéo candidate utilise ffpyplayer 4.5.1 avec la recette FFmpeg 6.1.2 de p4a historique, à confirmer par build réel avant toute déclaration de compatibilité téléphone.
+
+
+### JT-MEDIA-001 — correction ciblée après run #11
+
+Le run #11 démontre un blocage natif ffpyplayer 4.5.1 / Python 3.14.2. La correction suivante ne modifie ni le runtime JTrex ni les médias : elle fixe uniquement python3 et hostpython3 à 3.11.13 tout en gardant le p4a `58d2114…`, `venv --clear`, FFmpeg 6.1.2, NDK r28c et les deux architectures.
+
+Critère de réussite : ffpyplayer compile sans les erreurs d'API CPython 3.14 et le build poursuit vers l'APK.

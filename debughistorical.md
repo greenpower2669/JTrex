@@ -325,3 +325,20 @@ Ce changement est motivé uniquement par le décodage MP4 H.264/AAC requis par J
 Statut : PAR CONCEPTION.
 
 Si l'intro ne produit pas de lecture valide, un timeout borné libère le lecteur et donne accès au jeu. Si la vidéo d'attente ne produit aucune frame en 4 s, elle est libérée et les JPEG historiques reprennent. Aucun événement de vidéo ne déclenche dégâts ou changements de phase.
+
+
+### JT-MEDIA-004 — Run #11 : ffpyplayer incompatible Python 3.14
+Statut : CONFIRMÉ PAR BUILD.
+
+Run : `36351063741`.
+Commit : `e11a37fb88417d9e0cf102a3604374a86a97f950`.
+
+La préparation média et la recette FFmpeg 6.1.2 passent. L'échec survient pendant la compilation de ffpyplayer 4.5.1 contre Python 3.14.2.
+
+Erreurs discriminantes :
+- `_PyLong_AsByteArray` attend 6 arguments, le C généré en fournit 5 ;
+- `_PyGen_SetStopIterationValue` n'est plus déclaré.
+
+Un ticket ffpyplayer Python 3.14 est encore ouvert. Aucun APK 1.0.2 n'a été produit par ce run.
+
+Hypothèse suivante : conserver p4a/FFmpeg mais fixer python3 + hostpython3 à 3.11.13, sans modifier le C de ffpyplayer.

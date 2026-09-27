@@ -803,3 +803,10 @@ L'intégration autorisée conserve le moteur historique et remplace seulement l'
 Au lancement de l'application, une seule intro est choisie uniformément parmi les trois MP4. Les callbacks de gameplay ne sont planifiés qu'après sa fin ou après un repli de sécurité. La musique historique du menu est différée jusqu'à cette transition afin de ne pas se superposer à l'audio de l'intro.
 
 La vidéo d'attente conserve le son historique du jeu : sa propre piste audio est muette. Les images JPEG historiques restent empaquetées et servent de repli si le lecteur vidéo ne fournit pas de frame.
+
+
+## 30. JT-MEDIA-001 — cible Python vidéo
+
+Le run #11 a confirmé que le candidat vidéo atteint la compilation de ffpyplayer, mais ffpyplayer 4.5.1 échoue contre les API C de Python 3.14.2. Le gameplay JTrex n'est pas en cause.
+
+Le test suivant conserve le même p4a et la même recette FFmpeg 6.1.2, mais fixe le Python cible à 3.11.13, version stable historique de la même lignée p4a et adaptée au code C généré de ffpyplayer 4.5.1.

@@ -258,3 +258,15 @@ Commande interne associée :
 - [ ] Vérifier inclusion MP4, ABIs et signature.
 - [ ] Livrer l'APK direct à Fab.
 - [ ] Validation téléphone : intro, son, icône, attente vidéo, attaque, retour attente, pause/reprise.
+
+
+## JT-MEDIA-001 — FAB-DEBUG vidéo essai Python 3.11
+
+- [x] Run #11 : préparation média réussie.
+- [x] Run #11 : FFmpeg 6.1.2 franchi suffisamment pour atteindre ffpyplayer.
+- [x] Isoler l'incompatibilité ffpyplayer 4.5.1 / Python 3.14.
+- [x] Vérifier le mécanisme p4a de pin `VERSION_<recipe>`.
+- [x] Fixer python3 à 3.11.13 et hostpython3 à la même version.
+- [ ] Relancer exactement le candidat 1.0.2.
+- [ ] Vérifier disparition des erreurs `_PyLong_AsByteArray` / `_PyGen_SetStopIterationValue`.
+- [ ] Si build vert : récupérer et contrôler l'APK.
