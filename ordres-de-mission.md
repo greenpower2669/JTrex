@@ -327,3 +327,8 @@ Astra autorise un nouvel essai mono-hypothèse : ajouter uniquement `--disable-v
 
 ### Clôture du run #16
 L'essai `--disable-vulkan` est concluant : FFmpeg 6.1.2 et ffpyplayer 4.5.1 passent sur les deux architectures et le workflow produit `JuneT-Rex-1.0.2-debug.apk`. SHA-256 : `8743980ff87fc13c9a534de7d5de07c561e2c2b9312852893fb5c943ddb23c4a`. La validation runtime reste à Fab sur téléphone.
+
+
+### JTREX — diagnostic du premier crash sur téléphone
+
+Ordre Astra reçu : diagnostic uniquement. L'APK testé est identifié comme le 1.0.2 debug du run #16, SHA-256 `8743980ff87fc13c9a534de7d5de07c561e2c2b9312852893fb5c943ddb23c4a`. Le retour Fab est « logo Kivy puis fermeture ». Aucun accès ADB au téléphone n'est disponible dans cette session et aucune reproduction n'est revendiquée. La prochaine preuve obligatoire est un logcat complet du lancement permettant de déterminer le dernier marqueur JT et la première erreur fatale. Aucune modification Python/FFmpeg/Cython, gameplay ou média n'est autorisée avant cette preuve.

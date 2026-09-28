@@ -902,3 +902,24 @@ Le test suivant conserve le même p4a et la même recette FFmpeg 6.1.2, mais fix
 - Absence des erreurs `_PyLong_AsByteArray` et `_PyGen_SetStopIterationValue`.
 - APK produit : `JuneT-Rex-1.0.2-debug.apk`, SHA-256 `8743980ff87fc13c9a534de7d5de07c561e2c2b9312852893fb5c943ddb23c4a`.
 - Compilation validée ; lecture vidéo, fluidité et gameplay restent à valider par Fab sur téléphone.
+
+
+### Premier crash téléphone — diagnostic ouvert — 2026-09-28
+
+Constat Fab : l'application affiche le logo Kivy puis se ferme. La compilation du run #16 est réussie, mais le démarrage applicatif, l'intro vidéo et le gameplay ne sont pas validés.
+
+APK identifié :
+- fichier transmis : `JuneT-Rex-1.0.2-debug.apk` ;
+- build GitHub Actions : run #16, ID `36364807323` ;
+- commit construit : `e88bd93ec0a7d9b34b2d4f64eb10b3627d230149` ;
+- version : `1.0.2` ;
+- versionCode / numeric-version : `102` ;
+- package : `com.junedady.junetrex` ;
+- SHA-256 vérifié sur l'artefact réellement téléchargé : `8743980ff87fc13c9a534de7d5de07c561e2c2b9312852893fb5c943ddb23c4a` ;
+- ABIs contenues dans l'APK : `arm64-v8a` et `armeabi-v7a`.
+
+Limite actuelle : aucun accès ADB au téléphone de Fab dans cette session et aucun environnement Android compatible disponible ici pour reproduire le lancement. Le crash n'est donc pas reproduit et sa cause reste inconnue.
+
+Marqueurs disponibles dans les sources préparées : `[JT-BOOT]`, `[JT-START]`, `[JT-INTRO] chosen=`, `[JT-INTRO] begin=`, `[JT-INTRO] gameplay enabled`. Sans logcat du lancement réel, aucun de ces marqueurs ne peut être déclaré comme dernier marqueur atteint.
+
+Diagnostic à poursuivre uniquement avec un journal de lancement complet (Python, Java et natif). Ne pas attribuer le crash à la vidéo, ffpyplayer, FFmpeg, Kivy ou une ressource avant la première erreur fatale observée.

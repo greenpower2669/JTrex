@@ -365,3 +365,17 @@ Commande interne associée :
 - [x] APK 📦 `JuneT-Rex-1.0.2-debug.apk` produit.
 - [x] SHA-256 : `8743980ff87fc13c9a534de7d5de07c561e2c2b9312852893fb5c943ddb23c4a`.
 - [ ] Fab : validation téléphone des intros, icône, vidéo d'attente, fluidité, audio et gameplay.
+
+
+### Crash téléphone 1.0.2 — diagnostic ouvert
+
+- [x] Identifier l'APK réellement transmis : run #16 / commit `e88bd93ec0a7d9b34b2d4f64eb10b3627d230149`.
+- [x] Vérifier version 1.0.2, versionCode 102 et package `com.junedady.junetrex` dans les logs de packaging.
+- [x] Vérifier SHA-256 réel : `8743980ff87fc13c9a534de7d5de07c561e2c2b9312852893fb5c943ddb23c4a`.
+- [x] Vérifier que l'APK contient `arm64-v8a` et `armeabi-v7a`.
+- [ ] Récupérer `jtrex-demarrage.txt` depuis le téléphone avec logcat non filtré.
+- [ ] Relever modèle téléphone, version Android et ABI réellement utilisée.
+- [ ] Relever le dernier marqueur effectivement observé parmi `[JT-BOOT]`, `[JT-START]`, `[JT-INTRO] chosen=`, `[JT-INTRO] begin=`, `[JT-INTRO] gameplay enabled`.
+- [ ] Extraire le traceback Python complet ; sinon l'exception Java ou le signal natif + backtrace.
+- [ ] Identifier la première erreur fatale et la fonction/ressource/bibliothèque concernée.
+- [ ] Ne proposer aucune correction tant que cette première erreur fatale n'est pas établie.

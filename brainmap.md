@@ -637,3 +637,10 @@ Chaîne attendue : recette FFmpeg 6.1.2 → `--enable-hwaccels` conservé + `--d
 
 ### Run #16 — chaîne validée
 `--disable-vulkan` → FFmpeg arm64-v8a postbuild ✅ → ffpyplayer arm64-v8a postbuild ✅ → FFmpeg armeabi-v7a postbuild ✅ → ffpyplayer armeabi-v7a postbuild ✅ → packaging Android ✅ → APK 1.0.2 produit ✅.
+
+
+### Crash téléphone 1.0.2 — chaîne de preuve attendue
+
+APK run #16 identifié ✅ → installation sur téléphone ✅ selon retour Fab → logo Kivy visible → fermeture ❌ → journal ADB requis → repérer dernier marqueur JT → relever traceback Python complet, sinon exception Java ou signal/backtrace native → seulement ensuite proposer un correctif.
+
+Aucune bifurcation de diagnostic vers les vidéos n'est autorisée sans preuve dans le log.

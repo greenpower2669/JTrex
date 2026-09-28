@@ -425,3 +425,24 @@ Hypothèse suivante : conserver p4a/FFmpeg mais fixer python3 + hostpython3 à 3
 
 ### Run #16 — résultat réel (2026-09-28)
 Le correctif unique `--disable-vulkan` franchit le blocage Vulkan du run #15. FFmpeg 6.1.2 et ffpyplayer 4.5.1 compilent pour arm64-v8a et armeabi-v7a ; les erreurs Cython historiques ne réapparaissent pas. APK produit avec SHA-256 `8743980ff87fc13c9a534de7d5de07c561e2c2b9312852893fb5c943ddb23c4a`. Validation runtime téléphone encore ouverte.
+
+
+### Premier crash téléphone — diagnostic ouvert — 2026-09-28
+
+Constat Fab : l'application affiche le logo Kivy puis se ferme. La compilation du run #16 est réussie, mais le démarrage applicatif, l'intro vidéo et le gameplay ne sont pas validés.
+
+APK identifié :
+- fichier transmis : `JuneT-Rex-1.0.2-debug.apk` ;
+- build GitHub Actions : run #16, ID `36364807323` ;
+- commit construit : `e88bd93ec0a7d9b34b2d4f64eb10b3627d230149` ;
+- version : `1.0.2` ;
+- versionCode / numeric-version : `102` ;
+- package : `com.junedady.junetrex` ;
+- SHA-256 vérifié sur l'artefact réellement téléchargé : `8743980ff87fc13c9a534de7d5de07c561e2c2b9312852893fb5c943ddb23c4a` ;
+- ABIs contenues dans l'APK : `arm64-v8a` et `armeabi-v7a`.
+
+Limite actuelle : aucun accès ADB au téléphone de Fab dans cette session et aucun environnement Android compatible disponible ici pour reproduire le lancement. Le crash n'est donc pas reproduit et sa cause reste inconnue.
+
+Marqueurs disponibles dans les sources préparées : `[JT-BOOT]`, `[JT-START]`, `[JT-INTRO] chosen=`, `[JT-INTRO] begin=`, `[JT-INTRO] gameplay enabled`. Sans logcat du lancement réel, aucun de ces marqueurs ne peut être déclaré comme dernier marqueur atteint.
+
+Diagnostic à poursuivre uniquement avec un journal de lancement complet (Python, Java et natif). Ne pas attribuer le crash à la vidéo, ffpyplayer, FFmpeg, Kivy ou une ressource avant la première erreur fatale observée.
