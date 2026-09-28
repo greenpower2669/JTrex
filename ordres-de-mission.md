@@ -342,3 +342,8 @@ Le bugreport Samsung confirme que l'application ne parvient pas jusqu'au code JT
 ### 2026-09-28 — FAB-DEBUG-001 — diagnostic bootstrap Python
 
 Astra autorise uniquement un patch diagnostique du bootstrap p4a figé. Le bugreport existant ne révèle pas l'exception sous-jacente, donc `tools/patches/p4a-python312-bootstrap-exception-diag.patch` journalise les paramètres de bootstrap et capture immédiatement l'exception en attente lors de l'échec Py_InitializeFromConfig. La chaîne du run #16, les chemins, le bundle, main.py, FFmpeg, Cython, médias et gameplay restent inchangés. Le livrable de cette tentative est un APK de diagnostic, pas une correction de runtime.
+
+
+### Run #17 — correction de forme du patch diagnostique
+
+Le run #17 s'est arrêté sur `git apply --check` avant toute compilation. Cet arrêt ne constitue pas un test du bootstrap Python. La correction autorisée dans la continuité de cette même mission est limitée aux en-têtes de hunks du patch diagnostique ; son contenu fonctionnel reste identique.

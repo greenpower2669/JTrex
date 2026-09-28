@@ -405,3 +405,10 @@ Commande interne associée :
 - [ ] Fab : installer l'APK diagnostique et générer un nouveau rapport complet immédiatement après le crash.
 - [ ] Relever status.func/status.err_msg, version native, module_search_paths, stdlib.zip, exception raised/cause/context.
 - [ ] Ne pas annoncer le crash corrigé tant que [JT-BOOT] n'est pas atteint.
+
+
+### Après run #17
+- [x] Identifier l'échec comme un patch corrompu avant compilation.
+- [x] Confirmer qu'aucun nouveau diagnostic Python n'a été exécuté.
+- [x] Corriger uniquement les compteurs/en-têtes des hunks du patch bootstrap diagnostique.
+- [ ] Relancer le même diagnostic sans autre changement fonctionnel.

@@ -1,7 +1,7 @@
 diff --git a/pythonforandroid/bootstraps/common/build/jni/application/src/start.c b/pythonforandroid/bootstraps/common/build/jni/application/src/start.c
 --- a/pythonforandroid/bootstraps/common/build/jni/application/src/start.c
 +++ b/pythonforandroid/bootstraps/common/build/jni/application/src/start.c
-@@ -39,6 +39,96 @@ static void LOGP(const char *fmt, ...) {
+@@ -39,6 +39,108 @@ static void LOGP(const char *fmt, ...) {
      __android_log_vprint(ANDROID_LOG_INFO, "python", fmt, args);
      va_end(args);
  }
@@ -110,7 +110,7 @@ diff --git a/pythonforandroid/bootstraps/common/build/jni/application/src/start.
  
  static PyObject *androidembed_log(PyObject *self, PyObject *args) {
    char *logstr = NULL;
-@@ -317,6 +407,35 @@ int main(int argc, char *argv[]) {
+@@ -317,7 +419,40 @@ int main(int argc, char *argv[]) {
  
              config.module_search_paths_set = 1;
              PyWideStringList_Append(&config.module_search_paths, wchar_zip_path);
@@ -151,7 +151,7 @@ diff --git a/pythonforandroid/bootstraps/common/build/jni/application/src/start.
          #else
              char paths[512];
              snprintf(paths, 512, "%s/stdlib.zip:%s/modules", python_bundle_dir, python_bundle_dir);
-@@ -336,9 +455,33 @@ int main(int argc, char *argv[]) {
+@@ -336,8 +471,31 @@ int main(int argc, char *argv[]) {
  #if PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= P4A_MIN_VER
      PyStatus status = Py_InitializeFromConfig(&config);
      if (PyStatus_Exception(status)) {

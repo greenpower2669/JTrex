@@ -969,3 +969,7 @@ Aucune correction n'est appliquée dans cette étape de diagnostic.
 - Le patch journalise Py_GetVersion, les module_search_paths réellement fournis, l'existence/lisibilité/taille de stdlib.zip, status.func/status.err_msg, puis capture immédiatement PyErr_GetRaisedException sous Python 3.12 et journalise type/message/cause/contexte avec parcours borné.
 - En cas d'échec d'initialisation, le bootstrap retourne un statut d'échec sans continuer vers les appels applicatifs Python.
 - Ce patch est strictement diagnostique et ne signifie pas que le crash est corrigé.
+
+
+### Run #17 — application du patch diagnostique non testée
+Le run #17 (ID 36410139322) s'est arrêté avant compilation : `git apply --check` a signalé `corrupt patch ...:113`. Aucun diagnostic Python n'a donc été exécuté. Correction appliquée ensuite : uniquement les compteurs/en-têtes des hunks du même patch, sans changer son contenu fonctionnel.

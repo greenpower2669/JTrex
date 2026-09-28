@@ -654,3 +654,7 @@ Aucune bifurcation de diagnostic vers les vidéos n'est autorisée sans preuve d
 ## 2026-09-28 — FAB-DEBUG-001 — diagnostic bootstrap Python
 
 Bugreport existant sans exception détaillée → patch local `tools/patches/p4a-python312-bootstrap-exception-diag.patch` → checkout p4a figé → start.c réellement compilé → logs P4A_DIAG avant et au retour de Py_InitializeFromConfig → si échec : capture immédiate PyErr_GetRaisedException → type/message/cause/contexte → retour -1 → aucun main.py.
+
+
+### Run #17 — arrêt avant build
+`git apply --check` du patch bootstrap diagnostique ❌ (patch corrompu ligne 113) → aucun start.c compilé → aucun APK diagnostique → aucune nouvelle information runtime. Correction suivante limitée aux en-têtes de hunks.

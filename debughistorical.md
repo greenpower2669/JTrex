@@ -489,3 +489,7 @@ Aucune correction n'est appliquée dans cette étape de diagnostic.
 Le bugreport 1.0.2 ne contient que le PyStatus générique `failed to get the Python codec of the filesystem encoding`. Aucun détail import/zip/codecs n'est disponible. Les probes libpython 3.14/3.13 échouent mais libpython3.12.so charge correctement : ils ne sont pas retenus comme cause du crash.
 
 Patch diagnostique ajouté sous `tools/patches/p4a-python312-bootstrap-exception-diag.patch`, sans modification des chemins, du bundle, des médias, de FFmpeg, de Cython ou du gameplay. L'objectif du prochain APK est uniquement d'exposer l'exception Python en attente et les chemins réels.
+
+
+### Run #17 — échec de forme du patch diagnostique
+Le run #17 (36410139322) n'a pas compilé p4a. `git apply --check` a rejeté `p4a-python312-bootstrap-exception-diag.patch` comme corrompu à la ligne 113. Cet échec ne teste aucune hypothèse Python. Les seules modifications suivantes portent sur les compteurs d'en-tête des hunks afin d'appliquer le même diagnostic Astra.
