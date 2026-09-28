@@ -864,3 +864,23 @@ Le test suivant conserve le même p4a et la même recette FFmpeg 6.1.2, mais fix
 - Le patch est conservé dans `tools/patches/p4a-python312-grp-api21.patch` et appliqué reproductiblement par le workflow après `p4a-venv-clear.patch`.
 - `buildozer.spec` reste inchangé avec python3/hostpython3 3.12.14. L'export historique `VERSION_hostpython3=3.11.13` reste volontairement inchangé pour isoler cet essai.
 - Hypothèse encore à tester : le Python cible doit franchir `grp`, puis seulement ensuite ffpyplayer pourra être évalué.
+
+
+### Résultat réel du run #15 — 2026-09-28
+
+- Commit construit : `b7323fdb940b9be6e47e31f1ceed8d1094adc31c`.
+- GitHub Actions : run #15, ID `36360940843`, job `108737876412`.
+- Le patch `tools/patches/p4a-python312-grp-api21.patch` est appliqué avec succès par le workflow.
+- La recette python3 cible journalise : `JT-MEDIA-001: target grp unavailable below Android API 26`.
+- Pour le hostpython Linux, le configure conserve `checking for stdlib extension module grp... yes` et `Modules/grpmodule.c` est compilé : comportement attendu, le patch ne vise pas hostpython.
+- Pour le Python Android cible armeabi-v7a, le configure journalise `checking for stdlib extension module grp... n/a`.
+- Aucun `Modules/grpmodule.c` cible Android n'est compilé ; le blocage `setgrent/getgrent/endgrent` du run #14 est franchi.
+- Le build progresse ensuite jusqu'à `Building ffmpeg for armeabi-v7a` avec FFmpeg 6.1.2.
+- Première nouvelle erreur discriminante : `libavcodec/vulkan_av1.c:183:43: error: incompatible pointer to integer conversion initializing 'VkVideoSessionParametersKHR' ... with 'void *'`, sur `.videoSessionParametersTemplate = NULL`.
+- La même phase signale ensuite dans `libavcodec/vulkan_decode.c` des affectations `NULL` incompatibles vers `VkImageView`.
+- La commande configure FFmpeg observée contient notamment `--enable-hwaccels`.
+- `python3` pour arm64-v8a n'est pas atteint ; FFmpeg arm64-v8a n'est pas atteint.
+- ffpyplayer 4.5.1 est téléchargé/préparé pour armeabi-v7a, mais sa phase `Building ffpyplayer` n'est pas atteinte.
+- Les erreurs `_PyLong_AsByteArray` et `_PyGen_SetStopIterationValue` sont absentes du log, sans valeur probante pour ffpyplayer puisqu'il n'a pas été compilé.
+- Aucun APK 1.0.2 produit. Artefact diagnostic : `JuneTrex-Android-Diagnostics`, ID `10945787341`.
+- Aucun second correctif appliqué dans cette tentative.

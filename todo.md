@@ -328,3 +328,17 @@ Commande interne associée :
 - [ ] Si Python passe, relever ensuite la compilation ffpyplayer et les erreurs `_PyLong_AsByteArray` / `_PyGen_SetStopIterationValue`.
 - [ ] En cas de nouvel échec, consigner seulement la première erreur discriminante sans ajouter de second correctif.
 - [ ] Nettoyer ultérieurement l'export historique `VERSION_hostpython3=3.11.13` dans une mission distincte.
+
+
+### Après run #15
+
+- [x] Confirmer l'application du patch p4a grp.
+- [x] Confirmer le message de recette JT-MEDIA-001.
+- [x] Distinguer hostpython Linux (`grp... yes`) et Python Android cible (`grp... n/a`).
+- [x] Confirmer l'absence de compilation de `Modules/grpmodule.c` pour la cible Android.
+- [x] Confirmer que le blocage grp du run #14 est franchi.
+- [x] Isoler la première nouvelle erreur : FFmpeg 6.1.2 / Vulkan sur armeabi-v7a, `VkVideoSessionParametersKHR = NULL`.
+- [x] Confirmer que arm64-v8a et la phase réelle `Building ffpyplayer` ne sont pas atteintes.
+- [ ] Transmettre à Astra le run #15 et la commande configure FFmpeg contenant `--enable-hwaccels`.
+- [ ] Conserver le nettoyage de `VERSION_hostpython3=3.11.13` pour une mission distincte.
+- [ ] Ne pas annoncer d'APK 📦 1.0.2 tant qu'il n'existe pas réellement.

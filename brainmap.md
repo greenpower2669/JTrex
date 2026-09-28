@@ -623,3 +623,8 @@ Incohérence à conserver pour analyse Astra : le workflow exporte encore `VERSI
 Chaîne de test : p4a figé → `p4a-venv-clear.patch` → `p4a-python312-grp-api21.patch` → recette python3 cible 3.12.14 avec `py_cv_module_grp=n/a` si ndk_api<26 → configure doit annoncer `grp... n/a` → absence de `Modules/grpmodule.c` → poursuite Python → ffpyplayer si Python termine.
 
 Le patch ne s'applique pas au hostpython3 Linux.
+
+
+### Run #15 — chemin observé
+
+`patch grp p4a` ✅ → hostpython Linux conserve grp ✅ → `python3 armeabi-v7a: grp... n/a` ✅ → absence de grpmodule cible ✅ → Python cible dépasse le blocage du run #14 ✅ → `FFmpeg 6.1.2 armeabi-v7a` ❌ dans les sources Vulkan → arm64-v8a non atteint → build effectif ffpyplayer non atteint → APK non produit.

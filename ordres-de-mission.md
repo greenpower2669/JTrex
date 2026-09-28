@@ -313,3 +313,8 @@ L'alignement de préparation est validé, mais le test Python 3.12.14 / ffpyplay
 ### 2026-09-28 — JT-MEDIA-001 / FAB-DEBUG-001 — grp Android API 21
 
 Astra autorise un essai mono-hypothèse supplémentaire : conserver Python 3.12.14 et toute la chaîne actuelle, mais déclarer le module `grp` indisponible uniquement dans la recette `python3` Android lorsque `ndk_api < 26`. Le mécanisme est versionné dans `tools/patches/p4a-python312-grp-api21.patch` et appliqué par le workflow après le patch venv. Le hostpython3 Linux, l'export historique VERSION_hostpython3, ffpyplayer, FFmpeg, p4a, Cython, API/NDK, architectures, médias, runtime et gameplay restent inchangés. Aucun second correctif ne doit être ajouté au prochain run.
+
+
+### Clôture du run #15
+
+Le correctif ciblé `grp` est validé pour son objectif : la cible Android armeabi-v7a configure `grp` à `n/a` et dépasse le blocage CPython du run #14. Le nouveau blocage apparaît ensuite dans FFmpeg 6.1.2 pendant la compilation Vulkan pour armeabi-v7a, première erreur sur `libavcodec/vulkan_av1.c:183` lors de l'initialisation d'un `VkVideoSessionParametersKHR` avec `NULL`. La commande configure contient `--enable-hwaccels`. Aucun correctif supplémentaire n'est autorisé dans cette tentative ; Astra doit analyser ce nouveau blocage. ffpyplayer n'a pas encore été réellement compilé et arm64-v8a n'est pas atteint.
