@@ -658,3 +658,8 @@ Bugreport existant sans exception détaillée → patch local `tools/patches/p4a
 
 ### Run #17 — arrêt avant build
 `git apply --check` du patch bootstrap diagnostique ❌ (patch corrompu ligne 113) → aucun start.c compilé → aucun APK diagnostique → aucune nouvelle information runtime. Correction suivante limitée aux en-têtes de hunks.
+
+
+### Run #18 — chaîne diagnostique construite
+
+Patch corrigé ✅ → checkout p4a figé ✅ → diff P4A_DIAG présent dans p4a-patch.txt ✅ → start.c compilé arm64-v8a ✅ → start.c compilé armeabi-v7a ✅ → packaging APK ✅ → test téléphone requis → nouveau bugreport requis pour observer status.func/status.err_msg et l'exception raised/cause/context.

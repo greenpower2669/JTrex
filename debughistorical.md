@@ -493,3 +493,8 @@ Patch diagnostique ajouté sous `tools/patches/p4a-python312-bootstrap-exception
 
 ### Run #17 — échec de forme du patch diagnostique
 Le run #17 (36410139322) n'a pas compilé p4a. `git apply --check` a rejeté `p4a-python312-bootstrap-exception-diag.patch` comme corrompu à la ligne 113. Cet échec ne teste aucune hypothèse Python. Les seules modifications suivantes portent sur les compteurs d'en-tête des hunks afin d'appliquer le même diagnostic Astra.
+
+
+### Run #18 — diagnostic compilé, runtime non encore observé
+
+Le run #18 (36410518782) construit avec succès le même diagnostic Astra après correction de forme du patch. Le log de build confirme la compilation de `start.c` pour arm64-v8a et armeabi-v7a, et `p4a-patch.txt` contient les traces `P4A_DIAG`. APK : SHA-256 `fbc4a1d0f72cf677591e4a4ffb366db9237377c5f5c3574d6f7ca025249d8e64`. Aucune conclusion sur la cause racine n'est encore possible avant lancement téléphone et nouveau rapport.

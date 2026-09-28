@@ -973,3 +973,15 @@ Aucune correction n'est appliquée dans cette étape de diagnostic.
 
 ### Run #17 — application du patch diagnostique non testée
 Le run #17 (ID 36410139322) s'est arrêté avant compilation : `git apply --check` a signalé `corrupt patch ...:113`. Aucun diagnostic Python n'a donc été exécuté. Correction appliquée ensuite : uniquement les compteurs/en-têtes des hunks du même patch, sans changer son contenu fonctionnel.
+
+
+### Run #18 — APK diagnostique produit
+
+- Commit construit : `7fa5e4bd32ae02dbe88b8eb74e04e73b0a834986`.
+- GitHub Actions : run #18, ID `36410518782`, conclusion `success`.
+- Le patch bootstrap diagnostique est visible dans `p4a-patch.txt` avec les marqueurs `P4A_DIAG`.
+- Le `start.c` du bootstrap est effectivement compilé pour `arm64-v8a` et `armeabi-v7a`.
+- APK diagnostique produit : `JuneT-Rex-1.0.2-debug.apk`.
+- SHA-256 vérifié : `fbc4a1d0f72cf677591e4a4ffb366db9237377c5f5c3574d6f7ca025249d8e64`.
+- Artefact APK : ID `10965620909`. Artefact diagnostics : ID `10965760827`.
+- Ce succès valide uniquement la construction du diagnostic ; il ne valide pas le démarrage Python ni la correction du crash.

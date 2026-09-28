@@ -412,3 +412,17 @@ Commande interne associée :
 - [x] Confirmer qu'aucun nouveau diagnostic Python n'a été exécuté.
 - [x] Corriger uniquement les compteurs/en-têtes des hunks du patch bootstrap diagnostique.
 - [ ] Relancer le même diagnostic sans autre changement fonctionnel.
+
+
+### Après run #18
+
+- [x] Relancer le diagnostic après correction des en-têtes de hunks.
+- [x] Confirmer run #18 réussi.
+- [x] Confirmer le diff P4A_DIAG dans le checkout p4a effectif.
+- [x] Confirmer compilation de start.c pour arm64-v8a et armeabi-v7a.
+- [x] Produire l'APK diagnostique.
+- [x] SHA-256 : `fbc4a1d0f72cf677591e4a4ffb366db9237377c5f5c3574d6f7ca025249d8e64`.
+- [ ] Fab : installer l'APK diagnostique du run #18.
+- [ ] Fab : lancer JTrex puis générer immédiatement un nouveau rapport de bug complet.
+- [ ] Extraire les lignes P4A_DIAG : version, chemins, stdlib.zip, status.func, status.err_msg, exception raised/cause/context.
+- [ ] Ne pas annoncer « crash corrigé » tant que [JT-BOOT] n'est pas atteint.

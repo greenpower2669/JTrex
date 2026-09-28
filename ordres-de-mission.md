@@ -347,3 +347,8 @@ Astra autorise uniquement un patch diagnostique du bootstrap p4a figé. Le bugre
 ### Run #17 — correction de forme du patch diagnostique
 
 Le run #17 s'est arrêté sur `git apply --check` avant toute compilation. Cet arrêt ne constitue pas un test du bootstrap Python. La correction autorisée dans la continuité de cette même mission est limitée aux en-têtes de hunks du patch diagnostique ; son contenu fonctionnel reste identique.
+
+
+### Run #18 — livrable diagnostique disponible
+
+Le run #18 (ID `36410518782`) sur le commit `7fa5e4bd32ae02dbe88b8eb74e04e73b0a834986` compile le patch diagnostique Astra pour les deux architectures et produit un APK. SHA-256 : `fbc4a1d0f72cf677591e4a4ffb366db9237377c5f5c3574d6f7ca025249d8e64`. Ce livrable reste strictement diagnostique : la prochaine étape est le lancement sur le téléphone de Fab suivi d'un nouveau rapport complet afin de récupérer l'exception sous-jacente. Aucun correctif de cause racine n'est encore autorisé.
