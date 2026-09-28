@@ -628,3 +628,8 @@ Le patch ne s'applique pas au hostpython3 Linux.
 ### Run #15 — chemin observé
 
 `patch grp p4a` ✅ → hostpython Linux conserve grp ✅ → `python3 armeabi-v7a: grp... n/a` ✅ → absence de grpmodule cible ✅ → Python cible dépasse le blocage du run #14 ✅ → `FFmpeg 6.1.2 armeabi-v7a` ❌ dans les sources Vulkan → arm64-v8a non atteint → build effectif ffpyplayer non atteint → APK non produit.
+
+
+## 2026-09-28 — JT-MEDIA-001 — exclusion Vulkan FFmpeg 6.1.2
+
+Chaîne attendue : recette FFmpeg 6.1.2 → `--enable-hwaccels` conservé + `--disable-vulkan` → Vulkan désactivé → pas de `vulkan_av1.c` / `vulkan_decode.c` responsables → H.264/AAC logiciels et MOV/MP4 conservés → FFmpeg doit poursuivre → ffpyplayer seulement après succès FFmpeg.

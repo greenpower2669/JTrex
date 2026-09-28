@@ -318,3 +318,8 @@ Astra autorise un essai mono-hypothèse supplémentaire : conserver Python 3.12.
 ### Clôture du run #15
 
 Le correctif ciblé `grp` est validé pour son objectif : la cible Android armeabi-v7a configure `grp` à `n/a` et dépasse le blocage CPython du run #14. Le nouveau blocage apparaît ensuite dans FFmpeg 6.1.2 pendant la compilation Vulkan pour armeabi-v7a, première erreur sur `libavcodec/vulkan_av1.c:183` lors de l'initialisation d'un `VkVideoSessionParametersKHR` avec `NULL`. La commande configure contient `--enable-hwaccels`. Aucun correctif supplémentaire n'est autorisé dans cette tentative ; Astra doit analyser ce nouveau blocage. ffpyplayer n'a pas encore été réellement compilé et arm64-v8a n'est pas atteint.
+
+
+### 2026-09-28 — JT-MEDIA-001 — exclusion Vulkan FFmpeg 6.1.2
+
+Astra autorise un nouvel essai mono-hypothèse : ajouter uniquement `--disable-vulkan` à `tools/p4a-ffmpeg-6.1.2.py`, immédiatement après `--enable-hwaccels`. Tous les autres éléments de la chaîne et les correctifs déjà validés sont conservés. Aucun patch Vulkan supplémentaire, aucune mise à jour FFmpeg et aucune désactivation générale des accélérations matérielles ne doivent être ajoutés dans cette tentative. Le prochain run doit relever le résultat réel de FFmpeg, puis seulement de ffpyplayer s'il est atteint.

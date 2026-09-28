@@ -342,3 +342,16 @@ Commande interne associée :
 - [ ] Transmettre à Astra le run #15 et la commande configure FFmpeg contenant `--enable-hwaccels`.
 - [ ] Conserver le nettoyage de `VERSION_hostpython3=3.11.13` pour une mission distincte.
 - [ ] Ne pas annoncer d'APK 📦 1.0.2 tant qu'il n'existe pas réellement.
+
+
+## 2026-09-28 — JT-MEDIA-001 — exclusion Vulkan FFmpeg 6.1.2
+
+- [x] Ajouter uniquement `--disable-vulkan` après `--enable-hwaccels` dans `tools/p4a-ffmpeg-6.1.2.py`.
+- [ ] Vérifier que la configuration effective contient `--disable-vulkan`.
+- [ ] Vérifier que Vulkan et ses accélérations sont désactivés.
+- [ ] Vérifier que H.264, AAC et le démuxeur MOV/MP4 restent actifs.
+- [ ] Si visible dans les fichiers générés, confirmer `CONFIG_VULKAN=0`, `CONFIG_H264_DECODER=1`, `CONFIG_AAC_DECODER=1`, `CONFIG_MOV_DEMUXER=1`.
+- [ ] Relever le résultat FFmpeg puis ffpyplayer pour chaque architecture.
+- [ ] Vérifier la disparition/persistance de `_PyLong_AsByteArray` et `_PyGen_SetStopIterationValue` lorsque ffpyplayer est réellement compilé.
+- [ ] En cas d'échec, consigner uniquement la première nouvelle erreur discriminante sans ajouter de second correctif.
+- [ ] Annoncer l'APK 📦 1.0.2 uniquement s'il est réellement produit, avec SHA-256.

@@ -884,3 +884,12 @@ Le test suivant conserve le même p4a et la même recette FFmpeg 6.1.2, mais fix
 - Les erreurs `_PyLong_AsByteArray` et `_PyGen_SetStopIterationValue` sont absentes du log, sans valeur probante pour ffpyplayer puisqu'il n'a pas été compilé.
 - Aucun APK 1.0.2 produit. Artefact diagnostic : `JuneTrex-Android-Diagnostics`, ID `10945787341`.
 - Aucun second correctif appliqué dans cette tentative.
+
+
+## 2026-09-28 — JT-MEDIA-001 — exclusion Vulkan FFmpeg 6.1.2
+
+- Suite autorisée après le run #15 : conserver FFmpeg 6.1.2 et ajouter uniquement `--disable-vulkan` dans la recette `tools/p4a-ffmpeg-6.1.2.py`.
+- `--enable-hwaccels` est conservé afin de ne pas désactiver les autres accélérations matérielles.
+- Objectif : empêcher la construction de la famille Vulkan qui a échoué sur armeabi-v7a avec les handles Vulkan initialisés par `NULL`.
+- Les décodeurs logiciels AAC/H.264, le démuxeur MOV/MP4, Python 3.12.14, ffpyplayer 4.5.1, p4a figé, NDK/API, architectures, médias et gameplay restent inchangés.
+- Hypothèse à vérifier au prochain run : `CONFIG_VULKAN=0` et poursuite de FFmpeg sans compiler les objets Vulkan responsables.

@@ -413,3 +413,11 @@ Hypothèse suivante : conserver p4a/FFmpeg mais fixer python3 + hostpython3 à 3
 - Les erreurs `_PyLong_AsByteArray` et `_PyGen_SetStopIterationValue` sont absentes du log, sans valeur probante pour ffpyplayer puisqu'il n'a pas été compilé.
 - Aucun APK 1.0.2 produit. Artefact diagnostic : `JuneTrex-Android-Diagnostics`, ID `10945787341`.
 - Aucun second correctif appliqué dans cette tentative.
+
+
+## 2026-09-28 — JT-MEDIA-001 — exclusion Vulkan FFmpeg 6.1.2
+
+- Run #15 : premier nouveau blocage dans FFmpeg 6.1.2/Vulkan pour armeabi-v7a sur `VkVideoSessionParametersKHR = NULL`, puis `VkImageView = NULL`.
+- Correction mono-hypothèse autorisée : ajouter uniquement `--disable-vulkan` à la recette FFmpeg tout en conservant `--enable-hwaccels`.
+- Aucun patch `NULL -> VK_NULL_HANDLE`, aucune mise à jour FFmpeg et aucune désactivation globale des hwaccels dans cette tentative.
+- Conséquence assumée : l'accélération Vulkan FFmpeg sera absente de l'APK ; la fluidité du décodage logiciel restera à valider sur téléphone si l'APK est produit.

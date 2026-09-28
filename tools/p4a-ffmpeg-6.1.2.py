@@ -99,6 +99,7 @@ class FFMpegRecipe(Recipe):
                 '--enable-protocol=file,http,hls,udp,tcp',
                 '--enable-small',
                 '--enable-hwaccels',
+                '--disable-vulkan',
                 '--enable-pic',
                 '--disable-static',
                 '--disable-debug',
