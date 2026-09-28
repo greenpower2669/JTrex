@@ -1021,3 +1021,19 @@ Contrôle préalable effectué sur l'APK réellement testé du run #18 :
 Hypothèse Astra autorisée : ajouter uniquement `-Wl,-z,global` à la liaison de `libpython3.12.so` pour Python cible 3.12.14, afin d'obtenir `DF_1_GLOBAL` / `FLAGS_1: GLOBAL` sans ajouter de DT_NEEDED à zlib.
 
 Le patch local est `tools/patches/p4a-python312-libpython-global.patch`. Le contexte du premier hunk a été ajusté mécaniquement à la source p4a figée, qui n'a pas la ligne vide présente dans le texte Astra ; les lignes fonctionnelles sont inchangées.
+
+
+### Run #19 — DF_1_GLOBAL matérialisé dans l'APK
+
+- Commit construit : `e0c374fe7f436ea12ef07a9676916033cd5f6fcf`.
+- GitHub Actions : run #19, ID `36437050585`, conclusion `success`.
+- APK produit : `JuneT-Rex-1.0.2-debug.apk`.
+- SHA-256 : `945f795bce1b925ac981df48bbd3781d73d5816927ef4356ce00e2875068a241`.
+- Artefact APK : ID `10977123002`; diagnostics : ID `10976803216`.
+- Le log de build contient `-Wl,-z,global` dans la liaison de libpython3.12.so pour arm64-v8a et armeabi-v7a.
+- Inspection ELF de l'APK final :
+  - arm64-v8a : `DT_FLAGS_1 = NOW GLOBAL`;
+  - armeabi-v7a : `DT_FLAGS_1 = NOW GLOBAL`;
+  - `PyExc_MemoryError` reste exporté GLOBAL sur les deux ABI.
+- Aucun `DT_SONAME` explicite n'est présent dans le libpython final, comme au run #18 ; ce point préexistant n'est pas modifié dans cette hypothèse.
+- Le build valide la matérialisation de DF_1_GLOBAL uniquement. Le bootstrap Python et [JT-BOOT] restent à valider sur le téléphone.

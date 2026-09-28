@@ -515,3 +515,12 @@ Aucune modification de code ni de chaîne n'est appliquée après cette observat
 Précondition vérifiée sur l'APK du run #18 : `GLOBAL` est absent de `DT_FLAGS_1` sur arm64-v8a et armeabi-v7a ; seul `NOW` est présent. `PyExc_MemoryError` reste exporté par libpython. Aucun DT_SONAME explicite n'est observé sur libpython3.12.so dans cet APK.
 
 Essai mono-hypothèse : marquer uniquement la libpython cible 3.12.14 avec `-Wl,-z,global`. Aucun LDFLAGS global, aucun DT_NEEDED ajouté à zlib, aucune modification de main.py, chemins, bundle, médias ou gameplay.
+
+
+### Run #19 — résultat de l'essai GLOBAL
+
+Le run #19 compile avec succès l'unique hypothèse Astra. L'APK final contient `DF_1_GLOBAL` sur libpython3.12.so pour arm64-v8a et armeabi-v7a, et `PyExc_MemoryError` reste exporté. Le log de liaison contient bien `-Wl,-z,global`.
+
+Observation conservée : aucun `DT_SONAME` explicite n'est présent dans le libpython final, comme dans le run #18. Aucun correctif supplémentaire n'est appliqué.
+
+La cause runtime n'est pas encore déclarée corrigée : seul un lancement téléphone peut confirmer la disparition de l'erreur `cannot locate symbol "PyExc_MemoryError"` et la progression du bootstrap.

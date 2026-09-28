@@ -364,3 +364,10 @@ Inspection ELF complémentaire : `libpython3.12.so` exporte le symbole, `zlib.cp
 ### 2026-09-28 — FAB-DEBUG-001 — visibilité globale de libpython
 
 Astra autorise un seul changement fonctionnel : ajouter `-Wl,-z,global` à la liaison de `libpython3.12.so` via un patch spécifique à la recette python3 cible 3.12.14. Le contrôle préalable du run #18 confirme que `DT_FLAGS_1` contient `NOW` mais pas `GLOBAL` sur les deux ABI. Le libpython testé ne présente pas de DT_SONAME explicite ; ce fait est conservé sans correction hors périmètre. Aucun autre composant de chaîne, média ou gameplay ne change.
+
+
+### Run #19 — preuve statique de DF_1_GLOBAL
+
+Le run #19 (ID `36437050585`) sur le commit `e0c374fe7f436ea12ef07a9676916033cd5f6fcf` produit un APK où libpython3.12.so possède `FLAGS_1: NOW GLOBAL` sur arm64-v8a et armeabi-v7a. `PyExc_MemoryError` reste exporté. SHA-256 : `945f795bce1b925ac981df48bbd3781d73d5816927ef4356ce00e2875068a241`.
+
+Le DT_SONAME explicite reste absent comme au run #18 et n'est pas modifié dans cette mission. L'hypothèse GLOBAL est correctement matérialisée ; la prochaine étape est uniquement le test téléphone. Si une erreur subsiste, rapporter la première nouvelle erreur sans ajouter un second correctif.

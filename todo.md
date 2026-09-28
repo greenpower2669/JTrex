@@ -458,3 +458,18 @@ Commande interne associée :
 - [ ] Relever le SONAME réel du nouvel APK sans inventer sa présence.
 - [ ] Ne transmettre à Fab pour test runtime que si GLOBAL est réellement matérialisé.
 - [ ] Sur téléphone : vérifier disparition du dlopen PyExc_MemoryError puis progression de Py_InitializeFromConfig et [JT-BOOT].
+
+
+### Après run #19
+
+- [x] Build #19 réussi.
+- [x] Relever `-Wl,-z,global` dans les commandes de liaison des deux ABI.
+- [x] Vérifier `FLAGS_1: NOW GLOBAL` sur arm64-v8a.
+- [x] Vérifier `FLAGS_1: NOW GLOBAL` sur armeabi-v7a.
+- [x] Vérifier `PyExc_MemoryError` toujours exporté sur les deux ABI.
+- [x] Relever l'absence persistante de DT_SONAME explicite sans la corriger.
+- [x] SHA-256 APK : `945f795bce1b925ac981df48bbd3781d73d5816927ef4356ce00e2875068a241`.
+- [ ] Fab : installer l'APK du run #19.
+- [ ] Fab : lancer JTrex et vérifier si le bootstrap franchit l'ancien blocage.
+- [ ] Si crash : générer immédiatement un rapport complet et relever la première nouvelle erreur discriminante.
+- [ ] Ne pas annoncer « crash corrigé » avant réussite de Py_InitializeFromConfig et apparition de [JT-BOOT].

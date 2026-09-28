@@ -673,3 +673,8 @@ Py_InitializeFromConfig → init_fs_encoding → zipimport de stdlib.zip → bes
 ## 2026-09-28 — FAB-DEBUG-001 — libpython GLOBAL
 
 Run #18 : libpython FLAGS_1=NOW seulement → patch recette python3 3.12.14 → patch CPython Makefile cible libpython.so → PY_CORE_LDFLAGS += -Wl,-z,global → rebuild deux ABI → inspecter APK final → FLAGS_1 doit contenir GLOBAL → seulement ensuite test téléphone → zlib doit pouvoir résoudre PyExc_MemoryError via groupe global.
+
+
+### Run #19 — chaîne statique validée
+
+patch recette python3 3.12.14 ✅ → Makefile libpython.so reçoit `-Wl,-z,global` ✅ → build arm64-v8a + armeabi-v7a ✅ → APK final `FLAGS_1: NOW GLOBAL` sur les deux ABI ✅ → `PyExc_MemoryError` toujours exporté ✅ → test téléphone requis → vérifier disparition du dlopen sur zlib → vérifier Py_InitializeFromConfig → vérifier [JT-BOOT].
