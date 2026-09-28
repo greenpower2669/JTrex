@@ -359,3 +359,8 @@ Le run #18 (ID `36410518782`) sur le commit `7fa5e4bd32ae02dbe88b8eb74e04e73b0a8
 Le patch diagnostique a rempli son objectif. Le téléphone expose désormais l'exception réelle : `ZipImportError: can't decompress data; zlib not available`, causée par l'échec de chargement de `zlib.cpython-312.so` avec `dlopen failed: cannot locate symbol "PyExc_MemoryError"`. Le bundle et les chemins sont présents et lisibles.
 
 Inspection ELF complémentaire : `libpython3.12.so` exporte le symbole, `zlib.cpython-312.so` le référence comme non résolu et ne déclare pas `libpython3.12.so` en DT_NEEDED. Aucun correctif n'est appliqué. Astra doit déterminer la prochaine correction mono-hypothèse de liaison/chargement Python sur Android.
+
+
+### 2026-09-28 — FAB-DEBUG-001 — visibilité globale de libpython
+
+Astra autorise un seul changement fonctionnel : ajouter `-Wl,-z,global` à la liaison de `libpython3.12.so` via un patch spécifique à la recette python3 cible 3.12.14. Le contrôle préalable du run #18 confirme que `DT_FLAGS_1` contient `NOW` mais pas `GLOBAL` sur les deux ABI. Le libpython testé ne présente pas de DT_SONAME explicite ; ce fait est conservé sans correction hors périmètre. Aucun autre composant de chaîne, média ou gameplay ne change.

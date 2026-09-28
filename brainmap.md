@@ -668,3 +668,8 @@ Patch corrigé ✅ → checkout p4a figé ✅ → diff P4A_DIAG présent dans p4
 ### Run #18 — cause runtime réellement observée
 
 Py_InitializeFromConfig → init_fs_encoding → zipimport de stdlib.zip → besoin zlib → dlopen zlib.cpython-312.so → symbole `PyExc_MemoryError` introuvable → zlib indisponible → `ZipImportError: can't decompress data; zlib not available` → échec init_fs_encoding → aucun main.py.
+
+
+## 2026-09-28 — FAB-DEBUG-001 — libpython GLOBAL
+
+Run #18 : libpython FLAGS_1=NOW seulement → patch recette python3 3.12.14 → patch CPython Makefile cible libpython.so → PY_CORE_LDFLAGS += -Wl,-z,global → rebuild deux ABI → inspecter APK final → FLAGS_1 doit contenir GLOBAL → seulement ensuite test téléphone → zlib doit pouvoir résoudre PyExc_MemoryError via groupe global.

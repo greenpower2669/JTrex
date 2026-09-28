@@ -1,0 +1,23 @@
+diff --git a/pythonforandroid/recipes/python3/__init__.py b/pythonforandroid/recipes/python3/__init__.py
+--- a/pythonforandroid/recipes/python3/__init__.py
++++ b/pythonforandroid/recipes/python3/__init__.py
+@@ -184,6 +184,9 @@
+     def apply_patches(self, arch, build_dir=None):
+ 
+         _p_version = Version(self.version)
++        if self.version == '3.12.14':
++            self.patches.append('patches/py3.12.14-libpython-global.patch')
++
+         if _p_version.major == 3 and _p_version.minor == 7:
+             self.patches += [
+                 'patches/py3.7.1_fix-ctypes-util-find-library.patch',
+diff --git a/pythonforandroid/recipes/python3/patches/py3.12.14-libpython-global.patch b/pythonforandroid/recipes/python3/patches/py3.12.14-libpython-global.patch
+new file mode 100644
+--- /dev/null
++++ b/pythonforandroid/recipes/python3/patches/py3.12.14-libpython-global.patch
+@@ -0,0 +1,5 @@
++--- a/Makefile.pre.in
+++++ b/Makefile.pre.in
++@@ -820,1 +820,2 @@
+++libpython$(LDVERSION).so: PY_CORE_LDFLAGS += -Wl,-z,global
++ libpython$(LDVERSION).so: $(LIBRARY_OBJS) $(DTRACE_OBJS)

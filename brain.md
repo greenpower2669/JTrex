@@ -1009,3 +1009,15 @@ Inspection ELF de l'APK diagnostique arm64-v8a :
 La cause immédiate du bootstrap est donc établie : le module d'extension zlib ne peut pas résoudre un symbole Python au chargement, ce qui rend zlib indisponible ; zipimport ne peut alors pas décompresser `stdlib.zip`, ce qui fait échouer `init_fs_encoding`.
 
 Aucun correctif n'est appliqué dans cette étape.
+
+
+## 2026-09-28 — FAB-DEBUG-001 — visibilité globale de libpython
+
+Contrôle préalable effectué sur l'APK réellement testé du run #18 :
+- arm64-v8a : `DT_FLAGS_1 = NOW`, sans `GLOBAL` ; `PyExc_MemoryError` exporté GLOBAL.
+- armeabi-v7a : `DT_FLAGS_1 = NOW`, sans `GLOBAL` ; `PyExc_MemoryError` exporté GLOBAL.
+- aucun `DT_SONAME` explicite n'est présent dans `libpython3.12.so` sur ces deux ABI ; ce constat préexiste au nouvel essai et n'est pas corrigé dans cette mission.
+
+Hypothèse Astra autorisée : ajouter uniquement `-Wl,-z,global` à la liaison de `libpython3.12.so` pour Python cible 3.12.14, afin d'obtenir `DF_1_GLOBAL` / `FLAGS_1: GLOBAL` sans ajouter de DT_NEEDED à zlib.
+
+Le patch local est `tools/patches/p4a-python312-libpython-global.patch`. Le contexte du premier hunk a été ajusté mécaniquement à la source p4a figée, qui n'a pas la ligne vide présente dans le texte Astra ; les lignes fonctionnelles sont inchangées.

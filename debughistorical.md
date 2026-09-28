@@ -508,3 +508,10 @@ Le nouveau bugreport téléphone montre la même séquence sur de nombreuses ten
 Contrôle ELF sur l'APK du run #18 : le symbole `PyExc_MemoryError` est bien exporté par `libpython3.12.so`, tandis que `zlib.cpython-312.so` le laisse non résolu et n'a pas de DT_NEEDED vers `libpython3.12.so`. Cet élément est une preuve technique à analyser par Astra pour choisir la prochaine correction mono-hypothèse.
 
 Aucune modification de code ni de chaîne n'est appliquée après cette observation.
+
+
+## 2026-09-28 — FAB-DEBUG-001 — essai DF_1_GLOBAL
+
+Précondition vérifiée sur l'APK du run #18 : `GLOBAL` est absent de `DT_FLAGS_1` sur arm64-v8a et armeabi-v7a ; seul `NOW` est présent. `PyExc_MemoryError` reste exporté par libpython. Aucun DT_SONAME explicite n'est observé sur libpython3.12.so dans cet APK.
+
+Essai mono-hypothèse : marquer uniquement la libpython cible 3.12.14 avec `-Wl,-z,global`. Aucun LDFLAGS global, aucun DT_NEEDED ajouté à zlib, aucune modification de main.py, chemins, bundle, médias ou gameplay.

@@ -441,3 +441,20 @@ Commande interne associée :
 - [x] Confirmer que zlib a ce symbole non résolu et n'a pas `libpython3.12.so` dans DT_NEEDED.
 - [ ] Transmettre à Astra cette cause immédiate pour décision sur une seule correction mono-hypothèse.
 - [ ] Ne rien modifier avant retour Astra.
+
+
+## 2026-09-28 — FAB-DEBUG-001 — visibilité globale libpython
+
+- [x] Contrôler run #18 avant modification : FLAGS_1=NOW, GLOBAL absent sur arm64-v8a et armeabi-v7a.
+- [x] Confirmer PyExc_MemoryError toujours exporté par libpython.
+- [x] Relever l'absence de DT_SONAME explicite dans le libpython du run #18 sans la modifier.
+- [x] Créer `tools/patches/p4a-python312-libpython-global.patch`.
+- [x] Limiter l'enregistrement du patch à python3 cible version 3.12.14.
+- [x] Limiter `-Wl,-z,global` à la cible `libpython$(LDVERSION).so`.
+- [ ] Vérifier application du patch p4a dans le prochain run.
+- [ ] Vérifier `-Wl,-z,global` dans la commande effective de liaison.
+- [ ] Vérifier `FLAGS_1` avec `GLOBAL` dans le nouvel APK pour les deux ABI.
+- [ ] Vérifier PyExc_MemoryError toujours exporté.
+- [ ] Relever le SONAME réel du nouvel APK sans inventer sa présence.
+- [ ] Ne transmettre à Fab pour test runtime que si GLOBAL est réellement matérialisé.
+- [ ] Sur téléphone : vérifier disparition du dlopen PyExc_MemoryError puis progression de Py_InitializeFromConfig et [JT-BOOT].
