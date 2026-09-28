@@ -644,3 +644,8 @@ Chaîne attendue : recette FFmpeg 6.1.2 → `--enable-hwaccels` conservé + `--d
 APK run #16 identifié ✅ → installation sur téléphone ✅ selon retour Fab → logo Kivy visible → fermeture ❌ → journal ADB requis → repérer dernier marqueur JT → relever traceback Python complet, sinon exception Java ou signal/backtrace native → seulement ensuite proposer un correctif.
 
 Aucune bifurcation de diagnostic vers les vidéos n'est autorisée sans preuve dans le log.
+
+
+### Crash 1.0.2 — chaîne réellement observée dans le bugreport
+
+`PythonActivity onCreate/onStart/onResume` ✅ → SurfaceView SDL créée ✅ → `SDL_main` ✅ → `Initializing Python for Android` ✅ → `_python_bundle dir exists` ✅ → `set wchar paths...` ✅ → **`Python initialization failed: failed to get the Python codec of the filesystem encoding`** ❌ → `main.py` non atteint → aucun marqueur JT → intro/ffpyplayer/gameplay non atteints.

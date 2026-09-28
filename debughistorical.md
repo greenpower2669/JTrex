@@ -446,3 +446,39 @@ Limite actuelle : aucun accès ADB au téléphone de Fab dans cette session et a
 Marqueurs disponibles dans les sources préparées : `[JT-BOOT]`, `[JT-START]`, `[JT-INTRO] chosen=`, `[JT-INTRO] begin=`, `[JT-INTRO] gameplay enabled`. Sans logcat du lancement réel, aucun de ces marqueurs ne peut être déclaré comme dernier marqueur atteint.
 
 Diagnostic à poursuivre uniquement avec un journal de lancement complet (Python, Java et natif). Ne pas attribuer le crash à la vidéo, ffpyplayer, FFmpeg, Kivy ou une ressource avant la première erreur fatale observée.
+
+
+### Crash téléphone 1.0.2 — preuve bugreport reçue — 2026-09-28
+
+Rapport téléphone reçu : `bugreport-a57xnaeea-BP4A.251205.006-2026-09-28-10-54-03.zip`.
+
+Identité de l'appareil et de l'installation vérifiée dans le bugreport :
+- modèle : `SM-A576B` ;
+- Android : 16, build `BP4A.251205.006` ;
+- ABI réellement utilisée : `arm64-v8a` ;
+- package installé : `com.junedady.junetrex` ;
+- version : `1.0.2` ; versionCode : `102` ; minSdk 21 ; targetSdk 36 ;
+- application installée en mode debuggable ; APK signing version 2.
+
+Lancement pertinent observé à 10:53:39 : process `16365`. PythonActivity atteint `onCreate`, `onStart`, `onResume`, crée sa SurfaceView puis lance `SDL_main` et `Initializing Python for Android`.
+
+Dernières traces Python avant terminaison :
+```text
+10:53:40.440 python: Initializing Python for Android
+10:53:40.440 python: Setting additional env vars from p4a_env_vars.txt
+10:53:40.440 python: Changing directory to '/data/user/0/com.junedady.junetrex/files/app'
+10:53:40.442 python: Preparing to initialize python
+10:53:40.442 python: _python_bundle dir exists
+10:53:40.442 python: set wchar paths...
+10:53:40.506 python: Python initialization failed:
+10:53:40.506 python: failed to get the Python codec of the filesystem encoding
+10:53:40.506 python: Python for android ended.
+```
+
+Le processus meurt ensuite à 10:53:40.604. Aucun marqueur `[JT-BOOT]`, `[JT-START]` ou `[JT-INTRO]` n'apparaît dans le bugreport : le code applicatif `main.py` n'est donc pas atteint. Le crash ne peut pas être attribué aux vidéos, à l'intro ou au gameplay à ce stade.
+
+La même erreur `failed to get the Python codec of the filesystem encoding` est répétée sur plusieurs autres tentatives de lancement dans le rapport, ce qui confirme un échec reproductible de l'initialisation CPython sur l'appareil.
+
+Inspection statique de l'APK du run #16 : `libpybundle.so` contient `_python_bundle/stdlib.zip`, et cette archive contient bien le paquet `encodings` (122 entrées) ainsi que `codecs.pyc`. Le diagnostic ne doit donc pas être simplifié en « encodings absent » sans analyse supplémentaire ; il s'agit d'un échec de chargement/initialisation du codec de filesystem pendant le démarrage CPython.
+
+Aucune correction n'est appliquée dans cette étape de diagnostic.

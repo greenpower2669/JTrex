@@ -379,3 +379,15 @@ Commande interne associée :
 - [ ] Extraire le traceback Python complet ; sinon l'exception Java ou le signal natif + backtrace.
 - [ ] Identifier la première erreur fatale et la fonction/ressource/bibliothèque concernée.
 - [ ] Ne proposer aucune correction tant que cette première erreur fatale n'est pas établie.
+
+
+### Crash téléphone 1.0.2 — bugreport exploité
+
+- [x] Récupérer un rapport téléphone complet sans ordinateur.
+- [x] Identifier appareil : SM-A576B / Android 16 / arm64-v8a.
+- [x] Confirmer installation : com.junedady.junetrex 1.0.2, versionCode 102.
+- [x] Identifier la première erreur fatale reproductible : `Python initialization failed: failed to get the Python codec of the filesystem encoding`.
+- [x] Confirmer que `main.py` et tous les marqueurs JT ne sont pas atteints.
+- [x] Confirmer statiquement que `_python_bundle/stdlib.zip` contient bien `encodings` et `codecs.pyc`.
+- [ ] Transmettre ce diagnostic à Astra pour la prochaine correction mono-hypothèse.
+- [ ] Ne modifier ni Python, ni p4a, ni FFmpeg, ni Cython, ni runtime média, ni gameplay avant le nouvel ordre Astra.

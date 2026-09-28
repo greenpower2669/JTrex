@@ -332,3 +332,8 @@ L'essai `--disable-vulkan` est concluant : FFmpeg 6.1.2 et ffpyplayer 4.5.1 pass
 ### JTREX — diagnostic du premier crash sur téléphone
 
 Ordre Astra reçu : diagnostic uniquement. L'APK testé est identifié comme le 1.0.2 debug du run #16, SHA-256 `8743980ff87fc13c9a534de7d5de07c561e2c2b9312852893fb5c943ddb23c4a`. Le retour Fab est « logo Kivy puis fermeture ». Aucun accès ADB au téléphone n'est disponible dans cette session et aucune reproduction n'est revendiquée. La prochaine preuve obligatoire est un logcat complet du lancement permettant de déterminer le dernier marqueur JT et la première erreur fatale. Aucune modification Python/FFmpeg/Cython, gameplay ou média n'est autorisée avant cette preuve.
+
+
+### Retour diagnostic bugreport téléphone — crash 1.0.2
+
+Le bugreport Samsung confirme que l'application ne parvient pas jusqu'au code JTrex. Sur SM-A576B / Android 16 / arm64-v8a, Python-for-Android atteint `_python_bundle dir exists` puis `set wchar paths...` et échoue avec `Python initialization failed: failed to get the Python codec of the filesystem encoding`. Aucun marqueur JT n'est émis. L'archive `stdlib.zip` de l'APK contient pourtant `encodings` et `codecs.pyc`. Diagnostic uniquement ; aucune correction appliquée. Astra doit décider de la prochaine hypothèse de chaîne Python/p4a.
