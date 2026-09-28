@@ -854,3 +854,13 @@ Le test suivant conserve le même p4a et la même recette FFmpeg 6.1.2, mais fix
 - Les erreurs historiques `_PyLong_AsByteArray` et `_PyGen_SetStopIterationValue` n'apparaissent pas dans ce run, mais leur disparition dans ffpyplayer n'est pas prouvée puisque ffpyplayer n'a pas été compilé.
 - Aucun APK 1.0.2 produit. Artefact diagnostic : `JuneTrex-Android-Diagnostics`, ID `10944283554`.
 - Aucun correctif supplémentaire appliqué conformément à FAB-DEBUG-001.
+
+
+## 2026-09-28 — JT-MEDIA-001 / FAB-DEBUG-001 — grp Android API 21
+
+- Cause retenue après le run #14 : CPython 3.12.14 tente de construire le module standard `grp` pour la cible Android API native 21 alors que `grp_getgrall_impl` utilise `setgrent`, `getgrent` et `endgrent`, indisponibles sur cette cible.
+- Correction Astra autorisée : patcher uniquement la recette `python3` cible de p4a afin de définir `py_cv_module_grp=n/a` lorsque `self.version == '3.12.14'` et `ndk_api < 26`.
+- Le hostpython3 Linux n'est pas concerné par cette exclusion.
+- Le patch est conservé dans `tools/patches/p4a-python312-grp-api21.patch` et appliqué reproductiblement par le workflow après `p4a-venv-clear.patch`.
+- `buildozer.spec` reste inchangé avec python3/hostpython3 3.12.14. L'export historique `VERSION_hostpython3=3.11.13` reste volontairement inchangé pour isoler cet essai.
+- Hypothèse encore à tester : le Python cible doit franchir `grp`, puis seulement ensuite ffpyplayer pourra être évalué.

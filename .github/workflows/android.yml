@@ -10,6 +10,7 @@ on:
       - 'tools/jtrex_media_runtime.py'
       - 'tools/p4a-ffmpeg-6.1.2.py'
       - 'tools/patches/p4a-venv-clear.patch'
+      - 'tools/patches/p4a-python312-grp-api21.patch'
       - 'assets/**'
   release:
     types: [published]
@@ -164,6 +165,10 @@ jobs:
             "$GITHUB_WORKSPACE/tools/patches/p4a-venv-clear.patch"
           git -C "$P4A_DIR" apply \
             "$GITHUB_WORKSPACE/tools/patches/p4a-venv-clear.patch"
+          git -C "$P4A_DIR" apply --check \
+            "$GITHUB_WORKSPACE/tools/patches/p4a-python312-grp-api21.patch"
+          git -C "$P4A_DIR" apply \
+            "$GITHUB_WORKSPACE/tools/patches/p4a-python312-grp-api21.patch"
           cp "$GITHUB_WORKSPACE/tools/p4a-ffmpeg-6.1.2.py" \
             "$P4A_DIR/pythonforandroid/recipes/ffmpeg/__init__.py"
           echo "ffmpeg_recipe_source=p4a@541fe992ea86b3902f0e0f776167555da6dbca01" \

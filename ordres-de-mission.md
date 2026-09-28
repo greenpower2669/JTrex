@@ -308,3 +308,8 @@ Astra autorise la suite du run #13 sous forme d'un essai séparé : modifier uni
 ### Clôture du run #14
 
 L'alignement de préparation est validé, mais le test Python 3.12.14 / ffpyplayer reste incomplet : la compilation s'arrête d'abord dans CPython 3.12.14 pour `armeabi-v7a`, `Modules/grpmodule.c`, sur `setgrent/getgrent/endgrent`. Aucun second correctif ne doit être empilé. Astra doit recevoir ce blocage avec la note que p4a demande/télécharge hostpython3 3.12.14 alors que le workflow exporte encore une variable héritée `VERSION_hostpython3=3.11.13`.
+
+
+### 2026-09-28 — JT-MEDIA-001 / FAB-DEBUG-001 — grp Android API 21
+
+Astra autorise un essai mono-hypothèse supplémentaire : conserver Python 3.12.14 et toute la chaîne actuelle, mais déclarer le module `grp` indisponible uniquement dans la recette `python3` Android lorsque `ndk_api < 26`. Le mécanisme est versionné dans `tools/patches/p4a-python312-grp-api21.patch` et appliqué par le workflow après le patch venv. Le hostpython3 Linux, l'export historique VERSION_hostpython3, ffpyplayer, FFmpeg, p4a, Cython, API/NDK, architectures, médias, runtime et gameplay restent inchangés. Aucun second correctif ne doit être ajouté au prochain run.

@@ -384,3 +384,12 @@ Hypothèse suivante : conserver p4a/FFmpeg mais fixer python3 + hostpython3 à 3
 - Les erreurs historiques `_PyLong_AsByteArray` et `_PyGen_SetStopIterationValue` n'apparaissent pas dans ce run, mais leur disparition dans ffpyplayer n'est pas prouvée puisque ffpyplayer n'a pas été compilé.
 - Aucun APK 1.0.2 produit. Artefact diagnostic : `JuneTrex-Android-Diagnostics`, ID `10944283554`.
 - Aucun correctif supplémentaire appliqué conformément à FAB-DEBUG-001.
+
+
+## 2026-09-28 — JT-MEDIA-001 / FAB-DEBUG-001 — grp Android API 21
+
+- Run #14 : échec de CPython 3.12.14/armeabi-v7a dans `Modules/grpmodule.c` sur `setgrent/getgrent/endgrent`.
+- Correction mono-hypothèse proposée par Astra : déclarer `grp` indisponible dans le Python Android cible pour API native <26 via `py_cv_module_grp=n/a`.
+- Aucun warning n'est désactivé, aucune fonction Android n'est simulée, et aucun autre module standard n'est modifié.
+- Risque assumé : le Python Android résultant n'aura pas le module `grp`; si une dépendance l'importe obligatoirement, cet échec devra être rapporté explicitement.
+- L'hypothèse ffpyplayer 4.5.1 / Python 3.12.14 reste non validée avant le prochain run.

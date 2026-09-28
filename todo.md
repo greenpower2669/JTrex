@@ -313,3 +313,18 @@ Commande interne associée :
 - [x] Consigner l'export workflow hérité `VERSION_hostpython3=3.11.13` sans le modifier dans cette tentative.
 - [ ] Transmettre le run #14 à Astra pour analyse et prochaine correction mono-hypothèse.
 - [ ] Ne pas annoncer d'APK 📦 1.0.2 tant qu'il n'existe pas réellement.
+
+
+## 2026-09-28 — JT-MEDIA-001 / FAB-DEBUG-001 — grp Android API 21
+
+- [x] Créer `tools/patches/p4a-python312-grp-api21.patch` avec l'exclusion ciblée `py_cv_module_grp=n/a`.
+- [x] Ajouter le patch à `on.push.paths`.
+- [x] Appliquer le patch par `git apply --check` puis `git apply` après `p4a-venv-clear.patch`.
+- [x] Ne pas modifier `VERSION_hostpython3=3.11.13` dans cette tentative.
+- [ ] Vérifier le message `JT-MEDIA-001: target grp unavailable below Android API 26`.
+- [ ] Vérifier `checking for stdlib extension module grp... n/a`.
+- [ ] Vérifier l'absence de compilation de `Modules/grpmodule.c`.
+- [ ] Relever séparément la progression de python3 sur armeabi-v7a puis arm64-v8a.
+- [ ] Si Python passe, relever ensuite la compilation ffpyplayer et les erreurs `_PyLong_AsByteArray` / `_PyGen_SetStopIterationValue`.
+- [ ] En cas de nouvel échec, consigner seulement la première erreur discriminante sans ajouter de second correctif.
+- [ ] Nettoyer ultérieurement l'export historique `VERSION_hostpython3=3.11.13` dans une mission distincte.

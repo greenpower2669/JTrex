@@ -616,3 +616,10 @@ Le champ `python_target` du rapport est déclaratif ; seules les traces p4a peuv
 `garde prepare_android.py 3.12.14` ✅ → `p4a python3/hostpython3 3.12.14 demandés + sources v3.12.14` ✅ → `hostpython3 construit` → `python3 armeabi-v7a` ❌ dans `Modules/grpmodule.c` (`setgrent/getgrent/endgrent`) → `python3 arm64-v8a` non atteint → `ffpyplayer` non atteint → APK non produit.
 
 Incohérence à conserver pour analyse Astra : le workflow exporte encore `VERSION_hostpython3=3.11.13`, alors que p4a demande et télécharge explicitement hostpython3 3.12.14.
+
+
+## 2026-09-28 — JT-MEDIA-001 / FAB-DEBUG-001 — grp Android API 21
+
+Chaîne de test : p4a figé → `p4a-venv-clear.patch` → `p4a-python312-grp-api21.patch` → recette python3 cible 3.12.14 avec `py_cv_module_grp=n/a` si ndk_api<26 → configure doit annoncer `grp... n/a` → absence de `Modules/grpmodule.c` → poursuite Python → ffpyplayer si Python termine.
+
+Le patch ne s'applique pas au hostpython3 Linux.
