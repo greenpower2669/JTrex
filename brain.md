@@ -893,3 +893,12 @@ Le test suivant conserve le même p4a et la même recette FFmpeg 6.1.2, mais fix
 - Objectif : empêcher la construction de la famille Vulkan qui a échoué sur armeabi-v7a avec les handles Vulkan initialisés par `NULL`.
 - Les décodeurs logiciels AAC/H.264, le démuxeur MOV/MP4, Python 3.12.14, ffpyplayer 4.5.1, p4a figé, NDK/API, architectures, médias et gameplay restent inchangés.
 - Hypothèse à vérifier au prochain run : `CONFIG_VULKAN=0` et poursuite de FFmpeg sans compiler les objets Vulkan responsables.
+
+
+### Run #16 — résultat réel (2026-09-28)
+- Commit construit : `e88bd93ec0a7d9b34b2d4f64eb10b3627d230149`; run #16 ID `36364807323`.
+- FFmpeg 6.1.2 : `--disable-vulkan` transmis sur arm64-v8a et armeabi-v7a ; AAC/H.264 et démuxer MOV conservés.
+- FFmpeg et ffpyplayer 4.5.1 atteignent le postbuild sur les deux architectures.
+- Absence des erreurs `_PyLong_AsByteArray` et `_PyGen_SetStopIterationValue`.
+- APK produit : `JuneT-Rex-1.0.2-debug.apk`, SHA-256 `8743980ff87fc13c9a534de7d5de07c561e2c2b9312852893fb5c943ddb23c4a`.
+- Compilation validée ; lecture vidéo, fluidité et gameplay restent à valider par Fab sur téléphone.

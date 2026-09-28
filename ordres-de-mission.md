@@ -323,3 +323,7 @@ Le correctif ciblé `grp` est validé pour son objectif : la cible Android armea
 ### 2026-09-28 — JT-MEDIA-001 — exclusion Vulkan FFmpeg 6.1.2
 
 Astra autorise un nouvel essai mono-hypothèse : ajouter uniquement `--disable-vulkan` à `tools/p4a-ffmpeg-6.1.2.py`, immédiatement après `--enable-hwaccels`. Tous les autres éléments de la chaîne et les correctifs déjà validés sont conservés. Aucun patch Vulkan supplémentaire, aucune mise à jour FFmpeg et aucune désactivation générale des accélérations matérielles ne doivent être ajoutés dans cette tentative. Le prochain run doit relever le résultat réel de FFmpeg, puis seulement de ffpyplayer s'il est atteint.
+
+
+### Clôture du run #16
+L'essai `--disable-vulkan` est concluant : FFmpeg 6.1.2 et ffpyplayer 4.5.1 passent sur les deux architectures et le workflow produit `JuneT-Rex-1.0.2-debug.apk`. SHA-256 : `8743980ff87fc13c9a534de7d5de07c561e2c2b9312852893fb5c943ddb23c4a`. La validation runtime reste à Fab sur téléphone.

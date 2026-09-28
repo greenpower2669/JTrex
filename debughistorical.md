@@ -421,3 +421,7 @@ Hypothèse suivante : conserver p4a/FFmpeg mais fixer python3 + hostpython3 à 3
 - Correction mono-hypothèse autorisée : ajouter uniquement `--disable-vulkan` à la recette FFmpeg tout en conservant `--enable-hwaccels`.
 - Aucun patch `NULL -> VK_NULL_HANDLE`, aucune mise à jour FFmpeg et aucune désactivation globale des hwaccels dans cette tentative.
 - Conséquence assumée : l'accélération Vulkan FFmpeg sera absente de l'APK ; la fluidité du décodage logiciel restera à valider sur téléphone si l'APK est produit.
+
+
+### Run #16 — résultat réel (2026-09-28)
+Le correctif unique `--disable-vulkan` franchit le blocage Vulkan du run #15. FFmpeg 6.1.2 et ffpyplayer 4.5.1 compilent pour arm64-v8a et armeabi-v7a ; les erreurs Cython historiques ne réapparaissent pas. APK produit avec SHA-256 `8743980ff87fc13c9a534de7d5de07c561e2c2b9312852893fb5c943ddb23c4a`. Validation runtime téléphone encore ouverte.

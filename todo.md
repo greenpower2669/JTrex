@@ -355,3 +355,13 @@ Commande interne associée :
 - [ ] Vérifier la disparition/persistance de `_PyLong_AsByteArray` et `_PyGen_SetStopIterationValue` lorsque ffpyplayer est réellement compilé.
 - [ ] En cas d'échec, consigner uniquement la première nouvelle erreur discriminante sans ajouter de second correctif.
 - [ ] Annoncer l'APK 📦 1.0.2 uniquement s'il est réellement produit, avec SHA-256.
+
+
+### Après run #16
+- [x] `--disable-vulkan` transmis aux deux architectures.
+- [x] FFmpeg 6.1.2 postbuild sur arm64-v8a et armeabi-v7a.
+- [x] ffpyplayer 4.5.1 postbuild sur arm64-v8a et armeabi-v7a.
+- [x] Absence de `_PyLong_AsByteArray` / `_PyGen_SetStopIterationValue`.
+- [x] APK 📦 `JuneT-Rex-1.0.2-debug.apk` produit.
+- [x] SHA-256 : `8743980ff87fc13c9a534de7d5de07c561e2c2b9312852893fb5c943ddb23c4a`.
+- [ ] Fab : validation téléphone des intros, icône, vidéo d'attente, fluidité, audio et gameplay.

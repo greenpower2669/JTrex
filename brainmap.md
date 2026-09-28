@@ -633,3 +633,7 @@ Le patch ne s'applique pas au hostpython3 Linux.
 ## 2026-09-28 — JT-MEDIA-001 — exclusion Vulkan FFmpeg 6.1.2
 
 Chaîne attendue : recette FFmpeg 6.1.2 → `--enable-hwaccels` conservé + `--disable-vulkan` → Vulkan désactivé → pas de `vulkan_av1.c` / `vulkan_decode.c` responsables → H.264/AAC logiciels et MOV/MP4 conservés → FFmpeg doit poursuivre → ffpyplayer seulement après succès FFmpeg.
+
+
+### Run #16 — chaîne validée
+`--disable-vulkan` → FFmpeg arm64-v8a postbuild ✅ → ffpyplayer arm64-v8a postbuild ✅ → FFmpeg armeabi-v7a postbuild ✅ → ffpyplayer armeabi-v7a postbuild ✅ → packaging Android ✅ → APK 1.0.2 produit ✅.
