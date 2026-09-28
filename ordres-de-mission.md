@@ -352,3 +352,10 @@ Le run #17 s'est arrêté sur `git apply --check` avant toute compilation. Cet a
 ### Run #18 — livrable diagnostique disponible
 
 Le run #18 (ID `36410518782`) sur le commit `7fa5e4bd32ae02dbe88b8eb74e04e73b0a834986` compile le patch diagnostique Astra pour les deux architectures et produit un APK. SHA-256 : `fbc4a1d0f72cf677591e4a4ffb366db9237377c5f5c3574d6f7ca025249d8e64`. Ce livrable reste strictement diagnostique : la prochaine étape est le lancement sur le téléphone de Fab suivi d'un nouveau rapport complet afin de récupérer l'exception sous-jacente. Aucun correctif de cause racine n'est encore autorisé.
+
+
+### Retour bugreport diagnostique run #18 — cause immédiate établie
+
+Le patch diagnostique a rempli son objectif. Le téléphone expose désormais l'exception réelle : `ZipImportError: can't decompress data; zlib not available`, causée par l'échec de chargement de `zlib.cpython-312.so` avec `dlopen failed: cannot locate symbol "PyExc_MemoryError"`. Le bundle et les chemins sont présents et lisibles.
+
+Inspection ELF complémentaire : `libpython3.12.so` exporte le symbole, `zlib.cpython-312.so` le référence comme non résolu et ne déclare pas `libpython3.12.so` en DT_NEEDED. Aucun correctif n'est appliqué. Astra doit déterminer la prochaine correction mono-hypothèse de liaison/chargement Python sur Android.

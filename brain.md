@@ -985,3 +985,27 @@ Le run #17 (ID 36410139322) s'est arrêté avant compilation : `git apply --chec
 - SHA-256 vérifié : `fbc4a1d0f72cf677591e4a4ffb366db9237377c5f5c3574d6f7ca025249d8e64`.
 - Artefact APK : ID `10965620909`. Artefact diagnostics : ID `10965760827`.
 - Ce succès valide uniquement la construction du diagnostic ; il ne valide pas le démarrage Python ni la correction du crash.
+
+
+### Run #18 — bugreport téléphone : cause sous-jacente exposée
+
+Nouveau rapport Fab : `bugreport-a57xnaeea-BP4A.251205.006-2026-09-28-14-23-12.zip`.
+
+Le diagnostic natif P4A_DIAG fonctionne et révèle de façon reproductible :
+- Python natif : 3.12.14.
+- `stdlib.zip` existe, est lisible, taille 3 850 556 octets.
+- `module_search_paths` contient bien `_python_bundle/stdlib.zip` puis `_python_bundle/modules`.
+- `status.func=init_fs_encoding`.
+- `status.err_msg=failed to get the Python codec of the filesystem encoding`.
+- exception levée : `ZipImportError: can't decompress data; zlib not available`.
+- contexte : `ImportError: dlopen failed: cannot locate symbol "PyExc_MemoryError" referenced by ".../_python_bundle/modules/zlib.cpython-312.so"`.
+
+Inspection ELF de l'APK diagnostique arm64-v8a :
+- `zlib.cpython-312.so` est présent et déclare `PyExc_MemoryError` comme symbole GLOBAL UND.
+- ses dépendances NEEDED sont `libz.so`, `libdl.so`, `libc.so` ; `libpython3.12.so` n'est pas NEEDED.
+- `libpython3.12.so` exporte bien `PyExc_MemoryError` comme symbole GLOBAL.
+- `libmain.so` dépend bien de `libpython3.12.so`.
+
+La cause immédiate du bootstrap est donc établie : le module d'extension zlib ne peut pas résoudre un symbole Python au chargement, ce qui rend zlib indisponible ; zipimport ne peut alors pas décompresser `stdlib.zip`, ce qui fait échouer `init_fs_encoding`.
+
+Aucun correctif n'est appliqué dans cette étape.

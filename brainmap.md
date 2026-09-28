@@ -663,3 +663,8 @@ Bugreport existant sans exception détaillée → patch local `tools/patches/p4a
 ### Run #18 — chaîne diagnostique construite
 
 Patch corrigé ✅ → checkout p4a figé ✅ → diff P4A_DIAG présent dans p4a-patch.txt ✅ → start.c compilé arm64-v8a ✅ → start.c compilé armeabi-v7a ✅ → packaging APK ✅ → test téléphone requis → nouveau bugreport requis pour observer status.func/status.err_msg et l'exception raised/cause/context.
+
+
+### Run #18 — cause runtime réellement observée
+
+Py_InitializeFromConfig → init_fs_encoding → zipimport de stdlib.zip → besoin zlib → dlopen zlib.cpython-312.so → symbole `PyExc_MemoryError` introuvable → zlib indisponible → `ZipImportError: can't decompress data; zlib not available` → échec init_fs_encoding → aucun main.py.

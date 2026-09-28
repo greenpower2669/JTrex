@@ -498,3 +498,13 @@ Le run #17 (36410139322) n'a pas compilé p4a. `git apply --check` a rejeté `p4
 ### Run #18 — diagnostic compilé, runtime non encore observé
 
 Le run #18 (36410518782) construit avec succès le même diagnostic Astra après correction de forme du patch. Le log de build confirme la compilation de `start.c` pour arm64-v8a et armeabi-v7a, et `p4a-patch.txt` contient les traces `P4A_DIAG`. APK : SHA-256 `fbc4a1d0f72cf677591e4a4ffb366db9237377c5f5c3574d6f7ca025249d8e64`. Aucune conclusion sur la cause racine n'est encore possible avant lancement téléphone et nouveau rapport.
+
+
+### Run #18 — cause immédiate identifiée par P4A_DIAG
+
+Le nouveau bugreport téléphone montre la même séquence sur de nombreuses tentatives. L'exception sous-jacente est enfin visible :
+`ZipImportError: can't decompress data; zlib not available`, avec contexte `ImportError: dlopen failed: cannot locate symbol "PyExc_MemoryError" referenced by zlib.cpython-312.so`.
+
+Contrôle ELF sur l'APK du run #18 : le symbole `PyExc_MemoryError` est bien exporté par `libpython3.12.so`, tandis que `zlib.cpython-312.so` le laisse non résolu et n'a pas de DT_NEEDED vers `libpython3.12.so`. Cet élément est une preuve technique à analyser par Astra pour choisir la prochaine correction mono-hypothèse.
+
+Aucune modification de code ni de chaîne n'est appliquée après cette observation.

@@ -426,3 +426,18 @@ Commande interne associée :
 - [ ] Fab : lancer JTrex puis générer immédiatement un nouveau rapport de bug complet.
 - [ ] Extraire les lignes P4A_DIAG : version, chemins, stdlib.zip, status.func, status.err_msg, exception raised/cause/context.
 - [ ] Ne pas annoncer « crash corrigé » tant que [JT-BOOT] n'est pas atteint.
+
+
+### Après bugreport diagnostic du run #18
+
+- [x] Recevoir un nouveau rapport complet du téléphone.
+- [x] Relever `status.func=init_fs_encoding`.
+- [x] Relever `ZipImportError: can't decompress data; zlib not available`.
+- [x] Relever le contexte `ImportError: dlopen failed: cannot locate symbol "PyExc_MemoryError"`.
+- [x] Vérifier que stdlib.zip existe et est lisible.
+- [x] Vérifier les module_search_paths réels.
+- [x] Vérifier statiquement zlib.cpython-312.so et libpython3.12.so dans l'APK arm64-v8a.
+- [x] Confirmer que libpython exporte `PyExc_MemoryError`.
+- [x] Confirmer que zlib a ce symbole non résolu et n'a pas `libpython3.12.so` dans DT_NEEDED.
+- [ ] Transmettre à Astra cette cause immédiate pour décision sur une seule correction mono-hypothèse.
+- [ ] Ne rien modifier avant retour Astra.
