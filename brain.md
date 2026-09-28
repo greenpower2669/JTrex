@@ -959,3 +959,13 @@ La même erreur `failed to get the Python codec of the filesystem encoding` est 
 Inspection statique de l'APK du run #16 : `libpybundle.so` contient `_python_bundle/stdlib.zip`, et cette archive contient bien le paquet `encodings` (122 entrées) ainsi que `codecs.pyc`. Le diagnostic ne doit donc pas être simplifié en « encodings absent » sans analyse supplémentaire ; il s'agit d'un échec de chargement/initialisation du codec de filesystem pendant le démarrage CPython.
 
 Aucune correction n'est appliquée dans cette étape de diagnostic.
+
+
+## 2026-09-28 — FAB-DEBUG-001 — diagnostic bootstrap Python
+
+- Relecture du bugreport existant : aucune exception Python détaillée n'est présente autour du PID 16365 ; aucun traceback, ModuleNotFoundError, ImportError, ZipImportError ni bad magic number n'est journalisé.
+- Les échecs de chargement libpython3.14.so et libpython3.13.so sont des essais de détection ; libpython3.12.so est ensuite chargée avec succès avant SDL_main.
+- Essai diagnostique autorisé par Astra : patcher uniquement le start.c du bootstrap p4a figé pour rendre visible l'exception sous-jacente à Py_InitializeFromConfig.
+- Le patch journalise Py_GetVersion, les module_search_paths réellement fournis, l'existence/lisibilité/taille de stdlib.zip, status.func/status.err_msg, puis capture immédiatement PyErr_GetRaisedException sous Python 3.12 et journalise type/message/cause/contexte avec parcours borné.
+- En cas d'échec d'initialisation, le bootstrap retourne un statut d'échec sans continuer vers les appels applicatifs Python.
+- Ce patch est strictement diagnostique et ne signifie pas que le crash est corrigé.

@@ -337,3 +337,8 @@ Ordre Astra reçu : diagnostic uniquement. L'APK testé est identifié comme le 
 ### Retour diagnostic bugreport téléphone — crash 1.0.2
 
 Le bugreport Samsung confirme que l'application ne parvient pas jusqu'au code JTrex. Sur SM-A576B / Android 16 / arm64-v8a, Python-for-Android atteint `_python_bundle dir exists` puis `set wchar paths...` et échoue avec `Python initialization failed: failed to get the Python codec of the filesystem encoding`. Aucun marqueur JT n'est émis. L'archive `stdlib.zip` de l'APK contient pourtant `encodings` et `codecs.pyc`. Diagnostic uniquement ; aucune correction appliquée. Astra doit décider de la prochaine hypothèse de chaîne Python/p4a.
+
+
+### 2026-09-28 — FAB-DEBUG-001 — diagnostic bootstrap Python
+
+Astra autorise uniquement un patch diagnostique du bootstrap p4a figé. Le bugreport existant ne révèle pas l'exception sous-jacente, donc `tools/patches/p4a-python312-bootstrap-exception-diag.patch` journalise les paramètres de bootstrap et capture immédiatement l'exception en attente lors de l'échec Py_InitializeFromConfig. La chaîne du run #16, les chemins, le bundle, main.py, FFmpeg, Cython, médias et gameplay restent inchangés. Le livrable de cette tentative est un APK de diagnostic, pas une correction de runtime.

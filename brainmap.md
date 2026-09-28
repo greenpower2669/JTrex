@@ -649,3 +649,8 @@ Aucune bifurcation de diagnostic vers les vidéos n'est autorisée sans preuve d
 ### Crash 1.0.2 — chaîne réellement observée dans le bugreport
 
 `PythonActivity onCreate/onStart/onResume` ✅ → SurfaceView SDL créée ✅ → `SDL_main` ✅ → `Initializing Python for Android` ✅ → `_python_bundle dir exists` ✅ → `set wchar paths...` ✅ → **`Python initialization failed: failed to get the Python codec of the filesystem encoding`** ❌ → `main.py` non atteint → aucun marqueur JT → intro/ffpyplayer/gameplay non atteints.
+
+
+## 2026-09-28 — FAB-DEBUG-001 — diagnostic bootstrap Python
+
+Bugreport existant sans exception détaillée → patch local `tools/patches/p4a-python312-bootstrap-exception-diag.patch` → checkout p4a figé → start.c réellement compilé → logs P4A_DIAG avant et au retour de Py_InitializeFromConfig → si échec : capture immédiate PyErr_GetRaisedException → type/message/cause/contexte → retour -1 → aucun main.py.

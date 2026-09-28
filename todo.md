@@ -391,3 +391,17 @@ Commande interne associée :
 - [x] Confirmer statiquement que `_python_bundle/stdlib.zip` contient bien `encodings` et `codecs.pyc`.
 - [ ] Transmettre ce diagnostic à Astra pour la prochaine correction mono-hypothèse.
 - [ ] Ne modifier ni Python, ni p4a, ni FFmpeg, ni Cython, ni runtime média, ni gameplay avant le nouvel ordre Astra.
+
+
+## 2026-09-28 — FAB-DEBUG-001 — diagnostic bootstrap Python
+
+- [x] Relire le bugreport sans filtrage limité au tag python.
+- [x] Confirmer l'absence de traceback/ModuleNotFoundError/ImportError/ZipImportError/bad magic autour du lancement.
+- [x] Confirmer que les probes libpython3.14/3.13 échouent mais libpython3.12.so charge avec succès.
+- [x] Créer `tools/patches/p4a-python312-bootstrap-exception-diag.patch`.
+- [x] Appliquer le patch au start.c du checkout p4a figé avant construction.
+- [ ] Vérifier dans p4a-patch.txt que le start.c effectif contient P4A_DIAG.
+- [ ] Produire l'APK diagnostique et relever run/commit/SHA-256.
+- [ ] Fab : installer l'APK diagnostique et générer un nouveau rapport complet immédiatement après le crash.
+- [ ] Relever status.func/status.err_msg, version native, module_search_paths, stdlib.zip, exception raised/cause/context.
+- [ ] Ne pas annoncer le crash corrigé tant que [JT-BOOT] n'est pas atteint.

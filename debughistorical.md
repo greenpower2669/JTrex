@@ -482,3 +482,10 @@ La même erreur `failed to get the Python codec of the filesystem encoding` est 
 Inspection statique de l'APK du run #16 : `libpybundle.so` contient `_python_bundle/stdlib.zip`, et cette archive contient bien le paquet `encodings` (122 entrées) ainsi que `codecs.pyc`. Le diagnostic ne doit donc pas être simplifié en « encodings absent » sans analyse supplémentaire ; il s'agit d'un échec de chargement/initialisation du codec de filesystem pendant le démarrage CPython.
 
 Aucune correction n'est appliquée dans cette étape de diagnostic.
+
+
+## 2026-09-28 — FAB-DEBUG-001 — diagnostic bootstrap Python
+
+Le bugreport 1.0.2 ne contient que le PyStatus générique `failed to get the Python codec of the filesystem encoding`. Aucun détail import/zip/codecs n'est disponible. Les probes libpython 3.14/3.13 échouent mais libpython3.12.so charge correctement : ils ne sont pas retenus comme cause du crash.
+
+Patch diagnostique ajouté sous `tools/patches/p4a-python312-bootstrap-exception-diag.patch`, sans modification des chemins, du bundle, des médias, de FFmpeg, de Cython ou du gameplay. L'objectif du prochain APK est uniquement d'exposer l'exception Python en attente et les chemins réels.
