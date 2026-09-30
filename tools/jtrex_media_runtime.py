@@ -238,6 +238,13 @@ class JTMediaController:
         key = self._key_for_state(indexa)
         if key == self._scene_key and self._scene_player is not None:
             # Families 2/3/4 and 5/6/7 deliberately keep one player.
+            # Re-apply aspect-fill even after EOS/pause if the viewport changed.
+            texture = self._scene_player.texture
+            if texture is not None and self.root._jt_scene_video_active:
+                bounds_pos, bounds_size = self._game_bounds()
+                self._cover_rectangle(
+                    self.root.deux, texture, bounds_pos, bounds_size
+                )
             return
         if key == self._scene_failed_key and self._scene_key == key:
             return
