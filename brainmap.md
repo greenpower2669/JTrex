@@ -710,3 +710,48 @@ score cubique historique conservé
 Version lot : 1.0.3 / versionCode 103.
 Commit CI candidat : `d547fb9315f1432f2b5cda4417340fda67abacc5`.
 
+
+
+## 2026-09-30 — cartographie JT-MEDIA-POWER-SCORE-001
+
+### Chaîne média
+`tools/prepare_android.py`
+→ extrait `JuneTrex.zip`
+→ applique les adaptations ciblées au `main.py` généré
+→ copie `tools/jtrex_media_runtime.py`
+→ valide les médias et la syntaxe
+→ Buildozer empaquette les médias dans `assets/private.tar`.
+
+`JTMediaController.sync_scene_state(indexa)`
+→ famille 1 = wait
+→ famille 2/3/4 = charge rouge/bleu
+→ famille 5/6/7 = jaune
+→ 8 = ST win
+→ 9 = TR win
+→ autre état = arrêt/libération du lecteur et retour rendu historique.
+
+Même famille : le lecteur est conservé. Changement de famille : génération incrémentée, anciens callbacks ignorés. EOS ne modifie jamais `indexa`.
+
+### Chaîne pouvoirs
+`POWER_COSTS`
+→ `jt_power_available(slot)`
+→ `jt_refresh_power_flags()`
+→ `select/bonus` + son de nouvelle disponibilité
+→ garde tactile ou IA
+→ revérification au callback réel
+→ débit exact
+→ `selected[slot]=True`
+→ rafraîchissement immédiat.
+
+Règle unique : énergie strictement `> coût`. Le clignotement à 100 n'entre pas dans cette autorisation.
+
+### Chaîne score diagnostique
+arrêt orbe humain / IA / timeout
+→ cause d'arrêt mémorisée
+→ diagnostic géométrique borné
+→ `colpts` historique inchangé
+→ log FINAL avec erreurs/cubes/pénalités/différence/test égalité
+→ `asb` historique
+→ log LETTER séparé.
+
+La future correction géométrique ne doit être appliquée qu'après mesure téléphone confirmant le décalage.

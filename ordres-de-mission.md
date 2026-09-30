@@ -384,3 +384,122 @@ Score : instrumentation seulement dans ce lot. Conserver formule cubique, `haut[
 
 Candidat de code/CI à tester : version 1.0.3, versionCode 103, commit `d547fb9315f1432f2b5cda4417340fda67abacc5`. Ne pas confondre push Git, succès CI, APK produit et validation téléphone.
 
+
+
+## 2026-09-30 — ASTRA → SOL — JTREX — AVENANT CANONIQUE JT-POWERS-COSTS
+
+Cet avenant remplace les sections « coûts à définir », la condition `>=` et les tests correspondants de l'ordre précédent.
+
+### 1. Coûts approuvés par Fab
+
+```python
+POWER_COSTS = {
+    1: 60,  # ST1 — état 21
+    2: 40,  # ST2 — état 22, soin
+    3: 60,  # ST3 — état 23
+    4: 60,  # TR1 — état 24
+    5: 60,  # TR2 — état 25
+    6: 80,  # TR3 — état 26
+}
+```
+
+Aucun coût ne reste à déterminer.
+
+### 2. Condition canonique
+
+Un pouvoir est utilisable si :
+- la phase autorise son utilisation ;
+- son slot n'a pas déjà été utilisé ;
+- énergie > POWER_COSTS[slot].
+
+Employer strictement `>`, jamais `>=`.
+
+L'énergie historique peut être fractionnaire. Ne pas la convertir en entier et ne pas modifier ses gains.
+
+Exemple : `40,5 > 40` autorise le soin. Après débit, énergie = `0,5`.
+
+### 3. Application commune
+
+Utiliser cette source unique pour :
+- disponibilité visuelle ;
+- bonus/select ;
+- activation tactile ;
+- activation IA ;
+- débit énergétique ;
+- indication sonore de disponibilité.
+
+Revérifier énergie, phase et `selected` au déclenchement réel. Un indicateur visuel précédemment activé ne suffit pas.
+
+Débiter exactement le coût une seule fois. Marquer `selected` et conserver l'interdiction de réutilisation du même slot pendant le combat.
+
+Conserver la décision probabiliste historique de l'IA : être éligible ne signifie pas déclencher obligatoirement.
+
+Auditer les anciens seuils `>60` associés aux pouvoirs. Ne pas remplacer indistinctement tous les nombres 60 du jeu.
+
+Le clignotement à 100 reste un rappel de réserve pleine, indépendant de la disponibilité de chaque pouvoir.
+
+### 4. Tests des limites
+
+Pour chaque slot, avec les autres conditions satisfaites :
+
+Coût 40 :
+- énergie 40 : refus ;
+- énergie 40,5 : autorisation, reste 0,5 ;
+- énergie 41 : autorisation, reste 1.
+
+Coût 60 :
+- énergie 60 : refus ;
+- énergie 60,5 : autorisation, reste 0,5 ;
+- énergie 61 : autorisation, reste 1.
+
+Coût 80 :
+- énergie 80 : refus ;
+- énergie 80,5 : autorisation, reste 0,5 ;
+- énergie 81 : autorisation, reste 1.
+
+Vérifier humain, IA et affichage. Un refus ne doit consommer aucune énergie ni marquer `selected`.
+
+Tester aussi :
+- slot déjà utilisé malgré une recharge suffisante ;
+- deux appuis rapides : une seule consommation ;
+- disponibilités distinctes selon les coûts ;
+- aucune énergie négative.
+
+Mesurer le débit immédiatement après activation, séparément des gains historiques liés aux impacts ultérieurs.
+
+### 5. Périmètre et livraison
+
+Ce patch modifie uniquement les coûts et leurs conditions cohérentes d'utilisation et d'affichage.
+
+Conserver effets, soin, dégâts, gains d'énergie, score, vidéos, timers et chaîne native Android.
+
+Appliquer sur la branche active. Actualiser les mémoires et l'ordre de mission :
+- ST = 60 / 40 / 60 ;
+- TR = 60 / 60 / 80 ;
+- condition = énergie strictement supérieure au coût.
+
+Lancer les tests ciblés puis le workflow Android existant pour construire le nouvel APK, sans modifier cette chaîne.
+
+Livrer :
+📦 `JuneT-Rex-<version>-debug.apk`
+avec l'icône JTrex existante, versionCode, commit, run, SHA-256 et lien de téléchargement.
+
+Distinguer tests réussis, APK produit et validation sur le téléphone de Fab.
+
+### État réel obtenu au 2026-09-30
+
+- Code média/énergie/diagnostic score : présent sur la branche et vérifié par CI.
+- HEAD code construit : `7f83389086ebe847007ddd48e506157ae41f74ad`.
+- Workflow Android : run #32 / ID `36753181725`, succès.
+- Workflow inspection média : run #11 / ID `36753181720`, succès.
+- APK : `JuneT-Rex-1.0.3-debug.apk`.
+- version : `1.0.3`.
+- versionCode : `103`.
+- ABI : `arm64-v8a` + `armeabi-v7a`.
+- Signature : Android Debug.
+- Taille APK : `319081968` octets.
+- SHA-256 APK : `48de9d70a2a6b03f641ff001973e782e7d56e8ec1d9e367c624ca4af85a73fdb`.
+- Les cinq vidéos sont incluses dans `assets/private.tar` de l'APK avec leurs SHA-256 attendus.
+- Les diagnostics contiennent les captures début/milieu/fin des cinq scènes.
+- Aucune correction géométrique du score n'est appliquée : elle reste conditionnée à la preuve téléphone.
+- Validation téléphone des médias, limites d'énergie et géométrie du score : encore à faire par Fab.

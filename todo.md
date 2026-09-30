@@ -498,3 +498,29 @@ Commande interne associée :
 - [ ] Seulement si les mesures le prouvent : appliquer la correction géométrique minimale du centre de fenêtre.
 - [ ] AAB 📦 après stabilisation de l'APK.
 
+
+
+## 2026-09-30 — JT-MEDIA-POWER-SCORE-001 — après run #32
+
+- [x] Coder les cinq scènes de combat selon indexa 1 / 2-4 / 5-7 / 8 / 9.
+- [x] Conserver 10/11 historiques.
+- [x] Combat aspect-fill muet ; intros aspect-fit avec audio.
+- [x] Protéger les callbacks par lecteur + génération et conserver un seul lecteur de scène.
+- [x] Conserver JPEG historiques comme fallback.
+- [x] Appliquer `POWER_COSTS={1:60,2:40,3:60,4:60,5:60,6:80}`.
+- [x] Utiliser strictement énergie `> coût`, jamais `>=`.
+- [x] Partager la même règle entre UI, tactile, IA, débit et disponibilité sonore.
+- [x] Corriger verrou sonore droit et identité visuelle TRFS/TRMA.
+- [x] Ajouter diagnostics score STOP / FINAL / LETTER sans modifier le score.
+- [x] Inspecter les cinq MP4 et produire captures début/milieu/fin.
+- [x] Build Android run #32 vert au commit code `7f83389086ebe847007ddd48e506157ae41f74ad`.
+- [x] Produire APK 1.0.3 / versionCode 103.
+- [x] Vérifier APK : SHA-256 `48de9d70a2a6b03f641ff001973e782e7d56e8ec1d9e367c624ca4af85a73fdb`, 319081968 octets, Android Debug, deux ABI.
+- [ ] Fab : installer l'APK 1.0.3 sur téléphone.
+- [ ] Fab : valider scènes 1 / 2-4 / 5-7 / 8 / 9 et confirmer que 10/11 restent historiques.
+- [ ] Fab : valider touches rouge/bleu et jaune aux bons seuils anim1.
+- [ ] Fab : tester humain et IA à 40/40,5 ; 60/60,5 ; 80/80,5.
+- [ ] Fab : tester deux taps rapides et recharge après slot déjà utilisé.
+- [ ] Fab : fournir logs/captures score déterministes A-F.
+- [ ] Seulement si les mesures le prouvent : appliquer la correction géométrique minimale de la fenêtre-cible.
+- [ ] Ne pas merger main ni publier de release sans validation Fab.

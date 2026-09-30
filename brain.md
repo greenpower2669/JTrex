@@ -1067,3 +1067,34 @@ Commits fonctionnels de ce lot :
 
 À ce point du journal, code poussé ≠ workflow validé ≠ APK produit ≠ téléphone validé. Ces statuts doivent être complétés uniquement avec leurs preuves réelles.
 
+
+
+## 2026-09-30 — JT-MEDIA-POWER-SCORE-001 — état canonique consolidé
+
+Branche Android active : `port/android-first-apk`.
+
+Pouvoirs :
+- ST1 = 60 ; ST2 soin = 40 ; ST3 = 60.
+- TR1 = 60 ; TR2 = 60 ; TR3 = 80.
+- Disponibilité commune : `indexa == 1` ET slot non utilisé ET énergie du camp strictement `> POWER_COSTS[slot]`.
+- L'énergie reste fractionnaire.
+- La table unique alimente UI, bonus/select, tactile, IA, débit et signal de nouvelle disponibilité.
+- Les probabilités IA historiques, effets, dégâts/soin et gains d'énergie ne changent pas.
+
+Médias combat :
+- indexa 1 : attente, vidéo `StegVsTrexvaetviensremolacebisorigune.mp4`, boucle.
+- indexa 2/3/4 : confrontation rouge/bleu, un seul lecteur pour la famille.
+- indexa 5/6/7 : égalité/bouton jaune, un seul lecteur pour la famille.
+- indexa 8 : verdict échange ST.
+- indexa 9 : verdict échange TR.
+- indexa 10/11 restent historiques.
+- Combat : aspect-fill, audio vidéo muet, JPEG historique en fallback.
+- Intros : aspect-fit complet, audio conservé.
+
+Score :
+- formule cubique, `haut[7]`, seuil strict `<20000` et lettres inchangés ;
+- instrumentation STOP / FINAL / LETTER active ;
+- `visual_error` reste diagnostique ;
+- aucune correction géométrique avant preuve téléphone.
+
+Livrable CI de référence du lot : code `7f83389086ebe847007ddd48e506157ae41f74ad`, run Android #32, APK 1.0.3 / versionCode 103, SHA-256 `48de9d70a2a6b03f641ff001973e782e7d56e8ec1d9e367c624ca4af85a73fdb`.

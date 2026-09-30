@@ -537,3 +537,35 @@ Le score reste `max(0, 150000000 - somme(abs(haut[i]-haut[7])**3))`. L'écart co
 
 Statut au moment de cette entrée : modifications Git présentes jusqu'à `d547fb9315f1432f2b5cda4417340fda67abacc5`; tests Actions, APK 1.0.3 et validation téléphone non encore consignés.
 
+
+
+## 2026-09-30 — JT-MEDIA-POWER-SCORE-001 — constats après CI verte
+
+Le run Android #32 (`36753181725`) et le run inspection #11 (`36753181720`) sont verts au commit code `7f83389086ebe847007ddd48e506157ae41f74ad`.
+
+APK produit :
+- `JuneT-Rex-1.0.3-debug.apk`
+- 319081968 octets
+- SHA-256 `48de9d70a2a6b03f641ff001973e782e7d56e8ec1d9e367c624ca4af85a73fdb`
+- arm64-v8a + armeabi-v7a
+- signature Android Debug.
+
+Les cinq médias combat inspectés sont H.264 852×480 avec piste AAC stéréo 44,1 kHz. Aucune rotation n'est signalée. ffprobe retourne PAR/DAR non renseigné pour ces fichiers ; aucune transformation de rotation/PAR particulière n'est donc appliquée dans le runtime.
+
+Durées observées :
+- rouge/bleu : 3.791667 s ;
+- jaune : 6.757007 s ;
+- attente : 11.333334 s ;
+- verdict ST : 7.166667 s ;
+- verdict TR : 3.625000 s.
+
+Les captures début/milieu/fin montrent que les scènes 15, 16, 60 et 61 commencent et finissent sur des frames quasi noires de transition, tandis que l'action utile apparaît au milieu. La scène 20 montre l'action sur les trois captures. Ceci est une propriété des pixels de la vidéo, pas une marge créée par l'aspect-fill.
+
+Non validé à ce stade :
+- comportement réel des cinq scènes sur le téléphone ;
+- limites d'énergie 40/40,5, 60/60,5 et 80/80,5 en interaction réelle ;
+- absence de double activation sous taps rapides en conditions téléphone ;
+- cause géométrique du score sur écran réel ;
+- correction géométrique éventuelle.
+
+Ne pas déclarer ces points corrigés/validés avant retour Fab.
