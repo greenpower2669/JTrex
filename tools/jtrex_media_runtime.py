@@ -1,7 +1,8 @@
 """Kivy video integration for June T-Rex.
 
-Gameplay stays in the historical main.py. This module owns only the random
-launch intro and the visual wait-loop replacement.
+Gameplay stays in the historical main.py. This module owns launch intros and
+visual replacements for selected combat scenes. Video EOS never changes the
+historical state machine.
 """
 
 import random
@@ -19,7 +20,34 @@ INTRO_FILES = (
     "assets/intro/JTrexintro2.mp4",
     "assets/intro/JTrexintro3.mp4",
 )
-WAIT_FILE = "assets/combat/StegVsTrexvaetviensremolace.mp4"
+
+SCENES = {
+    "wait": {
+        "states": frozenset((1,)),
+        "file": "assets/combat/StegVsTrexvaetviensremolacebisorigune.mp4",
+        "loop": True,
+    },
+    "charge": {
+        "states": frozenset((2, 3, 4)),
+        "file": "assets/combat/Chargestegtrexchargerougebleu.mp4",
+        "loop": False,
+    },
+    "yellow": {
+        "states": frozenset((5, 6, 7)),
+        "file": "assets/combat/Stegtrexegalitechargeboutonjaune.mp4",
+        "loop": False,
+    },
+    "st-win": {
+        "states": frozenset((8,)),
+        "file": "assets/combat/Stegtrexresultstegwin.mp4",
+        "loop": False,
+    },
+    "tr-win": {
+        "states": frozenset((9,)),
+        "file": "assets/combat/Stegtrexresulttrexwin.mp4",
+        "loop": False,
+    },
+}
 
 
 class IntroOverlay(Widget):
@@ -51,6 +79,7 @@ class IntroOverlay(Widget):
         ww, wh = self.size
         if tw <= 0 or th <= 0 or ww <= 0 or wh <= 0:
             return
+        # Intros deliberately remain aspect-fit / complete.
         scale = min(ww / float(tw), wh / float(th))
         vw, vh = tw * scale, th * scale
         self._video.size = (vw, vh)
@@ -78,13 +107,23 @@ class JTMediaController:
         self._intro_timeout = None
         self._intro_done_callback = None
         self._intro_done = False
-        self._wait_player = None
-        self._wait_timeout = None
-        self._wait_has_frame = False
-        self._wait_rect_pos = None
-        self._wait_rect_size = None
+
+        self._scene_player = None
+        self._scene_key = None
+        self._scene_generation = 0
+        self._scene_has_frame = False
+        self._scene_timeout = None
+        self._scene_frame_callback = None
+        self._scene_eos_callback = None
+        self._scene_failed_key = None
+        self._scene_rect_pos = None
+        self._scene_rect_size = None
         self._paused_player = None
+
+        self.root._jt_scene_video_active = False
+        # Compatibility with the first wait-only integration.
         self.root._jt_wait_video_active = False
+
         provider = getattr(CoreVideo, "__module__", repr(CoreVideo))
         print("[JT-MEDIA] video provider={}".format(provider), flush=True)
 
@@ -97,16 +136,32 @@ class JTMediaController:
         return str(path) if path.is_file() else None
 
     @staticmethod
-    def _fit_rectangle(rectangle, texture, bounds_pos, bounds_size):
+    def _cover_rectangle(rectangle, texture, bounds_pos, bounds_size):
+        """Aspect-fill a game scene while preserving source proportions."""
         tw, th = texture.size
         bw, bh = bounds_size
         bx, by = bounds_pos
         if tw <= 0 or th <= 0 or bw <= 0 or bh <= 0:
             return
-        scale = min(bw / float(tw), bh / float(th))
+        scale = max(bw / float(tw), bh / float(th))
         rw, rh = tw * scale, th * scale
         rectangle.size = (rw, rh)
         rectangle.pos = (bx + (bw - rw) / 2.0, by + (bh - rh) / 2.0)
+
+    def _game_bounds(self):
+        pos = tuple(getattr(self.root, "pos", (0, 0)))
+        size = tuple(getattr(self.root, "size", (0, 0)))
+        if size[0] <= 0 or size[1] <= 0:
+            pos = self._scene_rect_pos or tuple(self.root.deux.pos)
+            size = self._scene_rect_size or tuple(self.root.deux.size)
+        return pos, size
+
+    @staticmethod
+    def _key_for_state(indexa):
+        for key, scene in SCENES.items():
+            if indexa in scene["states"]:
+                return key
+        return None
 
     def start_intro(self, done_callback):
         if self._intro_done:
@@ -130,7 +185,7 @@ class JTMediaController:
             self._intro_overlay = overlay
             self._intro_player = player
             self._intro_timeout = Clock.schedule_once(
-                lambda dt: self._finish_intro("timeout"), 20.0
+                lambda dt: self._finish_intro("timeout"), 40.0
             )
             print("[JT-INTRO] begin={}".format(chosen), flush=True)
             player.play()
@@ -176,84 +231,184 @@ class JTMediaController:
         if callback is not None:
             Clock.schedule_once(lambda dt: callback(), 0)
 
-    def sync_wait_state(self, indexa):
+    def sync_scene_state(self, indexa):
+        """Follow the state *after* the historical engine has transitioned."""
         if not self._intro_done:
             return
-        if indexa == 1:
-            if self._wait_player is None and not self.root._jt_wait_video_active:
-                self._start_wait_video()
-        elif self._wait_player is not None or self.root._jt_wait_video_active:
-            self._stop_wait_video("state={}".format(indexa))
-
-    def _start_wait_video(self):
-        path = self._resolve(WAIT_FILE)
-        if not path or CoreVideo is None:
-            print("[JT-WAIT][ERROR] video/provider unavailable; historical frames kept", flush=True)
-            self.root._jt_wait_video_active = False
+        key = self._key_for_state(indexa)
+        if key == self._scene_key and self._scene_player is not None:
+            # Families 2/3/4 and 5/6/7 deliberately keep one player.
             return
+        if key == self._scene_failed_key and self._scene_key == key:
+            return
+        if key != self._scene_key:
+            self._stop_scene("state={}".format(indexa), preserve_failure=False)
+        if key is None:
+            self._scene_failed_key = None
+            return
+        if self._scene_player is None:
+            self._start_scene(key, indexa)
+
+    # Backward-compatible name used by older generated main.py revisions.
+    def sync_wait_state(self, indexa):
+        self.sync_scene_state(indexa)
+
+    def _start_scene(self, key, indexa):
+        scene = SCENES[key]
+        path = self._resolve(scene["file"])
+        self._scene_key = key
+        self._scene_generation += 1
+        generation = self._scene_generation
+        self._scene_has_frame = False
+        self.root._jt_scene_video_active = False
+        self.root._jt_wait_video_active = False
+
+        if not path or CoreVideo is None:
+            self._scene_failed_key = key
+            print(
+                "[JT-SCENE][ERROR] key={} file={} unavailable; historical frames kept".format(
+                    key, scene["file"]
+                ),
+                flush=True,
+            )
+            return
+
         try:
-            self._wait_has_frame = False
-            self._wait_rect_pos = tuple(self.root.deux.pos)
-            self._wait_rect_size = tuple(self.root.deux.size)
-            self.root._jt_wait_video_active = True
-            player = CoreVideo(filename=path, eos="loop", autoplay=False)
+            self._scene_rect_pos = tuple(self.root.deux.pos)
+            self._scene_rect_size = tuple(self.root.deux.size)
+            eos_policy = "loop" if scene["loop"] else "pause"
+            player = CoreVideo(filename=path, eos=eos_policy, autoplay=False)
             player.volume = 0.0
-            player.bind(on_frame=self._on_wait_frame)
-            self._wait_player = player
-            self._wait_timeout = Clock.schedule_once(self._wait_frame_timeout, 4.0)
-            print("[JT-WAIT] enter={} audio=muted".format(WAIT_FILE), flush=True)
+
+            def frame_callback(bound_player, *args):
+                self._on_scene_frame(bound_player, generation)
+
+            def eos_callback(bound_player, *args):
+                self._on_scene_eos(bound_player, generation)
+
+            self._scene_frame_callback = frame_callback
+            self._scene_eos_callback = eos_callback
+            player.bind(on_frame=frame_callback, on_eos=eos_callback)
+            self._scene_player = player
+            self._scene_timeout = Clock.schedule_once(
+                lambda dt: self._scene_frame_timeout(generation), 4.0
+            )
+            print(
+                "[JT-SCENE] enter key={} state={} file={} loop={} audio=muted generation={}".format(
+                    key, indexa, scene["file"], scene["loop"], generation
+                ),
+                flush=True,
+            )
             player.play()
         except Exception as exc:
-            print("[JT-WAIT][ERROR] {!r}; historical frames kept".format(exc), flush=True)
-            self._stop_wait_video("exception")
+            self._scene_failed_key = key
+            print(
+                "[JT-SCENE][ERROR] key={} {!r}; historical frames kept".format(
+                    key, exc
+                ),
+                flush=True,
+            )
+            self._stop_scene("exception", preserve_failure=True)
 
-    def _on_wait_frame(self, player, *args):
+    def _on_scene_frame(self, player, generation):
+        if (
+            player is not self._scene_player
+            or generation != self._scene_generation
+            or self._scene_key is None
+        ):
+            return
         texture = player.texture
         if texture is None:
             return
-        self._wait_has_frame = True
-        if self._wait_timeout is not None:
-            self._wait_timeout.cancel()
-            self._wait_timeout = None
+
+        self._scene_has_frame = True
+        if self._scene_timeout is not None:
+            self._scene_timeout.cancel()
+            self._scene_timeout = None
+
         self.root.deux.texture = texture
-        if self._wait_rect_pos is not None and self._wait_rect_size is not None:
-            self._fit_rectangle(
-                self.root.deux, texture, self._wait_rect_pos, self._wait_rect_size
+        self.root._jt_scene_video_active = True
+        self.root._jt_wait_video_active = self._scene_key == "wait"
+        bounds_pos, bounds_size = self._game_bounds()
+        self._cover_rectangle(self.root.deux, texture, bounds_pos, bounds_size)
+
+    def _on_scene_eos(self, player, generation):
+        if player is not self._scene_player or generation != self._scene_generation:
+            return
+        # eos=loop handles wait; eos=pause keeps the last decoded frame.
+        print(
+            "[JT-SCENE] eos key={} generation={} state-machine=unchanged".format(
+                self._scene_key, generation
+            ),
+            flush=True,
+        )
+
+    def _scene_frame_timeout(self, generation):
+        if generation != self._scene_generation:
+            return
+        self._scene_timeout = None
+        if not self._scene_has_frame:
+            key = self._scene_key
+            self._scene_failed_key = key
+            print(
+                "[JT-SCENE][ERROR] key={} no frame after 4s; historical frames restored".format(
+                    key
+                ),
+                flush=True,
             )
+            self._stop_scene("no-frame", preserve_failure=True)
 
-    def _wait_frame_timeout(self, dt):
-        self._wait_timeout = None
-        if not self._wait_has_frame:
-            print("[JT-WAIT][ERROR] no frame after 4s; historical frames restored", flush=True)
-            self._stop_wait_video("no-frame")
+    def _stop_scene(self, reason, preserve_failure=False):
+        key = self._scene_key
+        self._scene_generation += 1
+        if self._scene_timeout is not None:
+            self._scene_timeout.cancel()
+            self._scene_timeout = None
 
-    def _stop_wait_video(self, reason):
-        if self._wait_timeout is not None:
-            self._wait_timeout.cancel()
-            self._wait_timeout = None
-        player = self._wait_player
-        self._wait_player = None
+        player = self._scene_player
+        frame_callback = self._scene_frame_callback
+        eos_callback = self._scene_eos_callback
+        self._scene_player = None
+        self._scene_frame_callback = None
+        self._scene_eos_callback = None
+
+        self.root._jt_scene_video_active = False
         self.root._jt_wait_video_active = False
-        self._wait_has_frame = False
+        self._scene_has_frame = False
+
         if player is not None:
             try:
-                player.unbind(on_frame=self._on_wait_frame)
+                if frame_callback is not None:
+                    player.unbind(on_frame=frame_callback)
+                if eos_callback is not None:
+                    player.unbind(on_eos=eos_callback)
             except Exception:
                 pass
             try:
                 player.unload()
             except Exception as exc:
-                print("[JT-WAIT][WARN] unload={!r}".format(exc), flush=True)
-        if self._wait_rect_pos is not None:
-            self.root.deux.pos = self._wait_rect_pos
-        if self._wait_rect_size is not None:
-            self.root.deux.size = self._wait_rect_size
-        self._wait_rect_pos = None
-        self._wait_rect_size = None
-        print("[JT-WAIT] exit reason={}".format(reason), flush=True)
+                print("[JT-SCENE][WARN] unload={!r}".format(exc), flush=True)
+
+        # Restore geometry before historical JPEG rendering resumes.
+        if self._scene_rect_pos is not None:
+            self.root.deux.pos = self._scene_rect_pos
+        if self._scene_rect_size is not None:
+            self.root.deux.size = self._scene_rect_size
+        self._scene_rect_pos = None
+        self._scene_rect_size = None
+
+        self._scene_key = key if preserve_failure else None
+        if not preserve_failure:
+            self._scene_failed_key = None
+        print(
+            "[JT-SCENE] exit key={} reason={} generation={}".format(
+                key, reason, self._scene_generation
+            ),
+            flush=True,
+        )
 
     def on_pause(self):
-        player = self._intro_player or self._wait_player
+        player = self._intro_player or self._scene_player
         self._paused_player = None
         if player is not None and getattr(player, "state", "") == "playing":
             try:
@@ -276,4 +431,4 @@ class JTMediaController:
     def shutdown(self):
         if not self._intro_done:
             self._finish_intro("shutdown")
-        self._stop_wait_video("shutdown")
+        self._stop_scene("shutdown", preserve_failure=False)
