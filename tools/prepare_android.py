@@ -129,7 +129,17 @@ def adapt_main(source):
         + newline
         + "\t\tbonus[slot]=available"
         + newline
-        + "\t\tPOWER_READY_STATE[slot]=available",
+        + "\t\tPOWER_READY_STATE[slot]=available"
+        + newline
+        + "def jt_sync_scene_now():"
+        + newline
+        + "\tapp=App.get_running_app()"
+        + newline
+        + "\tmedia_controller=getattr(app,'_jt_media',None) if app is not None else None"
+        + newline
+        + "\tif media_controller is not None:"
+        + newline
+        + "\t\tmedia_controller.sync_scene_state(indexa)",
         1,
     )
 
@@ -234,14 +244,16 @@ def colpts():
     score_diff = abs(left_score-right_score)
     strict_tie = score_diff < 20000
     _JT_ORIGINAL_COLPTS()
+    chosen_state = 7 if colptsg and colptsd else (8 if colptsg else 9)
     print(
-        '[JT-SCORE][FINAL] exchange={} positions={} target={} '
+        '[JT-SCORE][FINAL] exchange={} positions={} target={} chosen_state={} '
         'left_errors={} left_cubes={} left_penalty={} left_raw={} left_score={} '
         'right_errors={} right_cubes={} right_penalty={} right_raw={} right_score={} '
         'diff={} tie_lt_20000={} colptsg={} colptsd={} degdt={} deggt={}'.format(
             _JT_EXCHANGE_ID,
             [haut[i] for i in range(1,7)],
             haut[7],
+            chosen_state,
             left_errors,left_cubes,left_penalty,left_score_raw,left_score,
             right_errors,right_cubes,right_penalty,right_score_raw,right_score,
             score_diff,strict_tie,colptsg,colptsd,degdt,deggt,
@@ -263,7 +275,7 @@ def asb(self, quia, quib):
     )
     return result
 
-def _jt_log_new_stops(self):
+def _jt_log_new_stops(self, observer):
     rectangles = {1:self.grb,2:self.gvb,3:self.gbb,4:self.drb,5:self.dvb,6:self.dbb}
     targets = {1:self.c3cg,2:self.c3cg,3:self.c3cg,4:self.c3cd,5:self.c3cd,6:self.c3cd}
     for i in range(1,7):
@@ -277,22 +289,32 @@ def _jt_log_new_stops(self):
             signed = orb_center[1]-target_center[1]
             legacy_error = abs(haut[i]-haut[7])
             visual_error = abs(signed)
+            texture = getattr(rect,'texture',None)
+            target_texture = getattr(target,'texture',None)
+            texture_size = getattr(texture,'size',None)
+            target_texture_size = getattr(target_texture,'size',None)
+            tex_coords = getattr(rect,'tex_coords',None)
+            target_tex_coords = getattr(target,'tex_coords',None)
             try:
+                widget_window_origin = self.to_window(0,0)
                 window_center = self.to_window(orb_center[0],orb_center[1])
                 target_window_center = self.to_window(target_center[0],target_center[1])
             except Exception:
+                widget_window_origin = (0,0)
                 window_center = orb_center
                 target_window_center = target_center
             print(
-                '[JT-SCORE][STOP] exchange={} orb={} camp={} cause={} timestamp={} indexa={} '
-                'haut={} target_haut={} logical_size={} rect_pos={} rect_size={} '
+                '[JT-SCORE][STOP] exchange={} orb={} camp={} cause={} observer={} timestamp={} indexa={} '
+                'logical_pos={} target_haut={} logical_size={} rect_pos={} rect_size={} '
                 'orb_center={} target_pos={} target_size={} target_center={} '
-                'window_center={} target_window_center={} legacy_error={} visual_error={} '
-                'signed={} Window={} historical={} mdo={}'.format(
-                    _JT_EXCHANGE_ID,i,'ST' if i<4 else 'TR',_JT_STOP_CAUSE[i],time.time(),indexa,
-                    haut[i],haut[7],mdo,rect.pos,rect.size,orb_center,target.pos,target.size,target_center,
-                    window_center,target_window_center,legacy_error,visual_error,signed,Window.size,
-                    (xmax,ymax),mdo,
+                'widget_window_origin={} window_center={} target_window_center={} '
+                'legacy_error={} visual_error={} signed={} texture_size={} target_texture_size={} '
+                'tex_coords={} target_tex_coords={} Window={} historical={} mdo={}'.format(
+                    _JT_EXCHANGE_ID,i,'ST' if i<4 else 'TR',_JT_STOP_CAUSE[i],observer,time.time(),indexa,
+                    (col[i],haut[i]),haut[7],mdo,rect.pos,rect.size,orb_center,target.pos,target.size,target_center,
+                    widget_window_origin,window_center,target_window_center,
+                    legacy_error,visual_error,signed,texture_size,target_texture_size,
+                    tex_coords,target_tex_coords,Window.size,(xmax,ymax),mdo,
                 ),
                 flush=True,
             )
@@ -464,6 +486,11 @@ def _jt_log_new_stops(self):
                 insertions.append((index + 1, prefix + f"_JT_STOP_CAUSE[{slot_text}]='human'" + newline))
     for index, line in reversed(insertions):
         lines[index:index] = [line]
+    start, end = method_bounds(lines, "on_touch_down")
+    touch_body_indent = lines[start + 1][
+        : len(lines[start + 1]) - len(lines[start + 1].lstrip(" \t"))
+    ]
+    lines[end:end] = [touch_body_indent + "jt_sync_scene_now()" + newline]
 
     start, end = method_bounds(lines, "carupdate")
     for index in range(start, end):
@@ -473,6 +500,11 @@ def _jt_log_new_stops(self):
             break
     else:
         raise RuntimeError("Arrêt timeout carupdate introuvable.")
+    start, end = method_bounds(lines, "carupdate")
+    car_body_indent = lines[start + 1][
+        : len(lines[start + 1]) - len(lines[start + 1].lstrip(" \t"))
+    ]
+    lines[end:end] = [car_body_indent + "jt_sync_scene_now()" + newline]
 
     start, end = method_bounds(lines, "colvv")
     ai_insertions = []
@@ -489,9 +521,12 @@ def _jt_log_new_stops(self):
         lines[index:index] = [line]
     start, end = method_bounds(lines, "colvv")
     body_indent = lines[start + 1][: len(lines[start + 1]) - len(lines[start + 1].lstrip(" \t"))]
-    lines[start + 2:start + 2] = [body_indent + "_jt_log_new_stops(self)" + newline]
+    lines[start + 2:start + 2] = [body_indent + "_jt_log_new_stops(self, 'colvv-pre-update')" + newline]
     start, end = method_bounds(lines, "colvv")
-    lines[end:end] = [body_indent + "_jt_log_new_stops(self)" + newline]
+    lines[end:end] = [
+        body_indent + "_jt_log_new_stops(self, 'colvv-post-update')" + newline,
+        body_indent + "jt_sync_scene_now()" + newline,
+    ]
 
     start, end = method_bounds(lines, "on_pause")
     lifecycle = [
