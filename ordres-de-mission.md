@@ -371,3 +371,16 @@ Astra autorise un seul changement fonctionnel : ajouter `-Wl,-z,global` à la li
 Le run #19 (ID `36437050585`) sur le commit `e0c374fe7f436ea12ef07a9676916033cd5f6fcf` produit un APK où libpython3.12.so possède `FLAGS_1: NOW GLOBAL` sur arm64-v8a et armeabi-v7a. `PyExc_MemoryError` reste exporté. SHA-256 : `945f795bce1b925ac981df48bbd3781d73d5816927ef4356ce00e2875068a241`.
 
 Le DT_SONAME explicite reste absent comme au run #18 et n'est pas modifié dans cette mission. L'hypothèse GLOBAL est correctement matérialisée ; la prochaine étape est uniquement le test téléphone. Si une erreur subsiste, rapporter la première nouvelle erreur sans ajouter un second correctif.
+
+## 2026-09-30 — JT-MEDIA-POWER-SCORE-001 — ordre canonique Fab
+
+Mission active sur `port/android-first-apk`. Base fonctionnelle initiale `a6caa620e51281d4a2a8dc854830f15b5db66c7b`. Préserver intégralement la chaîne native actuellement fonctionnelle.
+
+Médias : indexa 1 = attente `StegVsTrexvaetviensremolacebisorigune.mp4`; 2/3/4 = confrontation rouge/bleu ; 5/6/7 = égalité bouton jaune ; 8 = victoire échange ST ; 9 = victoire échange TR. Les états 10/11 restent historiques. Combat en aspect-fill et muet ; intros intégrales en aspect-fit avec audio.
+
+Pouvoirs : source unique `POWER_COSTS={1:60,2:40,3:60,4:60,5:60,6:80}`. Condition canonique : phase autorisée ET slot non utilisé ET énergie strictement supérieure au coût. Ne jamais convertir en `>=`. L'énergie fractionnaire et ses gains historiques sont conservés.
+
+Score : instrumentation seulement dans ce lot. Conserver formule cubique, `haut[7]`, seuil strict d'égalité <20000 et lettres. Ne corriger la géométrie qu'après preuve téléphone.
+
+Candidat de code/CI à tester : version 1.0.3, versionCode 103, commit `d547fb9315f1432f2b5cda4417340fda67abacc5`. Ne pas confondre push Git, succès CI, APK produit et validation téléphone.
+
