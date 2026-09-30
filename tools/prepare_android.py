@@ -117,7 +117,19 @@ def adapt_main(source):
         + newline
         + "\tenergy=stamg if slot<4 else stamd"
         + newline
-        + "\treturn indexa==1 and not selected[slot] and energy>POWER_COSTS[slot]",
+        + "\treturn indexa==1 and not selected[slot] and energy>POWER_COSTS[slot]"
+        + newline
+        + "def jt_refresh_power_flags():"
+        + newline
+        + "\tfor slot in range(1,7):"
+        + newline
+        + "\t\tavailable=jt_power_available(slot)"
+        + newline
+        + "\t\tselect[slot]=available"
+        + newline
+        + "\t\tbonus[slot]=available"
+        + newline
+        + "\t\tPOWER_READY_STATE[slot]=available",
         1,
     )
 
@@ -156,7 +168,7 @@ def adapt_main(source):
             f"indexa={state};stamg-=60;selected[{slot}]=True",
             (
                 f"energy_before=stamg;cost=POWER_COSTS[{slot}];"
-                f"stamg-=cost;selected[{slot}]=True;indexa={state};"
+                f"stamg-=cost;selected[{slot}]=True;indexa={state};jt_refresh_power_flags();"
                 f"print('[JT-POWER] camp=ST slot={slot} state={state} before={{}} cost={{}} after={{}}'.format("
                 "energy_before,cost,stamg),flush=True)"
             ),
@@ -168,7 +180,7 @@ def adapt_main(source):
             f"indexa={state};stamd-=60;selected[{slot}]=True",
             (
                 f"energy_before=stamd;cost=POWER_COSTS[{slot}];"
-                f"stamd-=cost;selected[{slot}]=True;indexa={state};"
+                f"stamd-=cost;selected[{slot}]=True;indexa={state};jt_refresh_power_flags();"
                 f"print('[JT-POWER] camp=TR slot={slot} state={state} before={{}} cost={{}} after={{}}'.format("
                 "energy_before,cost,stamd),flush=True)"
             ),
@@ -178,25 +190,25 @@ def adapt_main(source):
     source = replace_exact(
         source,
         "if vsg and indexa==1 and computer(10000,lvlg) and stamg>60 and select[i] and not selected[i]:",
-        "if vsg and computer(10000,lvlg) and jt_power_available(i):",
+        "if vsg and indexa==1 and computer(10000,lvlg) and jt_power_available(i):",
         1,
     )
     source = replace_exact(
         source,
         "selected[i]=True;indexa=20+i;stamg-=60",
-        "energy_before=stamg;cost=POWER_COSTS[i];stamg-=cost;selected[i]=True;indexa=20+i;print('[JT-POWER] camp=ST ai=1 slot={} state={} before={} cost={} after={}'.format(i,20+i,energy_before,cost,stamg),flush=True)",
+        "energy_before=stamg;cost=POWER_COSTS[i];stamg-=cost;selected[i]=True;indexa=20+i;jt_refresh_power_flags();print('[JT-POWER] camp=ST ai=1 slot={} state={} before={} cost={} after={}'.format(i,20+i,energy_before,cost,stamg),flush=True)",
         1,
     )
     source = replace_exact(
         source,
         "if vsd and indexa==1 and computer(10000,lvld) and stamd>60 and select[i] and not selected[i]:",
-        "if vsd and computer(10000,lvld) and jt_power_available(i):",
+        "if vsd and indexa==1 and computer(10000,lvld) and jt_power_available(i):",
         1,
     )
     source = replace_exact(
         source,
         "selected[i]=True;indexa=20+i;stamd-=60",
-        "energy_before=stamd;cost=POWER_COSTS[i];stamd-=cost;selected[i]=True;indexa=20+i;print('[JT-POWER] camp=TR ai=1 slot={} state={} before={} cost={} after={}'.format(i,20+i,energy_before,cost,stamd),flush=True)",
+        "energy_before=stamd;cost=POWER_COSTS[i];stamd-=cost;selected[i]=True;indexa=20+i;jt_refresh_power_flags();print('[JT-POWER] camp=TR ai=1 slot={} state={} before={} cost={} after={}'.format(i,20+i,energy_before,cost,stamd),flush=True)",
         1,
     )
 
