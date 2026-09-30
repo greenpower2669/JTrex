@@ -569,3 +569,8 @@ Non validé à ce stade :
 - correction géométrique éventuelle.
 
 Ne pas déclarer ces points corrigés/validés avant retour Fab.
+
+
+## 2026-09-30 — JT-MEDIA-AUDIO-001 — audio natif des vidéos de combat
+
+Correction codée : les vidéos de combat ne sont plus volontairement muettes ; l'audio MP4 est activé au premier frame exploitable et l'ancien son de scène est stoppé à ce moment. Risques restant à valider sur téléphone : double son résiduel, audio continu après transition, synchronisation de la boucle indexa 1 et pause/reprise. Ne pas déclarer ces points validés avant test réel.
