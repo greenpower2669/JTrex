@@ -102,8 +102,9 @@ jobs:
 
           required_main = (
               "POWER_COSTS={1:60,2:40,3:60,4:60,5:60,6:80}",
-              "stamg>POWER_COSTS[i]",
-              "stamd>POWER_COSTS[i]",
+              "def jt_power_available(slot):",
+              "energy>POWER_COSTS[slot]",
+              "jt_power_available(i)",
               "[JT-POWER]",
               "[JT-SCORE][STOP]",
               "[JT-SCORE][FINAL]",
@@ -120,6 +121,13 @@ jobs:
               "stamd>60 and select[i]",
               "stamg-=60;selected[",
               "stamd-=60;selected[",
+              "and select[i] and not selected[i]",
+              "and bonus[1] and collide",
+              "and bonus[2] and collide",
+              "and bonus[3] and collide",
+              "and bonus[4] and collide",
+              "and bonus[5] and collide",
+              "and bonus[6] and collide",
               "babokpbd=False",
           )
           for token in forbidden_main:
