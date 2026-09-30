@@ -1098,3 +1098,8 @@ Score :
 - aucune correction géométrique avant preuve téléphone.
 
 Livrable CI de référence du lot : code `7f83389086ebe847007ddd48e506157ae41f74ad`, run Android #32, APK 1.0.3 / versionCode 103, SHA-256 `48de9d70a2a6b03f641ff001973e782e7d56e8ec1d9e367c624ca4af85a73fdb`.
+
+
+## 2026-09-30 — JT-MEDIA-AUDIO-001 — audio natif des vidéos de combat
+
+Règle audio combat : vidéo effectivement active = image + son natif du MP4. Avant la première frame utilisable ou en fallback média = rendu/son historiques. La bascule ne doit jamais superposer les deux bandes-son. L'attente indexa 1 boucle désormais avec l'audio du MP4 ; les autres vidéos conservent leur politique EOS sans agir sur indexa.
