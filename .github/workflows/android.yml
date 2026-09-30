@@ -95,6 +95,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 - <<'PY'
+          import ast
           from pathlib import Path
 
           main = Path("app/main.py").read_text(encoding="utf-8")
@@ -147,9 +148,56 @@ jobs:
               if token not in runtime:
                   raise SystemExit(f"missing runtime token: {token}")
 
+          tree = ast.parse(main, filename="app/main.py")
+          helper_names = {"jt_power_available", "jt_refresh_power_flags"}
+          helpers = [
+              node for node in tree.body
+              if isinstance(node, ast.FunctionDef) and node.name in helper_names
+          ]
+          if {node.name for node in helpers} != helper_names:
+              raise SystemExit("canonical power helpers missing from generated main")
+
+          ns = {
+              "POWER_COSTS": {1:60,2:40,3:60,4:60,5:60,6:80},
+              "POWER_READY_STATE": {i:False for i in range(1,7)},
+              "stamg": 0.0,
+              "stamd": 0.0,
+              "indexa": 1,
+              "selected": [False] * 7,
+              "select": [False] * 7,
+              "bonus": [False] * 7,
+              "range": range,
+          }
+          exec(compile(ast.Module(body=helpers, type_ignores=[]), "<power-helpers>", "exec"), ns)
+
+          for slot, cost in ns["POWER_COSTS"].items():
+              energy_name = "stamg" if slot < 4 else "stamd"
+              ns["selected"] = [False] * 7
+              ns["indexa"] = 1
+              ns[energy_name] = float(cost)
+              assert ns["jt_power_available"](slot) is False, (slot, cost, "exact")
+              ns[energy_name] = float(cost) + 0.5
+              assert ns["jt_power_available"](slot) is True, (slot, cost, "+0.5")
+              ns["selected"][slot] = True
+              assert ns["jt_power_available"](slot) is False, (slot, cost, "used")
+              ns["selected"][slot] = False
+              ns["indexa"] = 0
+              assert ns["jt_power_available"](slot) is False, (slot, cost, "phase")
+              ns["indexa"] = 1
+
+          ns["stamg"], ns["stamd"] = 40.5, 80.5
+          ns["selected"] = [False] * 7
+          ns["jt_refresh_power_flags"]()
+          assert ns["select"][2] and ns["bonus"][2]
+          assert not ns["select"][1] and not ns["bonus"][1]
+          assert ns["select"][6] and ns["bonus"][6]
+          assert main.count("jt_refresh_power_flags();print('[JT-POWER]") == 8
+          assert main.count("stamg-=cost") == 4
+          assert main.count("stamd-=cost") == 4
+
           compile(main, "app/main.py", "exec")
           compile(runtime, "app/jtrex_media_runtime.py", "exec")
-          print("JT validation: generated Python compiles and canonical markers are present")
+          print("JT validation: generated Python compiles; canonical power boundary tests pass")
           PY
 
       - name: Install Buildozer system dependencies
