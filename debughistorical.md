@@ -524,3 +524,16 @@ Le run #19 compile avec succès l'unique hypothèse Astra. L'APK final contient 
 Observation conservée : aucun `DT_SONAME` explicite n'est présent dans le libpython final, comme dans le run #18. Aucun correctif supplémentaire n'est appliqué.
 
 La cause runtime n'est pas encore déclarée corrigée : seul un lancement téléphone peut confirmer la disparition de l'erreur `cannot locate symbol "PyExc_MemoryError"` et la progression du bootstrap.
+
+## 2026-09-30 — JT-MEDIA-POWER-SCORE-001 — garde de non-régression
+
+État de départ vérifié : `port/android-first-apk` = `a6caa620e51281d4a2a8dc854830f15b5db66c7b`. Aucun changement natif autorisé ni appliqué dans ce lot. Les correctifs qui ont rendu le bootstrap Android fonctionnel restent intacts.
+
+Médias importés sans merge de main, depuis leurs blobs existants. Le runtime remplace uniquement l'image de fond des états 1, familles 2/3/4 et 5/6/7, 8 et 9. EOS n'agit jamais sur `indexa`, dégâts ou timers. 10/11 ne sont pas remplacés.
+
+Le débit historique unique 60 des six pouvoirs est remplacé seulement sur les six chemins de pouvoirs par la table Fab : 60/40/60 | 60/60/80. La garde est strictement `>`. Les autres constantes 60 du jeu ne doivent pas être modifiées par généralisation.
+
+Le score reste `max(0, 150000000 - somme(abs(haut[i]-haut[7])**3))`. L'écart connu entre la cible `haut[7]` et le centre de la fenêtre affichée est instrumenté, pas corrigé. Toute correction future exige une preuve téléphone et doit rester géométrique/minimale.
+
+Statut au moment de cette entrée : modifications Git présentes jusqu'à `d547fb9315f1432f2b5cda4417340fda67abacc5`; tests Actions, APK 1.0.3 et validation téléphone non encore consignés.
+
