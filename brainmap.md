@@ -678,3 +678,35 @@ Run #18 : libpython FLAGS_1=NOW seulement → patch recette python3 3.12.14 → 
 ### Run #19 — chaîne statique validée
 
 patch recette python3 3.12.14 ✅ → Makefile libpython.so reçoit `-Wl,-z,global` ✅ → build arm64-v8a + armeabi-v7a ✅ → APK final `FLAGS_1: NOW GLOBAL` sur les deux ABI ✅ → `PyExc_MemoryError` toujours exporté ✅ → test téléphone requis → vérifier disparition du dlopen sur zlib → vérifier Py_InitializeFromConfig → vérifier [JT-BOOT].
+
+## 2026-09-30 — JT-MEDIA-POWER-SCORE-001
+
+`a6caa620` base Android fonctionnelle confirmée par Fab
+→ ne pas toucher chaîne native
+→ import sélectif 5 blobs depuis main `a088804`
+→ scènes moteur : 1 / {2,3,4} / {5,6,7} / 8 / 9
+→ un lecteur par famille, combat muet, aspect-fill, intro aspect-fit+audio
+→ 10/11 restent JPEG historiques
+→ fallback JPEG jusqu'à première frame / échec borné / génération anti-frame obsolète.
+
+Pouvoirs :
+Fab → ST 60/40/60 ; TR 60/60/80
+→ `POWER_COSTS` source unique
+→ phase autorisée + non utilisé + énergie strictement > coût
+→ même règle UI / touch / IA / débit / son
+→ énergie float conservée
+→ slot unique par combat
+→ slot4 visuel TRFS ; slot6 visuel TRMA
+→ clignotement 100 indépendant.
+
+Score :
+score cubique historique conservé
+→ logs STOP + FINAL + LETTER
+→ comparer logique/rendu/centre visuel
+→ `visual_error` diagnostic seulement
+→ aucune correction géométrique avant mesure téléphone
+→ si preuve : patch minimal alignant la fenêtre sur la cible historique, sans changer score/seuil/lettres.
+
+Version lot : 1.0.3 / versionCode 103.
+Commit CI candidat : `d547fb9315f1432f2b5cda4417340fda67abacc5`.
+
