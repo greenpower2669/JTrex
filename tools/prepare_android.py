@@ -111,34 +111,40 @@ def adapt_main(source):
         + newline
         + "POWER_COSTS={1:60,2:40,3:60,4:60,5:60,6:80}"
         + newline
-        + "POWER_READY_STATE={1:False,2:False,3:False,4:False,5:False,6:False}",
+        + "POWER_READY_STATE={1:False,2:False,3:False,4:False,5:False,6:False}"
+        + newline
+        + "def jt_power_available(slot):"
+        + newline
+        + "\tenergy=stamg if slot<4 else stamd"
+        + newline
+        + "\treturn indexa==1 and not selected[slot] and energy>POWER_COSTS[slot]",
         1,
     )
 
     human_power_guards = {
         1: (
             "if not vsg and bonus[1] and collide(touch.x,touch.y,testx,testy,mdoo):",
-            "if not vsg and indexa==1 and not selected[1] and stamg>POWER_COSTS[1] and bonus[1] and collide(touch.x,touch.y,testx,testy,mdoo):",
+            "if not vsg and jt_power_available(1) and collide(touch.x,touch.y,testx,testy,mdoo):",
         ),
         2: (
             "if not vsg and bonus[2] and collide(touch.x,touch.y,testx,testy,mdoo):",
-            "if not vsg and indexa==1 and not selected[2] and stamg>POWER_COSTS[2] and bonus[2] and collide(touch.x,touch.y,testx,testy,mdoo):",
+            "if not vsg and jt_power_available(2) and collide(touch.x,touch.y,testx,testy,mdoo):",
         ),
         3: (
             "if not vsg and bonus[3] and collide(touch.x,touch.y,testx,testy,mdo):",
-            "if not vsg and indexa==1 and not selected[3] and stamg>POWER_COSTS[3] and bonus[3] and collide(touch.x,touch.y,testx,testy,mdo):",
+            "if not vsg and jt_power_available(3) and collide(touch.x,touch.y,testx,testy,mdo):",
         ),
         4: (
             "if not vsd and bonus[4] and collide(touch.x,touch.y,testx,testy,mdoo):",
-            "if not vsd and indexa==1 and not selected[4] and stamd>POWER_COSTS[4] and bonus[4] and collide(touch.x,touch.y,testx,testy,mdoo):",
+            "if not vsd and jt_power_available(4) and collide(touch.x,touch.y,testx,testy,mdoo):",
         ),
         5: (
             "if not vsd and bonus[5] and collide(touch.x,touch.y,testx,testy,mdoo):",
-            "if not vsd and indexa==1 and not selected[5] and stamd>POWER_COSTS[5] and bonus[5] and collide(touch.x,touch.y,testx,testy,mdoo):",
+            "if not vsd and jt_power_available(5) and collide(touch.x,touch.y,testx,testy,mdoo):",
         ),
         6: (
             "if not vsd and bonus[6] and collide(touch.x,touch.y,testx,testy,mdoo):",
-            "if not vsd and indexa==1 and not selected[6] and stamd>POWER_COSTS[6] and bonus[6] and collide(touch.x,touch.y,testx,testy,mdoo):",
+            "if not vsd and jt_power_available(6) and collide(touch.x,touch.y,testx,testy,mdoo):",
         ),
     }
     for slot, (old_guard, new_guard) in human_power_guards.items():
@@ -172,7 +178,7 @@ def adapt_main(source):
     source = replace_exact(
         source,
         "if vsg and indexa==1 and computer(10000,lvlg) and stamg>60 and select[i] and not selected[i]:",
-        "if vsg and indexa==1 and computer(10000,lvlg) and stamg>POWER_COSTS[i] and select[i] and not selected[i]:",
+        "if vsg and computer(10000,lvlg) and jt_power_available(i):",
         1,
     )
     source = replace_exact(
@@ -184,7 +190,7 @@ def adapt_main(source):
     source = replace_exact(
         source,
         "if vsd and indexa==1 and computer(10000,lvld) and stamd>60 and select[i] and not selected[i]:",
-        "if vsd and indexa==1 and computer(10000,lvld) and stamd>POWER_COSTS[i] and select[i] and not selected[i]:",
+        "if vsd and computer(10000,lvld) and jt_power_available(i):",
         1,
     )
     source = replace_exact(
@@ -406,9 +412,7 @@ def _jt_log_new_stops(self):
     power_block = [
         indent + "new_power_available=False" + newline,
         indent + "for i in range(1,7):" + newline,
-        indent + unit + "energy=stamg if i<4 else stamd" + newline,
-        indent + unit + "eligible=(not selected[i]) and energy>POWER_COSTS[i]" + newline,
-        indent + unit + "available=indexa==1 and eligible" + newline,
+        indent + unit + "available=jt_power_available(i)" + newline,
         indent + unit + "if available and not POWER_READY_STATE[i]:" + newline,
         indent + unit + unit + "new_power_available=True" + newline,
         indent + unit + "POWER_READY_STATE[i]=available" + newline,
