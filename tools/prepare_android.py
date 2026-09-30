@@ -11,8 +11,8 @@ import zipfile
 from pathlib import Path, PurePosixPath
 
 
-VERSION = "1.0.3"
-NUMERIC_VERSION = "103"
+VERSION = "1.0.4"
+NUMERIC_VERSION = "104"
 ARCHIVE_SIZE = 327992765
 ARCHIVE_SHA256 = (
     "f73ca1fd5e96ca6e11df5987bda8b2e59"
@@ -378,6 +378,25 @@ def _jt_log_new_stops(self, observer):
         "        Clock.schedule_interval(self.root.affbt, 0.05)" + newline,
         "        Clock.schedule_interval(self.root.carupdate, 1)" + newline,
         newline,
+        "    def _jt_set_native_scene_audio(self, active, state):" + newline,
+        "        global ma, sona0, sona" + newline,
+        "        if active:" + newline,
+        "            if ma is not None:" + newline,
+        "                ma.stop()" + newline,
+        "            print('[JT-SCENE] AUDIO_LEGACY suppressed state={}'.format(state), flush=True)" + newline,
+        "            return" + newline,
+        "        if state not in sona:" + newline,
+        "            return" + newline,
+        "        legacy = sona[state]" + newline,
+        "        if ma is not None:" + newline,
+        "            ma.stop()" + newline,
+        "        sona0 = legacy" + newline,
+        "        ma = SoundLoader.load(legacy)" + newline,
+        "        if ma is not None:" + newline,
+        "            ma.loop = state not in (2,3,4,5,6,7)" + newline,
+        "            ma.play()" + newline,
+        "        print('[JT-SCENE] AUDIO_LEGACY fallback state={} source={}'.format(state, legacy), flush=True)" + newline,
+        newline,
     ]
     lines[start:end] = replacement
 
@@ -423,6 +442,30 @@ def _jt_log_new_stops(self, observer):
     lines[source_index:source_index + 1] = [
         src_indent + "if not getattr(self, '_jt_scene_video_active', False):" + newline,
         src_indent + unit + original_source,
+    ]
+
+    # Keep historical scene audio as fallback until the first usable video frame.
+    start, end = method_bounds(lines, "anim_1")
+    load_index = None
+    loop_end = None
+    for index in range(start, end):
+        if lines[index].strip() == "ma = SoundLoader.load(sona0)":
+            load_index = index
+            break
+    require(load_index is not None, "Chargement audio historique anim_1 introuvable.")
+    for index in range(load_index, end):
+        if lines[index].strip() == "ma.loop=True":
+            loop_end = index
+            break
+    require(loop_end is not None, "Fin du bloc audio historique anim_1 introuvable.")
+    audio_indent = lines[load_index][
+        : len(lines[load_index]) - len(lines[load_index].lstrip(" \t"))
+    ]
+    audio_unit = "\t"
+    for index in range(load_index, loop_end + 1):
+        lines[index] = audio_indent + audio_unit + lines[index][len(audio_indent):]
+    lines[load_index:load_index] = [
+        audio_indent + "if not getattr(self, '_jt_scene_video_active', False):" + newline
     ]
 
     # Rebuild power availability from one canonical rule.
@@ -742,7 +785,7 @@ def prepare(archive, destination, spec, media_root, runtime):
         shutil.copyfile(spec, stage / "buildozer.spec")
 
         report = {
-            "mission": "JT-MEDIA-POWER-SCORE-001",
+            "mission": "JT-MEDIA-AUDIO-001",
             "version": VERSION,
             "numeric_version": NUMERIC_VERSION,
             "package": "com.junedady.junetrex",
@@ -759,14 +802,15 @@ def prepare(archive, destination, spec, media_root, runtime):
             "changes": [
                 "a.png -> A.png: 4 références",
                 "boutbleu0.png -> boutBleu0.png: 4 références",
-                "version 1.0.3 / versionCode 103",
+                "version 1.0.4 / versionCode 104",
                 "Python cible 3.12.14 pour compatibilité ffpyplayer",
                 "titre June T-Rex",
                 "menu music deferred until intro end",
                 "one random intro per process launch",
                 "states 1/2-4/5-7/8/9 mapped to five combat videos",
-                "combat videos aspect-fill and muted; intros remain aspect-fit with audio",
+                "combat videos aspect-fill with native MP4 audio after first usable frame; intros remain aspect-fit with audio",
                 "one scene player per state family with generation-safe callbacks",
+                "legacy scene soundtrack remains fallback until first usable video frame and on media failure",
                 "POWER_COSTS ST=60/40/60 TR=60/60/80 with strict energy>cost",
                 "power availability shared by UI, touch and AI; right sound lock corrected",
                 "TRFS slot 4 / TRMA slot 6 visual identity corrected",
