@@ -1,7 +1,7 @@
 """Kivy video integration for June T-Rex.
 
 Gameplay stays in the historical main.py. This module owns launch intros and
-visual replacements for selected combat scenes. Video EOS never changes the
+audiovisual replacements for selected combat scenes. Video EOS never changes the
 historical state machine.
 """
 
@@ -110,8 +110,10 @@ class JTMediaController:
 
         self._scene_player = None
         self._scene_key = None
+        self._scene_state = None
         self._scene_generation = 0
         self._scene_has_frame = False
+        self._scene_audio_native = False
         self._scene_timeout = None
         self._scene_frame_callback = None
         self._scene_eos_callback = None
@@ -237,6 +239,7 @@ class JTMediaController:
             return
         key = self._key_for_state(indexa)
         if key == self._scene_key and self._scene_player is not None:
+            self._scene_state = indexa
             # Families 2/3/4 and 5/6/7 deliberately keep one player.
             # Re-apply aspect-fill even after EOS/pause if the viewport changed.
             texture = self._scene_player.texture
@@ -250,6 +253,7 @@ class JTMediaController:
             return
         if key != self._scene_key:
             self._stop_scene("state={}".format(indexa), preserve_failure=False)
+        self._scene_state = indexa
         if key is None:
             self._scene_failed_key = None
             return
@@ -267,6 +271,7 @@ class JTMediaController:
         self._scene_generation += 1
         generation = self._scene_generation
         self._scene_has_frame = False
+        self._scene_audio_native = False
         self.root._jt_scene_video_active = False
         self.root._jt_wait_video_active = False
 
@@ -301,7 +306,7 @@ class JTMediaController:
                 lambda dt: self._scene_frame_timeout(generation), 4.0
             )
             print(
-                "[JT-SCENE] enter key={} state={} file={} loop={} audio=muted generation={}".format(
+                "[JT-SCENE] enter key={} state={} file={} loop={} audio=pending-first-frame generation={}".format(
                     key, indexa, scene["file"], scene["loop"], generation
                 ),
                 flush=True,
@@ -328,6 +333,7 @@ class JTMediaController:
         if texture is None:
             return
 
+        first_frame = not self._scene_has_frame
         self._scene_has_frame = True
         if self._scene_timeout is not None:
             self._scene_timeout.cancel()
@@ -336,6 +342,42 @@ class JTMediaController:
         self.root.deux.texture = texture
         self.root._jt_scene_video_active = True
         self.root._jt_wait_video_active = self._scene_key == "wait"
+
+        if first_frame:
+            callback = getattr(self.app, "_jt_set_native_scene_audio", None)
+            if callback is not None:
+                try:
+                    callback(True, self._scene_state)
+                except Exception as exc:
+                    print(
+                        "[JT-SCENE][WARN] AUDIO_LEGACY suppress state={} error={!r}".format(
+                            self._scene_state, exc
+                        ),
+                        flush=True,
+                    )
+            try:
+                player.volume = 1.0
+                self._scene_audio_native = True
+                print(
+                    "[JT-SCENE] AUDIO_NATIVE enabled key={} state={} generation={}".format(
+                        self._scene_key, self._scene_state, generation
+                    ),
+                    flush=True,
+                )
+            except Exception as exc:
+                self._scene_audio_native = False
+                if callback is not None:
+                    try:
+                        callback(False, self._scene_state)
+                    except Exception:
+                        pass
+                print(
+                    "[JT-SCENE][ERROR] AUDIO_NATIVE unavailable key={} state={} error={!r}".format(
+                        self._scene_key, self._scene_state, exc
+                    ),
+                    flush=True,
+                )
+
         bounds_pos, bounds_size = self._game_bounds()
         self._cover_rectangle(self.root.deux, texture, bounds_pos, bounds_size)
 
@@ -367,6 +409,8 @@ class JTMediaController:
 
     def _stop_scene(self, reason, preserve_failure=False):
         key = self._scene_key
+        state = self._scene_state
+        audio_native = self._scene_audio_native
         self._scene_generation += 1
         if self._scene_timeout is not None:
             self._scene_timeout.cancel()
@@ -385,6 +429,14 @@ class JTMediaController:
 
         if player is not None:
             try:
+                player.volume = 0.0
+            except Exception:
+                pass
+            try:
+                player.stop()
+            except Exception:
+                pass
+            try:
                 if frame_callback is not None:
                     player.unbind(on_frame=frame_callback)
                 if eos_callback is not None:
@@ -396,6 +448,34 @@ class JTMediaController:
             except Exception as exc:
                 print("[JT-SCENE][WARN] unload={!r}".format(exc), flush=True)
 
+        if audio_native:
+            if preserve_failure:
+                callback = getattr(self.app, "_jt_set_native_scene_audio", None)
+                if callback is not None:
+                    try:
+                        callback(False, state)
+                    except Exception as exc:
+                        print(
+                            "[JT-SCENE][WARN] AUDIO_LEGACY fallback state={} error={!r}".format(
+                                state, exc
+                            ),
+                            flush=True,
+                        )
+                print(
+                    "[JT-SCENE] AUDIO_LEGACY fallback key={} state={}".format(
+                        key, state
+                    ),
+                    flush=True,
+                )
+            else:
+                print(
+                    "[JT-SCENE] AUDIO_STOP key={} state={} reason={}".format(
+                        key, state, reason
+                    ),
+                    flush=True,
+                )
+        self._scene_audio_native = False
+
         # Restore geometry before historical JPEG rendering resumes.
         if self._scene_rect_pos is not None:
             self.root.deux.pos = self._scene_rect_pos
@@ -405,6 +485,7 @@ class JTMediaController:
         self._scene_rect_size = None
 
         self._scene_key = key if preserve_failure else None
+        self._scene_state = state if preserve_failure else None
         if not preserve_failure:
             self._scene_failed_key = None
         print(
