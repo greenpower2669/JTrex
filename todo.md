@@ -524,3 +524,15 @@ Commande interne associée :
 - [ ] Fab : fournir logs/captures score déterministes A-F.
 - [ ] Seulement si les mesures le prouvent : appliquer la correction géométrique minimale de la fenêtre-cible.
 - [ ] Ne pas merger main ni publier de release sans validation Fab.
+
+
+## 2026-09-30 — JT-MEDIA-AUDIO-001 — audio natif des vidéos de combat
+
+- [x] Coder la bascule audio native MP4 au premier frame utilisable.
+- [x] Conserver `ma/sona` comme fallback avant frame et en cas d'échec média.
+- [x] Empêcher `anim_1` de relancer le son historique pendant une vidéo active.
+- [x] Arrêter explicitement l'audio du lecteur lors d'une sortie de scène.
+- [x] Passer le candidat à 1.0.4 / versionCode 104.
+- [ ] Vérifier le workflow Android du commit audio.
+- [ ] Fab : tester les cinq scènes avec son MP4, absence de doublage et absence de son résiduel.
+- [ ] Fab : tester plusieurs boucles indexa 1 et pause/reprise.
