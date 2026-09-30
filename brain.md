@@ -1037,3 +1037,33 @@ Le patch local est `tools/patches/p4a-python312-libpython-global.patch`. Le cont
   - `PyExc_MemoryError` reste exporté GLOBAL sur les deux ABI.
 - Aucun `DT_SONAME` explicite n'est présent dans le libpython final, comme au run #18 ; ce point préexistant n'est pas modifié dans cette hypothèse.
 - Le build valide la matérialisation de DF_1_GLOBAL uniquement. Le bootstrap Python et [JT-BOOT] restent à valider sur le téléphone.
+
+## 2026-09-30 — JT-MEDIA-POWER-SCORE-001 — lot Fab canonique
+
+Base Android vérifiée avant modification : `a6caa620e51281d4a2a8dc854830f15b5db66c7b`, identique à la branche `port/android-first-apk` au début de la mission. Les médias ont été prélevés sélectivement depuis l'arbre de `main` observé au commit `a0888046616abb2654bdab6945ffa4de9c2e5f2d`; aucun merge global de main.
+
+Chaîne native à préserver : Python/hostpython/p4a, FFmpeg, ffpyplayer, Cython, SDL2, API/NDK/ABI, patch `venv --clear`, exclusion grp Android <26, `--disable-vulkan`, bootstrap diagnostic et `libpython GLOBAL`. Fab confirme que l'application démarre désormais sur Android ; cette mission ne modifie aucun de ces éléments.
+
+Mapping média canonique codé :
+- indexa 1 → `StegVsTrexvaetviensremolacebisorigune.mp4`, boucle ;
+- famille 2/3/4 → `Chargestegtrexchargerougebleu.mp4` ;
+- famille 5/6/7 → `Stegtrexegalitechargeboutonjaune.mp4` ;
+- indexa 8 → `Stegtrexresultstegwin.mp4` ;
+- indexa 9 → `Stegtrexresulttrexwin.mp4`.
+Les états 10/11 restent historiques. Les vidéos de combat sont muettes et en aspect-fill ; les intros restent aspect-fit avec leur audio. Un lecteur unique suit la famille moteur et les callbacks sont protégés par génération.
+
+Coûts Fab canoniques :
+`POWER_COSTS={1:60,2:40,3:60,4:60,5:60,6:80}`.
+ST = 60/40/60 ; TR = 60/60/80. Condition strictement `énergie > coût`, jamais `>=`. L'énergie reste fractionnaire. La même table pilote disponibilité, bonus/select, tactile, IA, débit et notification de nouvelle disponibilité. Le slot reste à usage unique par combat.
+
+Le diagnostic score conserve la formule historique inchangée. Les transitions vers `colstop`, le calcul final et la lettre `asb` reçoivent des logs ciblés. Aucune correction géométrique du score n'est appliquée avant preuve téléphone.
+
+Commits fonctionnels de ce lot :
+- `5f319188a87c26820521bfabe339cc2e3922f79b` : cinq médias importés ;
+- `b70f3ec40dde4058d39c5ca50076c2ed8c5c5664` : contrôleur des cinq scènes ;
+- `9a8f31af42fb9024e4dc6b398ed4df30222eb1b0` : coûts, disponibilités, identités TR et diagnostic score ;
+- `c1b732a74e4e0a0a7830d5d0f11f5a7af9785011` : version 1.0.3 / versionCode 103 ;
+- `d547fb9315f1432f2b5cda4417340fda67abacc5` : inspections média et validation CI ciblée.
+
+À ce point du journal, code poussé ≠ workflow validé ≠ APK produit ≠ téléphone validé. Ces statuts doivent être complétés uniquement avec leurs preuves réelles.
+
