@@ -473,3 +473,28 @@ Commande interne associée :
 - [ ] Fab : lancer JTrex et vérifier si le bootstrap franchit l'ancien blocage.
 - [ ] Si crash : générer immédiatement un rapport complet et relever la première nouvelle erreur discriminante.
 - [ ] Ne pas annoncer « crash corrigé » avant réussite de Py_InitializeFromConfig et apparition de [JT-BOOT].
+
+## 2026-09-30 — JT-MEDIA-POWER-SCORE-001
+
+- [x] Vérifier que la branche active est exactement au SHA Android audité `a6caa620…` avant patch.
+- [x] Importer uniquement les cinq nouveaux médias depuis main, sans merge global.
+- [x] Généraliser le contrôleur vidéo aux familles 1 / 2-4 / 5-7 / 8 / 9.
+- [x] Conserver 10/11 historiques, intros aspect-fit+audio et combat muet.
+- [x] Passer les scènes de jeu en aspect-fill et protéger les callbacks par génération.
+- [x] Définir `POWER_COSTS = 60/40/60 | 60/60/80` et la garde stricte `énergie > coût`.
+- [x] Revalider tactile et IA au déclenchement et débiter le coût exact une seule fois.
+- [x] Recalculer bonus/select depuis la même disponibilité.
+- [x] Corriger le verrou de disponibilité droit et l'identité slot4 TRFS / slot6 TRMA.
+- [x] Ajouter les diagnostics STOP / FINAL / LETTER du score sans changer la formule.
+- [x] Passer le candidat à 1.0.3 / versionCode 103.
+- [x] Étendre l'inspection CI aux cinq vidéos et ajouter une validation du main généré.
+- [ ] Vérifier le résultat du workflow sur le commit candidat `d547fb9315f1432f2b5cda4417340fda67abacc5`.
+- [ ] Si échec : corriger uniquement la première erreur discriminante sans toucher à la chaîne native.
+- [ ] Si build vert : relever run, commit construit, APK, SHA-256, ABI/signature et artefacts.
+- [ ] Contrôler les métadonnées ffprobe/SHA-256 et captures début/milieu/fin des cinq vidéos.
+- [ ] Fab : valider sur téléphone les cinq scènes, les touches R/B et jaunes, les victoires 8/9 et le maintien de 10/11.
+- [ ] Fab : vérifier les limites 40/40.5, 60/60.5 et 80/80.5, humain et IA.
+- [ ] Fab : fournir logs/captures des scénarios score déterministes.
+- [ ] Seulement si les mesures le prouvent : appliquer la correction géométrique minimale du centre de fenêtre.
+- [ ] AAB 📦 après stabilisation de l'APK.
+
