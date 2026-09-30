@@ -90,6 +90,60 @@ jobs:
                   print(f"{n + 1:05d}: {lines[n]}")
           PY
 
+      - name: Validate media, power and score adaptation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          main = Path("app/main.py").read_text(encoding="utf-8")
+          runtime = Path("app/jtrex_media_runtime.py").read_text(encoding="utf-8")
+
+          required_main = (
+              "POWER_COSTS={1:60,2:40,3:60,4:60,5:60,6:80}",
+              "stamg>POWER_COSTS[i]",
+              "stamd>POWER_COSTS[i]",
+              "[JT-POWER]",
+              "[JT-SCORE][STOP]",
+              "[JT-SCORE][FINAL]",
+              "[JT-SCORE][LETTER]",
+              "media_controller.sync_scene_state(indexa)",
+              "_jt_scene_video_active",
+          )
+          for token in required_main:
+              if token not in main:
+                  raise SystemExit(f"missing generated main token: {token}")
+
+          forbidden_main = (
+              "stamg>60 and select[i]",
+              "stamd>60 and select[i]",
+              "stamg-=60;selected[",
+              "stamd-=60;selected[",
+              "babokpbd=False",
+          )
+          for token in forbidden_main:
+              if token in main:
+                  raise SystemExit(f"stale power rule remains: {token}")
+
+          required_runtime = (
+              "StegVsTrexvaetviensremolacebisorigune.mp4",
+              "Chargestegtrexchargerougebleu.mp4",
+              "Stegtrexegalitechargeboutonjaune.mp4",
+              "Stegtrexresultstegwin.mp4",
+              "Stegtrexresulttrexwin.mp4",
+              "scale = max(",
+              'eos_policy = "loop" if scene["loop"] else "pause"',
+          )
+          for token in required_runtime:
+              if token not in runtime:
+                  raise SystemExit(f"missing runtime token: {token}")
+
+          compile(main, "app/main.py", "exec")
+          compile(runtime, "app/jtrex_media_runtime.py", "exec")
+          print("JT validation: generated Python compiles and canonical markers are present")
+          PY
+
       - name: Install Buildozer system dependencies
         shell: bash
         run: |
@@ -115,9 +169,10 @@ jobs:
             src="$1"
             stem="$2"
             echo "===== $src =====" | tee -a media-inspection/media-inspection.txt
+            sha256sum "$src" | tee -a media-inspection/media-inspection.txt
             ffprobe -v error \
               -show_entries format=filename,duration,size,bit_rate \
-              -show_entries stream=index,codec_name,codec_type,width,height,r_frame_rate,avg_frame_rate,sample_rate,channels \
+              -show_entries stream=index,codec_name,codec_type,width,height,sample_aspect_ratio,display_aspect_ratio,r_frame_rate,avg_frame_rate,sample_rate,channels:stream_tags=rotate:stream_side_data=rotation \
               -of json "$src" | tee -a media-inspection/media-inspection.txt
 
             duration="$(ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 "$src")"
@@ -131,7 +186,11 @@ jobs:
           inspect_video assets/intro/JTrexintro1.mp4 intro1
           inspect_video assets/intro/JTrexintro2.mp4 intro2
           inspect_video assets/intro/JTrexintro3.mp4 intro3
-          inspect_video assets/combat/StegVsTrexvaetviensremolace.mp4 steg-vs-trex
+          inspect_video assets/combat/Chargestegtrexchargerougebleu.mp4 scene-15-charge
+          inspect_video assets/combat/Stegtrexegalitechargeboutonjaune.mp4 scene-16-yellow
+          inspect_video assets/combat/StegVsTrexvaetviensremolacebisorigune.mp4 scene-20-wait
+          inspect_video assets/combat/Stegtrexresultstegwin.mp4 scene-60-st-win
+          inspect_video assets/combat/Stegtrexresulttrexwin.mp4 scene-61-tr-win
 
           echo "===== assets/icon/JtrexIcon.png =====" | tee -a media-inspection/media-inspection.txt
           ffprobe -v error -show_entries stream=codec_name,codec_type,width,height -of json \
@@ -235,9 +294,9 @@ jobs:
             exit 1
           fi
           mkdir -p artifacts
-          cp "${apks[0]}" artifacts/JuneT-Rex-1.0.2-debug.apk
+          cp "${apks[0]}" artifacts/JuneT-Rex-1.0.3-debug.apk
           cd artifacts
-          sha256sum JuneT-Rex-1.0.2-debug.apk > SHA256SUMS.txt
+          sha256sum JuneT-Rex-1.0.3-debug.apk > SHA256SUMS.txt
 
       - name: Upload diagnostic files
         if: always()
@@ -260,9 +319,9 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: JuneT-Rex-1.0.2-debug
+          name: JuneT-Rex-1.0.3-debug
           path: |
-            artifacts/JuneT-Rex-1.0.2-debug.apk
+            artifacts/JuneT-Rex-1.0.3-debug.apk
             artifacts/SHA256SUMS.txt
           if-no-files-found: error
           compression-level: 0
