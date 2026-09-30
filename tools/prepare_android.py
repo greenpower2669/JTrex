@@ -487,10 +487,18 @@ def _jt_log_new_stops(self, observer):
     for index, line in reversed(insertions):
         lines[index:index] = [line]
     start, end = method_bounds(lines, "on_touch_down")
-    touch_body_indent = lines[start + 1][
-        : len(lines[start + 1]) - len(lines[start + 1].lstrip(" \t"))
+    touch_return = None
+    for index in range(end - 1, start, -1):
+        if lines[index].strip() == "return True":
+            touch_return = index
+            break
+    require(touch_return is not None, "return True final de on_touch_down introuvable.")
+    touch_body_indent = lines[touch_return][
+        : len(lines[touch_return]) - len(lines[touch_return].lstrip(" \t"))
     ]
-    lines[end:end] = [touch_body_indent + "jt_sync_scene_now()" + newline]
+    lines[touch_return:touch_return] = [
+        touch_body_indent + "jt_sync_scene_now()" + newline
+    ]
 
     start, end = method_bounds(lines, "carupdate")
     for index in range(start, end):
