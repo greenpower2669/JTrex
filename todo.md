@@ -567,3 +567,17 @@ Commande interne associée :
 - [x] Corriger le garde-fou CI obsolète sans modifier le code fonctionnel.
 - [x] Run #42 : préparation historique + compilation Python + validation média/audio/pouvoirs/auras réussies.
 - [ ] Run #42 : inspection FFprobe des 7 nouveaux MP4 puis build APK complet en cours.
+
+
+## 2026-10-02 — JT-CINEMATIC-FINISHING-001 — lecture complète, auras tournantes, protection orbes
+
+- [x] Faire jouer intégralement les six vidéos de pouvoirs.
+- [x] Raccorder état 10 à StegFinishingTheTrex et état 11 à TrexFinishingTheSteg.
+- [x] Corriger l'aura : b1s..b6s / select0..15, pas les icônes de pouvoir.
+- [x] Aura visible uniquement si jt_power_available(slot).
+- [x] Empêcher le tap de lancement de charge de figer un orbe.
+- [x] Protéger les arrêts tactiles d'orbes pendant 2 secondes après la charge.
+- [x] Masquer les voyants diagnostic tant que le mode 20 taps n'est pas activé.
+- [ ] Valider préparation/CI/FFprobe des deux finishing et du candidat 1.0.7.
+- [ ] Valider le build APK 1.0.7.
+- [ ] Fab : tester les six pouvoirs jusqu'à EOS, les deux finishing, les auras tournantes, la protection orbes et le mode admin.

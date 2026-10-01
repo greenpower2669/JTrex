@@ -1113,3 +1113,8 @@ But immédiat : aider Fab à identifier visuellement les séquences qui restent 
 ## 2026-10-01 — JT-POWER-VIDEOS-001 — six pouvoirs vidéo + charge corrigée
 
 Médias pouvoirs canonisés : STSF→StegstegtrexAtkSancruaryForce.mp4, STLS→StegLifestream.mp4, STTA→StegTrexTornadoattk.mp4, TRFS→TrexStegTrexFireStormAttk.mp4, TRPH→TrexStegTrexPhoenixAttak.mp4, TRMA→TrexStgTrexAtkMereorlepluschère.mp4. Dans la branche de travail, ils sont renommés en chemins ASCII sous assets/powers/ pour fiabiliser le packaging Android. La charge 2/3/4 utilise désormais la version corrected. Aura = même fonction canonique que disponibilité/activation : jt_power_available(slot), donc énergie strictement > coût, slot non utilisé et indexa==1.
+
+
+## 2026-10-02 — JT-CINEMATIC-FINISHING-001 — lecture complète, auras tournantes, protection orbes
+
+Candidat 1.0.7 / versionCode 107. Cinématiques play-to-end : pouvoirs 21..26 et finishing 10/11. Pendant la lecture, _jt_scene_cinematic_lock bloque les touches humaines et le contrôleur conserve la vidéo malgré un changement d'indexa ; à EOS, il libère la vidéo puis se resynchronise sur l'état historique courant. Aura canonique = b1s..b6s (frames select/select0..15.png) visible seulement si jt_power_available(slot). Les icônes stsf/sth/stta/trfs/trph/trma restent historiques. Charge : même tap état1→2/3/4 incapable de poser colstop ; protection tactile supplémentaire 2 s.

@@ -770,3 +770,8 @@ JTMediaController reçoit le catalogue legacy via set_legacy_catalog(namea,longa
 ## 2026-10-01 — JT-POWER-VIDEOS-001 — six pouvoirs vidéo + charge corrigée
 
 SCENES du JTMediaController couvre désormais 1, 2/3/4, 5/6/7, 8, 9 et chaque pouvoir 21..26. Les pouvoirs sont six familles séparées afin qu'un changement d'état démarre le MP4 correspondant. EOS ne change jamais le moteur. Le mode admin persistant est activé après 20 taps bas-droite ; voyant rouge + libellé du dossier legacy, voyant vert sans libellé lorsque la frame MP4 est réellement active. affbt reçoit en fin de méthode six affectations canoniques des sprites 0/1 basées sur jt_power_available.
+
+
+## 2026-10-02 — JT-CINEMATIC-FINISHING-001 — lecture complète, auras tournantes, protection orbes
+
+JTMediaController : SCENES power-* et finish-* portent play_to_end=True. sync_scene_state garde le player courant jusqu'à EOS même si indexa a déjà évolué. _on_scene_eos stoppe proprement puis resynchronise sur _engine_state, sans modifier le gameplay. _jt_scene_cinematic_lock est exposé au root pour bloquer on_touch_down pendant la couverture vidéo. Admin : _update_status_indicator retourne immédiatement tant que _admin_enabled=False. Auras : affbt force uniquement la taille de b1s..b6s selon jt_power_available ; mc1 continue d'animer leurs sources select0..15.

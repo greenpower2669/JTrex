@@ -588,3 +588,8 @@ Le lot remplace uniquement les médias/rendus : aucune correction gameplay, dég
 
 ### CI #41 / #42
 Le run #41 a été arrêté par le validateur qui cherchait encore la chaîne UI `20 taps bas-droite pour ouvrir`; la préparation et le code avaient réussi. Correctif CI seul dans f8e90d5. Sur le run #42, les étapes de préparation, inspection des hooks et validation Python/média/audio/pouvoirs/auras sont vertes. Aucune régression fonctionnelle identifiée à ce stade; FFprobe et Buildozer restent à terminer.
+
+
+## 2026-10-02 — JT-CINEMATIC-FINISHING-001 — lecture complète, auras tournantes, protection orbes
+
+Correction d'une mauvaise interprétation de 1.0.6 : les PNG stsf1/sth1/stta1/trfs1/trph1/trma1 sont les items/icônes, pas l'aura tournante. La vraie aura est b1s..b6s et ses frames select/select0..15.png. 1.0.7 corrige cela sans changer les items. Ajout d'un verrou de touches humaines pendant les cinématiques complètes et d'une protection d'orbes 2 s au démarrage de charge. Risques à valider téléphone : moteur historique peut continuer en arrière-plan pendant la cinématique ; vérifier que ce comportement reste cohérent, que toutes les vidéos vont jusqu'à EOS, que les finishing correspondent au bon vainqueur et qu'aucun tap caché n'agit.
