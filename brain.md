@@ -1103,3 +1103,8 @@ Livrable CI de référence du lot : code `7f83389086ebe847007ddd48e506157ae41f74
 ## 2026-09-30 — JT-MEDIA-AUDIO-001 — audio natif des vidéos de combat
 
 Règle audio combat : vidéo effectivement active = image + son natif du MP4. Avant la première frame utilisable ou en fallback média = rendu/son historiques. La bascule ne doit jamais superposer les deux bandes-son. L'attente indexa 1 boucle désormais avec l'audio du MP4 ; les autres vidéos conservent leur politique EOS sans agir sur indexa.
+
+
+## 2026-10-01 — JT-MEDIA-ADMIN-001 — diagnostic des sources d'animation
+
+But immédiat : aider Fab à identifier visuellement les séquences qui restent à convertir en vidéo. Le catalogue historique exposé à l'admin provient directement de namea/longanim1/genrea/sona. Exemples confirmés : indexa 2=chargetr/, 3=chargest/, 4=horseg2ko/, 5-6=egtrwin/, 7=eg2ko/, 8=stwin/, 9=trwin/, 10=finishst/, 11=finishtr/, 21=stsf/, 22=stls/, 23=stta/, 24=trfs/, 25=trph/, 26=trma/.

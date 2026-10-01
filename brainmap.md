@@ -760,3 +760,8 @@ La future correction géométrique ne doit être appliquée qu'après mesure té
 ## 2026-09-30 — JT-MEDIA-AUDIO-001 — audio natif des vidéos de combat
 
 Chaîne audio : `anim_1` conserve `ma/sona[indexa]` comme fallback tant que `_jt_scene_video_active == False`. Au premier `on_frame` valide, `JTMediaController` marque la vidéo active, appelle `mainApp._jt_set_native_scene_audio(True, state)` pour arrêter `ma`, puis passe le volume du lecteur vidéo à 1.0. Un échec après activation appelle le même relais avec `False` pour restaurer `sona[state]`. Sortie normale : le lecteur vidéo et son audio sont arrêtés/libérés, sans relancer l'ancien son de la scène quittée.
+
+
+## 2026-10-01 — JT-MEDIA-ADMIN-001 — diagnostic des sources d'animation
+
+JTMediaController reçoit le catalogue legacy via set_legacy_catalog(namea,longanim1,genrea,sona). Window.on_touch_down compte 20 taps bas-droite pour ouvrir le Popup ADMIN MEDIA. Le Popup compare SCENES, présence réelle du MP4 et état courant _jt_scene_video_active. Le voyant bas-gauche utilise exactement ce dernier booléen : vert=frame vidéo active, rouge=legacy/fallback.

@@ -508,3 +508,8 @@ Distinguer tests réussis, APK produit et validation sur le téléphone de Fab.
 ## 2026-09-30 — JT-MEDIA-AUDIO-001 — audio natif des vidéos de combat
 
 Avenant canonique Fab : pour les scènes vidéo indexa 1, 2/3/4, 5/6/7, 8 et 9, la piste audio native du MP4 doit être utilisée dès la première frame vidéo exploitable. Le son historique de scène reste actif tant que la vidéo n'a pas fourni de frame, puis il est arrêté afin d'éviter tout doublage. En cas d'échec média après activation, le fallback restaure le son historique correspondant. Les états 10/11 restent entièrement historiques. Les intros conservent leur audio actuel. Aucun événement audio ne pilote le gameplay. Candidat : 1.0.4 / versionCode 104.
+
+
+## 2026-10-01 — JT-MEDIA-ADMIN-001 — diagnostic des sources d'animation
+
+Outil de repérage demandé par Fab avant le prochain rapport ASTRA. Vingt taps consécutifs dans les 12 % bas-droite ouvrent un menu administratif média. Le menu doit lister chaque indexa connu, le MP4 raccordé et présent lorsqu'il existe, sinon l'animation historique, ainsi que le répertoire/prefix legacy exact, le nombre de frames, le mode et le son. Pendant le jeu, un petit point clignotant bas-gauche est vert lorsque le rendu réellement affiché est un MP4, rouge lorsque le rendu est historique/fallback. Diagnostic uniquement : aucun effet gameplay. Candidat 1.0.5 / versionCode 105.

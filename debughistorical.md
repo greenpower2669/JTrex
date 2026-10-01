@@ -574,3 +574,8 @@ Ne pas déclarer ces points corrigés/validés avant retour Fab.
 ## 2026-09-30 — JT-MEDIA-AUDIO-001 — audio natif des vidéos de combat
 
 Correction codée : les vidéos de combat ne sont plus volontairement muettes ; l'audio MP4 est activé au premier frame exploitable et l'ancien son de scène est stoppé à ce moment. Risques restant à valider sur téléphone : double son résiduel, audio continu après transition, synchronisation de la boucle indexa 1 et pause/reprise. Ne pas déclarer ces points validés avant test réel.
+
+
+## 2026-10-01 — JT-MEDIA-ADMIN-001 — diagnostic des sources d'animation
+
+Ajout d'un diagnostic non intrusif pour distinguer le rendu réellement actif. Point clignotant vert si _jt_scene_video_active=True, rouge sinon. Le menu admin expose les chemins legacy afin d'éviter de confondre une jauge historique superposée avec une nouvelle vidéo de fond. À valider sur téléphone : déclenchement 20 taps, lisibilité du Popup, couleur correcte lors des transitions/fallback, absence d'effet sur les contrôles.

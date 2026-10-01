@@ -536,3 +536,15 @@ Commande interne associée :
 - [ ] Vérifier le workflow Android du commit audio.
 - [ ] Fab : tester les cinq scènes avec son MP4, absence de doublage et absence de son résiduel.
 - [ ] Fab : tester plusieurs boucles indexa 1 et pause/reprise.
+
+
+## 2026-10-01 — JT-MEDIA-ADMIN-001 — diagnostic des sources d'animation
+
+- [x] Ajouter le voyant bas-gauche vert=MP4 réel / rouge=legacy-fallback.
+- [x] Ajouter l'ouverture admin par 20 taps bas-droite.
+- [x] Afficher indexa, MP4 présent/raccordé, dossier/prefix legacy, frames, mode et son.
+- [x] Exposer namea/longanim1/genrea/sona au contrôleur média.
+- [x] Passer le candidat diagnostic à 1.0.5 / versionCode 105.
+- [x] Validation Python/CI de préparation et des hooks admin sur le run #40.
+- [ ] Attendre la fin du build APK du run #40.
+- [ ] Fab : relever les lignes rouges/LEGACY correspondant aux jauges à remplacer.
