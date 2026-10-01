@@ -579,3 +579,8 @@ Correction codée : les vidéos de combat ne sont plus volontairement muettes ; 
 ## 2026-10-01 — JT-MEDIA-ADMIN-001 — diagnostic des sources d'animation
 
 Ajout d'un diagnostic non intrusif pour distinguer le rendu réellement actif. Point clignotant vert si _jt_scene_video_active=True, rouge sinon. Le menu admin expose les chemins legacy afin d'éviter de confondre une jauge historique superposée avec une nouvelle vidéo de fond. À valider sur téléphone : déclenchement 20 taps, lisibilité du Popup, couleur correcte lors des transitions/fallback, absence d'effet sur les contrôles.
+
+
+## 2026-10-01 — JT-POWER-VIDEOS-001 — six pouvoirs vidéo + charge corrigée
+
+Le lot remplace uniquement les médias/rendus : aucune correction gameplay, dégâts, durée logique, score, IA ou coût n'est dérivée de la durée des MP4. Les fichiers source ont été envoyés par Fab sur main ; intégration prévue par réutilisation des blobs, sans merge main. Points à vérifier sur téléphone : chaque état 21..26 lance la bonne vidéo et son audio, retour historique correct après fin logique, charge corrected 2/3/4, aucune double bande-son, aura présente seulement lorsqu'un pouvoir peut réellement être lancé, voyant/admin corrects.

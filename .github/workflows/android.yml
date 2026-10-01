@@ -115,6 +115,12 @@ jobs:
               "_jt_set_native_scene_audio",
               "[JT-SCENE] AUDIO_LEGACY",
               "self._jt_media.set_legacy_catalog(namea, longanim1, genrea, sona)",
+              "self.b1.source='stsf1.png' if jt_power_available(1) else 'stsf0.png'",
+              "self.b2.source='sth1.png' if jt_power_available(2) else 'sth0.png'",
+              "self.b3.source='stta1.png' if jt_power_available(3) else 'stta0.png'",
+              "self.b4.source='trfs1.png' if jt_power_available(4) else 'trfs0.png'",
+              "self.b5.source='trph1.png' if jt_power_available(5) else 'trph0.png'",
+              "self.b6.source='trma1.png' if jt_power_available(6) else 'trma0.png'",
           )
           for token in required_main:
               if token not in main:
@@ -140,7 +146,13 @@ jobs:
 
           required_runtime = (
               "StegVsTrexvaetviensremolacebisorigune.mp4",
-              "Chargestegtrexchargerougebleu.mp4",
+              "Chargestegtrexchargerougebleucorrected.mp4",
+              "stsf-sanctuary-force.mp4",
+              "stls-lifestream.mp4",
+              "stta-tornado-attack.mp4",
+              "trfs-fire-storm.mp4",
+              "trph-phoenix-attack.mp4",
+              "trma-meteor-attack.mp4",
               "Stegtrexegalitechargeboutonjaune.mp4",
               "Stegtrexresultstegwin.mp4",
               "Stegtrexresulttrexwin.mp4",
@@ -155,6 +167,8 @@ jobs:
               "LEGACY / FALLBACK",
               "_on_admin_trigger",
               "_legacy_directory",
+              "20-tap mode enabled",
+              "ROUGE : le repertoire legacy est affiche au-dessus du voyant",
           )
           for token in required_runtime:
               if token not in runtime:
@@ -260,8 +274,14 @@ jobs:
           inspect_video assets/intro/JTrexintro1.mp4 intro1
           inspect_video assets/intro/JTrexintro2.mp4 intro2
           inspect_video assets/intro/JTrexintro3.mp4 intro3
-          inspect_video assets/combat/Chargestegtrexchargerougebleu.mp4 scene-15-charge
+          inspect_video assets/combat/Chargestegtrexchargerougebleucorrected.mp4 scene-15-charge-corrected
           inspect_video assets/combat/Stegtrexegalitechargeboutonjaune.mp4 scene-16-yellow
+          inspect_video assets/powers/stsf-sanctuary-force.mp4 power-21-stsf
+          inspect_video assets/powers/stls-lifestream.mp4 power-22-stls
+          inspect_video assets/powers/stta-tornado-attack.mp4 power-23-stta
+          inspect_video assets/powers/trfs-fire-storm.mp4 power-24-trfs
+          inspect_video assets/powers/trph-phoenix-attack.mp4 power-25-trph
+          inspect_video assets/powers/trma-meteor-attack.mp4 power-26-trma
           inspect_video assets/combat/StegVsTrexvaetviensremolacebisorigune.mp4 scene-20-wait
           inspect_video assets/combat/Stegtrexresultstegwin.mp4 scene-60-st-win
           inspect_video assets/combat/Stegtrexresulttrexwin.mp4 scene-61-tr-win
@@ -368,9 +388,9 @@ jobs:
             exit 1
           fi
           mkdir -p artifacts
-          cp "${apks[0]}" artifacts/JuneT-Rex-1.0.5-debug.apk
+          cp "${apks[0]}" artifacts/JuneT-Rex-1.0.6-debug.apk
           cd artifacts
-          sha256sum JuneT-Rex-1.0.5-debug.apk > SHA256SUMS.txt
+          sha256sum JuneT-Rex-1.0.6-debug.apk > SHA256SUMS.txt
 
       - name: Upload diagnostic files
         if: always()
@@ -393,9 +413,9 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: JuneT-Rex-1.0.5-debug
+          name: JuneT-Rex-1.0.6-debug
           path: |
-            artifacts/JuneT-Rex-1.0.5-debug.apk
+            artifacts/JuneT-Rex-1.0.6-debug.apk
             artifacts/SHA256SUMS.txt
           if-no-files-found: error
           compression-level: 0

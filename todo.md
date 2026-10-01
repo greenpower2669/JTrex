@@ -548,3 +548,15 @@ Commande interne associée :
 - [x] Validation Python/CI de préparation et des hooks admin sur le run #40.
 - [ ] Attendre la fin du build APK du run #40.
 - [ ] Fab : relever les lignes rouges/LEGACY correspondant aux jauges à remplacer.
+
+
+## 2026-10-01 — JT-POWER-VIDEOS-001 — six pouvoirs vidéo + charge corrigée
+
+- [x] Identifier les 7 nouveaux MP4 déposés sur main.
+- [x] Fixer le mapping 21 STSF Sanctuary / 22 STLS Lifestream / 23 STTA Tornado / 24 TRFS FireStorm / 25 TRPH Phoenix / 26 TRMA Meteor.
+- [x] Préparer le raccordement de Chargestegtrexchargerougebleucorrected.mp4 pour 2/3/4.
+- [x] Forcer les six auras sur jt_power_available(slot), identique à la lançabilité réelle.
+- [x] Ajouter le nom du répertoire legacy au-dessus du voyant rouge lorsque le mode 20 touches est activé.
+- [ ] Vérifier ffprobe/frames des 7 nouveaux MP4 dans CI.
+- [ ] Vérifier compilation Android et produire June-T-Rex-1.0.6-debug.apk.
+- [ ] Fab : tester les six pouvoirs, la charge corrected, les auras et le diagnostic 20 touches sur téléphone.

@@ -1108,3 +1108,8 @@ Règle audio combat : vidéo effectivement active = image + son natif du MP4. Av
 ## 2026-10-01 — JT-MEDIA-ADMIN-001 — diagnostic des sources d'animation
 
 But immédiat : aider Fab à identifier visuellement les séquences qui restent à convertir en vidéo. Le catalogue historique exposé à l'admin provient directement de namea/longanim1/genrea/sona. Exemples confirmés : indexa 2=chargetr/, 3=chargest/, 4=horseg2ko/, 5-6=egtrwin/, 7=eg2ko/, 8=stwin/, 9=trwin/, 10=finishst/, 11=finishtr/, 21=stsf/, 22=stls/, 23=stta/, 24=trfs/, 25=trph/, 26=trma/.
+
+
+## 2026-10-01 — JT-POWER-VIDEOS-001 — six pouvoirs vidéo + charge corrigée
+
+Médias pouvoirs canonisés : STSF→StegstegtrexAtkSancruaryForce.mp4, STLS→StegLifestream.mp4, STTA→StegTrexTornadoattk.mp4, TRFS→TrexStegTrexFireStormAttk.mp4, TRPH→TrexStegTrexPhoenixAttak.mp4, TRMA→TrexStgTrexAtkMereorlepluschère.mp4. Dans la branche de travail, ils sont renommés en chemins ASCII sous assets/powers/ pour fiabiliser le packaging Android. La charge 2/3/4 utilise désormais la version corrected. Aura = même fonction canonique que disponibilité/activation : jt_power_available(slot), donc énergie strictement > coût, slot non utilisé et indexa==1.

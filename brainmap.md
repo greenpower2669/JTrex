@@ -765,3 +765,8 @@ Chaîne audio : `anim_1` conserve `ma/sona[indexa]` comme fallback tant que `_jt
 ## 2026-10-01 — JT-MEDIA-ADMIN-001 — diagnostic des sources d'animation
 
 JTMediaController reçoit le catalogue legacy via set_legacy_catalog(namea,longanim1,genrea,sona). Window.on_touch_down compte 20 taps bas-droite pour ouvrir le Popup ADMIN MEDIA. Le Popup compare SCENES, présence réelle du MP4 et état courant _jt_scene_video_active. Le voyant bas-gauche utilise exactement ce dernier booléen : vert=frame vidéo active, rouge=legacy/fallback.
+
+
+## 2026-10-01 — JT-POWER-VIDEOS-001 — six pouvoirs vidéo + charge corrigée
+
+SCENES du JTMediaController couvre désormais 1, 2/3/4, 5/6/7, 8, 9 et chaque pouvoir 21..26. Les pouvoirs sont six familles séparées afin qu'un changement d'état démarre le MP4 correspondant. EOS ne change jamais le moteur. Le mode admin persistant est activé après 20 taps bas-droite ; voyant rouge + libellé du dossier legacy, voyant vert sans libellé lorsque la frame MP4 est réellement active. affbt reçoit en fin de méthode six affectations canoniques des sprites 0/1 basées sur jt_power_available.

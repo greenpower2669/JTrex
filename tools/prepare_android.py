@@ -11,8 +11,8 @@ import zipfile
 from pathlib import Path, PurePosixPath
 
 
-VERSION = "1.0.5"
-NUMERIC_VERSION = "105"
+VERSION = "1.0.6"
+NUMERIC_VERSION = "106"
 ARCHIVE_SIZE = 327992765
 ARCHIVE_SHA256 = (
     "f73ca1fd5e96ca6e11df5987bda8b2e59"
@@ -29,7 +29,13 @@ MEDIA_ASSETS = {
     "assets/intro/JTrexintro1.mp4": 3278089,
     "assets/intro/JTrexintro2.mp4": 2584105,
     "assets/intro/JTrexintro3.mp4": 3349412,
-    "assets/combat/Chargestegtrexchargerougebleu.mp4": 787193,
+    "assets/combat/Chargestegtrexchargerougebleucorrected.mp4": 746721,
+    "assets/powers/stsf-sanctuary-force.mp4": 2525411,
+    "assets/powers/stls-lifestream.mp4": 2243703,
+    "assets/powers/stta-tornado-attack.mp4": 2928334,
+    "assets/powers/trfs-fire-storm.mp4": 2431111,
+    "assets/powers/trph-phoenix-attack.mp4": 2379231,
+    "assets/powers/trma-meteor-attack.mp4": 2544535,
     "assets/combat/Stegtrexegalitechargeboutonjaune.mp4": 1432415,
     "assets/combat/StegVsTrexvaetviensremolacebisorigune.mp4": 2472718,
     "assets/combat/Stegtrexresultstegwin.mp4": 1521350,
@@ -518,6 +524,28 @@ def _jt_log_new_stops(self, observer):
         f"Identité visuelle TRFS/TRMA: {tr_identity_swaps} remplacement(s), 4 attendus.",
     )
 
+    # Canonical power aura: exactly the same rule as actual launchability.
+    start, end = method_bounds(lines, "affbt")
+    method_indent = len(lines[start]) - len(lines[start].lstrip(" \t"))
+    body_indent = None
+    for index in range(start + 1, end):
+        if not lines[index].strip():
+            continue
+        current_indent = len(lines[index]) - len(lines[index].lstrip(" \t"))
+        if current_indent > method_indent:
+            body_indent = lines[index][:current_indent]
+            break
+    require(body_indent is not None, "Indentation de affbt introuvable.")
+    aura_block = [
+        body_indent + "self.b1.source='stsf1.png' if jt_power_available(1) else 'stsf0.png'" + newline,
+        body_indent + "self.b2.source='sth1.png' if jt_power_available(2) else 'sth0.png'" + newline,
+        body_indent + "self.b3.source='stta1.png' if jt_power_available(3) else 'stta0.png'" + newline,
+        body_indent + "self.b4.source='trfs1.png' if jt_power_available(4) else 'trfs0.png'" + newline,
+        body_indent + "self.b5.source='trph1.png' if jt_power_available(5) else 'trph0.png'" + newline,
+        body_indent + "self.b6.source='trma1.png' if jt_power_available(6) else 'trma0.png'" + newline,
+    ]
+    lines[end:end] = aura_block
+
     # Record stop causes, but emit diagnostics only on transitions.
     start, end = method_bounds(lines, "on_touch_down")
     insertions = []
@@ -762,7 +790,13 @@ def prepare(archive, destination, spec, media_root, runtime):
             "assets/intro/JTrexintro1.mp4",
             "assets/intro/JTrexintro2.mp4",
             "assets/intro/JTrexintro3.mp4",
-            "assets/combat/Chargestegtrexchargerougebleu.mp4",
+            "assets/combat/Chargestegtrexchargerougebleucorrected.mp4",
+            "assets/powers/stsf-sanctuary-force.mp4",
+            "assets/powers/stls-lifestream.mp4",
+            "assets/powers/stta-tornado-attack.mp4",
+            "assets/powers/trfs-fire-storm.mp4",
+            "assets/powers/trph-phoenix-attack.mp4",
+            "assets/powers/trma-meteor-attack.mp4",
             "assets/combat/Stegtrexegalitechargeboutonjaune.mp4",
             "assets/combat/StegVsTrexvaetviensremolacebisorigune.mp4",
             "assets/combat/Stegtrexresultstegwin.mp4",
@@ -786,7 +820,7 @@ def prepare(archive, destination, spec, media_root, runtime):
         shutil.copyfile(spec, stage / "buildozer.spec")
 
         report = {
-            "mission": "JT-MEDIA-ADMIN-001",
+            "mission": "JT-POWER-VIDEOS-001",
             "version": VERSION,
             "numeric_version": NUMERIC_VERSION,
             "package": "com.junedady.junetrex",
@@ -803,23 +837,26 @@ def prepare(archive, destination, spec, media_root, runtime):
             "changes": [
                 "a.png -> A.png: 4 références",
                 "boutbleu0.png -> boutBleu0.png: 4 références",
-                "version 1.0.5 / versionCode 105",
+                "version 1.0.6 / versionCode 106",
                 "Python cible 3.12.14 pour compatibilité ffpyplayer",
                 "titre June T-Rex",
                 "menu music deferred until intro end",
                 "one random intro per process launch",
-                "states 1/2-4/5-7/8/9 mapped to five combat videos",
+                "states 1/2-4/5-7/8/9 mapped to combat videos; charge uses corrected red/blue gauge video",
+                "power states 21/22/23/24/25/26 mapped to STSF/STLS/STTA/TRFS/TRPH/TRMA videos",
                 "combat videos aspect-fill with native MP4 audio after first usable frame; intros remain aspect-fit with audio",
                 "one scene player per state family with generation-safe callbacks",
                 "legacy scene soundtrack remains fallback until first usable video frame and on media failure",
                 "POWER_COSTS ST=60/40/60 TR=60/60/80 with strict energy>cost",
                 "power availability shared by UI, touch and AI; right sound lock corrected",
+                "power aura frames are forced from jt_power_available(slot), exactly matching launchability",
                 "TRFS slot 4 / TRMA slot 6 visual identity corrected",
                 "score/stop/letter diagnostics added without changing legacy score",
                 "pause/resume/shutdown video lifecycle hooks",
                 "hidden media admin opens after 20 bottom-right taps",
                 "bottom-left blinking dot: green for actual MP4 rendering, red for legacy/fallback",
                 "admin lists every historical animation prefix/directory and mapped MP4 availability",
+                "20-tap mode shows the active legacy directory above the red status dot",
             ],
             "game_executed": False,
         }

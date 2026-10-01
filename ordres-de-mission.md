@@ -513,3 +513,8 @@ Avenant canonique Fab : pour les scènes vidéo indexa 1, 2/3/4, 5/6/7, 8 et 9, 
 ## 2026-10-01 — JT-MEDIA-ADMIN-001 — diagnostic des sources d'animation
 
 Outil de repérage demandé par Fab avant le prochain rapport ASTRA. Vingt taps consécutifs dans les 12 % bas-droite ouvrent un menu administratif média. Le menu doit lister chaque indexa connu, le MP4 raccordé et présent lorsqu'il existe, sinon l'animation historique, ainsi que le répertoire/prefix legacy exact, le nombre de frames, le mode et le son. Pendant le jeu, un petit point clignotant bas-gauche est vert lorsque le rendu réellement affiché est un MP4, rouge lorsque le rendu est historique/fallback. Diagnostic uniquement : aucun effet gameplay. Candidat 1.0.5 / versionCode 105.
+
+
+## 2026-10-01 — JT-POWER-VIDEOS-001 — six pouvoirs vidéo + charge corrigée
+
+Décision Fab : intégrer les six vidéos de pouvoirs fournies sur main sans merger main, en réutilisant leurs blobs sur port/android-first-apk. Mapping canonique : état 21 / STSF = Sanctuary Force ; 22 / STLS = Lifestream ; 23 / STTA = Tornado Attack ; 24 / TRFS = Fire Storm ; 25 / TRPH = Phoenix Attack ; 26 / TRMA = Meteor Attack (coût 80, la plus chère). La montée rouge/bleu états 2/3/4 doit utiliser la vidéo corrigée Chargestegtrexchargerougebleucorrected.mp4. Toutes les vidéos gardent le moteur historique comme autorité et fallback, audio MP4 natif après première frame exploitable. Les auras des six pouvoirs doivent être visibles si et seulement si jt_power_available(slot) est vrai. En mode admin 20 touches, quand le voyant est rouge, afficher au-dessus le répertoire legacy courant.

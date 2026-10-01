@@ -37,7 +37,7 @@ SCENES = {
     },
     "charge": {
         "states": frozenset((2, 3, 4)),
-        "file": "assets/combat/Chargestegtrexchargerougebleu.mp4",
+        "file": "assets/combat/Chargestegtrexchargerougebleucorrected.mp4",
         "loop": False,
     },
     "yellow": {
@@ -53,6 +53,36 @@ SCENES = {
     "tr-win": {
         "states": frozenset((9,)),
         "file": "assets/combat/Stegtrexresulttrexwin.mp4",
+        "loop": False,
+    },
+    "power-stsf": {
+        "states": frozenset((21,)),
+        "file": "assets/powers/stsf-sanctuary-force.mp4",
+        "loop": False,
+    },
+    "power-stls": {
+        "states": frozenset((22,)),
+        "file": "assets/powers/stls-lifestream.mp4",
+        "loop": False,
+    },
+    "power-stta": {
+        "states": frozenset((23,)),
+        "file": "assets/powers/stta-tornado-attack.mp4",
+        "loop": False,
+    },
+    "power-trfs": {
+        "states": frozenset((24,)),
+        "file": "assets/powers/trfs-fire-storm.mp4",
+        "loop": False,
+    },
+    "power-trph": {
+        "states": frozenset((25,)),
+        "file": "assets/powers/trph-phoenix-attack.mp4",
+        "loop": False,
+    },
+    "power-trma": {
+        "states": frozenset((26,)),
+        "file": "assets/powers/trma-meteor-attack.mp4",
         "loop": False,
     },
 }
@@ -139,6 +169,7 @@ class JTMediaController:
         self._admin_popup = None
         self._admin_label = None
         self._admin_refresh_event = None
+        self._admin_enabled = False
         self._indicator_phase = False
 
         self.root._jt_scene_video_active = False
@@ -157,6 +188,18 @@ class JTMediaController:
             )
         self._status_dot.bind(pos=self._layout_status_dot, size=self._layout_status_dot)
         self.root.add_widget(self._status_dot)
+        self._status_label = Label(
+            text="",
+            size_hint=(None, None),
+            size=(dp(300), dp(32)),
+            pos=(dp(6), dp(29)),
+            font_size=dp(16),
+            halign="left",
+            valign="middle",
+            opacity=0,
+        )
+        self._status_label.text_size = self._status_label.size
+        self.root.add_widget(self._status_label)
         self._indicator_event = Clock.schedule_interval(
             self._update_status_indicator, 0.35
         )
@@ -184,13 +227,26 @@ class JTMediaController:
     def _update_status_indicator(self, dt):
         if not self._intro_done:
             self._status_dot_color.rgba = (1, 0, 0, 0)
+            self._status_label.text = ""
+            self._status_label.opacity = 0
             return
         self._indicator_phase = not self._indicator_phase
         alpha = 1.0 if self._indicator_phase else 0.22
-        if getattr(self.root, "_jt_scene_video_active", False):
+        video_active = bool(getattr(self.root, "_jt_scene_video_active", False))
+        if video_active:
             self._status_dot_color.rgba = (0.0, 1.0, 0.0, alpha)
+            self._status_label.text = ""
+            self._status_label.opacity = 0
         else:
             self._status_dot_color.rgba = (1.0, 0.0, 0.0, alpha)
+            if self._admin_enabled:
+                prefix = self._legacy_names.get(self._engine_state, "")
+                directory = self._legacy_directory(prefix) if prefix else "LEGACY"
+                self._status_label.text = directory
+                self._status_label.opacity = 1
+            else:
+                self._status_label.text = ""
+                self._status_label.opacity = 0
 
     def _on_admin_trigger(self, window, touch):
         if self._admin_popup is not None:
@@ -211,6 +267,8 @@ class JTMediaController:
         if self._admin_tap_count >= 20:
             self._admin_tap_count = 0
             self._admin_tap_deadline = 0.0
+            self._admin_enabled = True
+            print("[JT-ADMIN] 20-tap mode enabled", flush=True)
             Clock.schedule_once(lambda dt: self._open_admin(), 0)
         return False
 
@@ -227,8 +285,9 @@ class JTMediaController:
         actual_video = bool(getattr(self.root, "_jt_scene_video_active", False))
         lines = [
             "JUNE T-REX — ADMIN MEDIA",
-            "20 taps bas-droite pour ouvrir",
+            "MODE 20 TOUCHES : ACTIF",
             "Voyant jeu : VERT = vraie video / ROUGE = animation historique",
+            "ROUGE : le repertoire legacy est affiche au-dessus du voyant",
             "",
             "ETAT ACTUEL : indexa={}  MODE={}".format(
                 current, "VIDEO MP4" if actual_video else "LEGACY / FALLBACK"
@@ -750,6 +809,12 @@ class JTMediaController:
             except Exception:
                 pass
             self._status_dot = None
+        if self._status_label is not None:
+            try:
+                self.root.remove_widget(self._status_label)
+            except Exception:
+                pass
+            self._status_label = None
         if not self._intro_done:
             self._finish_intro("shutdown")
         self._stop_scene("shutdown", preserve_failure=False)
