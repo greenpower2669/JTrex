@@ -560,3 +560,10 @@ Commande interne associée :
 - [ ] Vérifier ffprobe/frames des 7 nouveaux MP4 dans CI.
 - [ ] Vérifier compilation Android et produire June-T-Rex-1.0.6-debug.apk.
 - [ ] Fab : tester les six pouvoirs, la charge corrected, les auras et le diagnostic 20 touches sur téléphone.
+
+
+### CI #41 / #42
+- [x] Run #41 : préparation réussie ; échec uniquement sur un ancien token de texte du test admin, avant Buildozer.
+- [x] Corriger le garde-fou CI obsolète sans modifier le code fonctionnel.
+- [x] Run #42 : préparation historique + compilation Python + validation média/audio/pouvoirs/auras réussies.
+- [ ] Run #42 : inspection FFprobe des 7 nouveaux MP4 puis build APK complet en cours.

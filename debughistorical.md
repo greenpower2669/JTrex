@@ -584,3 +584,7 @@ Ajout d'un diagnostic non intrusif pour distinguer le rendu réellement actif. P
 ## 2026-10-01 — JT-POWER-VIDEOS-001 — six pouvoirs vidéo + charge corrigée
 
 Le lot remplace uniquement les médias/rendus : aucune correction gameplay, dégâts, durée logique, score, IA ou coût n'est dérivée de la durée des MP4. Les fichiers source ont été envoyés par Fab sur main ; intégration prévue par réutilisation des blobs, sans merge main. Points à vérifier sur téléphone : chaque état 21..26 lance la bonne vidéo et son audio, retour historique correct après fin logique, charge corrected 2/3/4, aucune double bande-son, aura présente seulement lorsqu'un pouvoir peut réellement être lancé, voyant/admin corrects.
+
+
+### CI #41 / #42
+Le run #41 a été arrêté par le validateur qui cherchait encore la chaîne UI `20 taps bas-droite pour ouvrir`; la préparation et le code avaient réussi. Correctif CI seul dans f8e90d5. Sur le run #42, les étapes de préparation, inspection des hooks et validation Python/média/audio/pouvoirs/auras sont vertes. Aucune régression fonctionnelle identifiée à ce stade; FFprobe et Buildozer restent à terminer.
