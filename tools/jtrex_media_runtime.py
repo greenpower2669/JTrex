@@ -6,12 +6,20 @@ historical state machine.
 """
 
 import random
+import time
 from pathlib import Path
 
 from kivy.clock import Clock
 from kivy.core.video import Video as CoreVideo
-from kivy.graphics import Color, Rectangle
+from kivy.core.window import Window
+from kivy.graphics import Color, Ellipse, Rectangle
+from kivy.metrics import dp
 from kivy.resources import resource_find
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.button import Button
+from kivy.uix.label import Label
+from kivy.uix.popup import Popup
+from kivy.uix.scrollview import ScrollView
 from kivy.uix.widget import Widget
 
 
@@ -121,13 +129,219 @@ class JTMediaController:
         self._scene_rect_pos = None
         self._scene_rect_size = None
         self._paused_player = None
+        self._engine_state = None
+        self._legacy_names = {}
+        self._legacy_lengths = {}
+        self._legacy_genres = {}
+        self._legacy_sounds = {}
+        self._admin_tap_count = 0
+        self._admin_tap_deadline = 0.0
+        self._admin_popup = None
+        self._admin_label = None
+        self._admin_refresh_event = None
+        self._indicator_phase = False
 
         self.root._jt_scene_video_active = False
         # Compatibility with the first wait-only integration.
         self.root._jt_wait_video_active = False
 
+        self._status_dot = Widget(
+            size_hint=(None, None),
+            size=(dp(18), dp(18)),
+            pos=(dp(8), dp(8)),
+        )
+        with self._status_dot.canvas:
+            self._status_dot_color = Color(1, 0, 0, 0)
+            self._status_dot_shape = Ellipse(
+                pos=self._status_dot.pos, size=self._status_dot.size
+            )
+        self._status_dot.bind(pos=self._layout_status_dot, size=self._layout_status_dot)
+        self.root.add_widget(self._status_dot)
+        self._indicator_event = Clock.schedule_interval(
+            self._update_status_indicator, 0.35
+        )
+        Window.bind(on_touch_down=self._on_admin_trigger)
+
         provider = getattr(CoreVideo, "__module__", repr(CoreVideo))
         print("[JT-MEDIA] video provider={}".format(provider), flush=True)
+
+    def set_legacy_catalog(self, names, lengths, genres, sounds):
+        self._legacy_names = dict(names)
+        self._legacy_lengths = dict(lengths)
+        self._legacy_genres = dict(genres)
+        self._legacy_sounds = dict(sounds)
+        print(
+            "[JT-ADMIN] legacy catalog states={}".format(
+                sorted(self._legacy_names)
+            ),
+            flush=True,
+        )
+
+    def _layout_status_dot(self, *args):
+        self._status_dot_shape.pos = self._status_dot.pos
+        self._status_dot_shape.size = self._status_dot.size
+
+    def _update_status_indicator(self, dt):
+        if not self._intro_done:
+            self._status_dot_color.rgba = (1, 0, 0, 0)
+            return
+        self._indicator_phase = not self._indicator_phase
+        alpha = 1.0 if self._indicator_phase else 0.22
+        if getattr(self.root, "_jt_scene_video_active", False):
+            self._status_dot_color.rgba = (0.0, 1.0, 0.0, alpha)
+        else:
+            self._status_dot_color.rgba = (1.0, 0.0, 0.0, alpha)
+
+    def _on_admin_trigger(self, window, touch):
+        if self._admin_popup is not None:
+            return False
+        width, height = Window.size
+        if width <= 0 or height <= 0:
+            return False
+        in_corner = touch.x >= width * 0.88 and touch.y <= height * 0.12
+        if not in_corner:
+            self._admin_tap_count = 0
+            self._admin_tap_deadline = 0.0
+            return False
+        now = time.monotonic()
+        if now > self._admin_tap_deadline:
+            self._admin_tap_count = 0
+        self._admin_tap_count += 1
+        self._admin_tap_deadline = now + 10.0
+        if self._admin_tap_count >= 20:
+            self._admin_tap_count = 0
+            self._admin_tap_deadline = 0.0
+            Clock.schedule_once(lambda dt: self._open_admin(), 0)
+        return False
+
+    @staticmethod
+    def _legacy_directory(prefix):
+        if not prefix:
+            return "(aucun)"
+        if "/" not in prefix:
+            return prefix
+        return prefix.rsplit("/", 1)[0] + "/"
+
+    def _admin_status_text(self):
+        current = self._engine_state
+        actual_video = bool(getattr(self.root, "_jt_scene_video_active", False))
+        lines = [
+            "JUNE T-REX — ADMIN MEDIA",
+            "20 taps bas-droite pour ouvrir",
+            "Voyant jeu : VERT = vraie video / ROUGE = animation historique",
+            "",
+            "ETAT ACTUEL : indexa={}  MODE={}".format(
+                current, "VIDEO MP4" if actual_video else "LEGACY / FALLBACK"
+            ),
+            "",
+        ]
+        catalog_states = set(self._legacy_names)
+        for scene in SCENES.values():
+            catalog_states.update(scene["states"])
+        for state in sorted(catalog_states):
+            key = self._key_for_state(state)
+            legacy_prefix = self._legacy_names.get(state, "")
+            legacy_dir = self._legacy_directory(legacy_prefix)
+            sound = self._legacy_sounds.get(state, "(aucun)")
+            length = self._legacy_lengths.get(state, "?")
+            genre = self._legacy_genres.get(state, "?")
+            marker = ">> " if state == current else "   "
+            if key is None:
+                lines.append(
+                    "{}indexa {:>2} | LEGACY | video=NON RACCORDEE".format(
+                        marker, state
+                    )
+                )
+                lines.append(
+                    "      dossier={}  prefix={}  frames={}  mode={}  son={}".format(
+                        legacy_dir, legacy_prefix or "(aucun)", length, genre, sound
+                    )
+                )
+                continue
+            scene = SCENES[key]
+            video_file = scene["file"]
+            video_present = bool(self._resolve(video_file))
+            if state == current:
+                mode = "VIDEO ACTIVE" if actual_video else "LEGACY / FALLBACK"
+            else:
+                mode = "VIDEO DISPONIBLE" if video_present else "VIDEO MANQUANTE"
+            lines.append(
+                "{}indexa {:>2} | {} | mp4={}".format(
+                    marker, state, mode, "OUI" if video_present else "NON"
+                )
+            )
+            lines.append("      video={}".format(video_file))
+            lines.append(
+                "      fallback={}  prefix={}  frames={}  mode={}  son={}".format(
+                    legacy_dir, legacy_prefix or "(aucun)", length, genre, sound
+                )
+            )
+        return "\n".join(lines)
+
+    def _refresh_admin(self, dt=0):
+        if self._admin_label is not None:
+            self._admin_label.text = self._admin_status_text()
+
+    def _open_admin(self):
+        if self._admin_popup is not None:
+            return
+        label = Label(
+            text=self._admin_status_text(),
+            size_hint_y=None,
+            font_size=dp(18),
+            halign="left",
+            valign="top",
+        )
+        label.bind(
+            width=lambda instance, value: setattr(
+                instance, "text_size", (value, None)
+            )
+        )
+        label.bind(
+            texture_size=lambda instance, value: setattr(
+                instance, "height", value[1] + dp(24)
+            )
+        )
+        scroll = ScrollView(size_hint=(1, 1))
+        scroll.add_widget(label)
+        close_button = Button(
+            text="FERMER",
+            size_hint=(1, None),
+            height=dp(58),
+            font_size=dp(20),
+        )
+        content = BoxLayout(orientation="vertical", spacing=dp(8), padding=dp(8))
+        content.add_widget(scroll)
+        content.add_widget(close_button)
+        popup = Popup(
+            title="ADMIN MEDIA — diagnostic uniquement",
+            content=content,
+            size_hint=(0.96, 0.94),
+            auto_dismiss=True,
+        )
+        self._admin_popup = popup
+        self._admin_label = label
+        close_button.bind(on_release=lambda *args: popup.dismiss())
+        popup.bind(on_dismiss=self._on_admin_dismiss)
+        self._admin_refresh_event = Clock.schedule_interval(
+            self._refresh_admin, 0.5
+        )
+        print(
+            "[JT-ADMIN] open state={} video_active={}".format(
+                self._engine_state,
+                bool(getattr(self.root, "_jt_scene_video_active", False)),
+            ),
+            flush=True,
+        )
+        popup.open()
+
+    def _on_admin_dismiss(self, *args):
+        if self._admin_refresh_event is not None:
+            self._admin_refresh_event.cancel()
+            self._admin_refresh_event = None
+        self._admin_popup = None
+        self._admin_label = None
+        print("[JT-ADMIN] close", flush=True)
 
     @staticmethod
     def _resolve(relative_path):
@@ -237,6 +451,7 @@ class JTMediaController:
         """Follow the state *after* the historical engine has transitioned."""
         if not self._intro_done:
             return
+        self._engine_state = indexa
         key = self._key_for_state(indexa)
         if key == self._scene_key and self._scene_player is not None:
             self._scene_state = indexa
@@ -517,6 +732,24 @@ class JTMediaController:
                 print("[JT-MEDIA][WARN] resume={!r}".format(exc), flush=True)
 
     def shutdown(self):
+        if self._admin_popup is not None:
+            try:
+                self._admin_popup.dismiss()
+            except Exception:
+                pass
+        try:
+            Window.unbind(on_touch_down=self._on_admin_trigger)
+        except Exception:
+            pass
+        if self._indicator_event is not None:
+            self._indicator_event.cancel()
+            self._indicator_event = None
+        if self._status_dot is not None:
+            try:
+                self.root.remove_widget(self._status_dot)
+            except Exception:
+                pass
+            self._status_dot = None
         if not self._intro_done:
             self._finish_intro("shutdown")
         self._stop_scene("shutdown", preserve_failure=False)
