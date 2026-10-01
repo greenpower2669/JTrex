@@ -566,7 +566,7 @@ Commande interne associée :
 - [x] Run #41 : préparation réussie ; échec uniquement sur un ancien token de texte du test admin, avant Buildozer.
 - [x] Corriger le garde-fou CI obsolète sans modifier le code fonctionnel.
 - [x] Run #42 : préparation historique + compilation Python + validation média/audio/pouvoirs/auras réussies.
-- [ ] Run #42 : inspection FFprobe des 7 nouveaux MP4 puis build APK complet en cours.
+- [x] Run #42 : inspection FFprobe des 7 nouveaux MP4 et build APK 1.0.6 terminés avec succès.
 
 
 ## 2026-10-02 — JT-CINEMATIC-FINISHING-001 — lecture complète, auras tournantes, protection orbes
@@ -578,6 +578,22 @@ Commande interne associée :
 - [x] Empêcher le tap de lancement de charge de figer un orbe.
 - [x] Protéger les arrêts tactiles d'orbes pendant 2 secondes après la charge.
 - [x] Masquer les voyants diagnostic tant que le mode 20 taps n'est pas activé.
-- [ ] Valider préparation/CI/FFprobe des deux finishing et du candidat 1.0.7.
-- [ ] Valider le build APK 1.0.7.
+- [x] Run #48 : préparation/CI/FFprobe des finishing et du candidat 1.0.7 terminés ; candidat ensuite rejeté par audit sémantique du verrou orbes.
+- [x] Build APK 1.0.7 réussi au run #48 ; ne pas remettre à Fab comme candidat final à cause du défaut de protection orbes détecté après CI.
 - [ ] Fab : tester les six pouvoirs jusqu'à EOS, les deux finishing, les auras tournantes, la protection orbes et le mode admin.
+
+
+## 2026-10-02 — JT-ORB-PROTECT-002 — 1.0.8
+
+- [x] Auditer le main généré 1.0.7 et identifier la garde d'arrêt humain inversée.
+- [x] Confirmer la transition historique de début : Start indexa 0 → charge 4 → fin 1x → indexa 1 + colstop remis à False.
+- [x] Armer les 2 s uniquement sur sortie charge 2/3/4 → phase orbes 1 avec Clock réel.
+- [x] Figer réellement les positions pendant 2 s.
+- [x] Bloquer les stops IA et humains pendant ces 2 s.
+- [x] Suspendre car2 et car pendant la fenêtre afin de ne pas consommer le temps de jeu.
+- [x] Conserver taps de charge, dégâts, score, pouvoirs et chaîne Android historiques.
+- [x] Renforcer CI avec tests sémantiques Clock et interdiction de l'ancienne garde.
+- [x] Run #49 entièrement vert ; APK 1.0.8 / versionCode 108 produit.
+- [x] SHA-256 APK : a27dfb9e49e11803ca006a0fb9307a47d7d15f9eb78fd3b8e9dd76667db7523b.
+- [ ] Fab : valider sur téléphone le gel réel 2 s, l'absence de stop humain/IA durant la fenêtre, puis le retour normal du contrôle.
+- [ ] Fab : valider sur téléphone les six pouvoirs jusqu'à EOS, les deux finishing, les auras tournantes et le mode admin 20 taps.

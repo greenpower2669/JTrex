@@ -775,3 +775,8 @@ SCENES du JTMediaController couvre désormais 1, 2/3/4, 5/6/7, 8, 9 et chaque po
 ## 2026-10-02 — JT-CINEMATIC-FINISHING-001 — lecture complète, auras tournantes, protection orbes
 
 JTMediaController : SCENES power-* et finish-* portent play_to_end=True. sync_scene_state garde le player courant jusqu'à EOS même si indexa a déjà évolué. _on_scene_eos stoppe proprement puis resynchronise sur _engine_state, sans modifier le gameplay. _jt_scene_cinematic_lock est exposé au root pour bloquer on_touch_down pendant la couverture vidéo. Admin : _update_status_indicator retourne immédiatement tant que _admin_enabled=False. Auras : affbt force uniquement la taille de b1s..b6s selon jt_power_available ; mc1 continue d'animer leurs sources select0..15.
+
+
+## 2026-10-02 — JT-ORB-PROTECT-002 — architecture 1.0.8
+
+Le verrou orbes est centralisé par `jt_orb_protected()` : vrai uniquement si `indexa==1` et `Clock.get_time() < _JT_ORB_TOUCH_PROTECT_UNTIL`. `anim_1` capture l'état sortant avant `anim1,indexa=0,1` et arme +2 s seulement si l'état sortant vaut 2/3/4. `on_touch_down` ne pose `colstop[1..6]` que si `indexa==1 and not jt_orb_protected()`; les taps rouge/bleu de charge restent indépendants. `colvv` fait `continue` avant déplacement/IA pendant la protection, donc les positions restent réellement fixes et aucun stop IA n'est créé. `carupdate` suspend `car2` et `car` pendant la même fenêtre. La CI #49 teste désormais la frontière Clock et interdit explicitement l'ancienne garde inversée. Build 1.0.8 : 865591a8d9518d9da26533ec403c6794fc1d4fd2.
