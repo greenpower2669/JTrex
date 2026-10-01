@@ -11,8 +11,8 @@ import zipfile
 from pathlib import Path, PurePosixPath
 
 
-VERSION = "1.0.6"
-NUMERIC_VERSION = "106"
+VERSION = "1.0.7"
+NUMERIC_VERSION = "107"
 ARCHIVE_SIZE = 327992765
 ARCHIVE_SHA256 = (
     "f73ca1fd5e96ca6e11df5987bda8b2e59"
@@ -36,6 +36,8 @@ MEDIA_ASSETS = {
     "assets/powers/trfs-fire-storm.mp4": 2431111,
     "assets/powers/trph-phoenix-attack.mp4": 2379231,
     "assets/powers/trma-meteor-attack.mp4": 2544535,
+    "assets/finishing/steg-finishing-trex.mp4": 2184229,
+    "assets/finishing/trex-finishing-steg.mp4": 1834787,
     "assets/combat/Stegtrexegalitechargeboutonjaune.mp4": 1432415,
     "assets/combat/StegVsTrexvaetviensremolacebisorigune.mp4": 2472718,
     "assets/combat/Stegtrexresultstegwin.mp4": 1521350,
@@ -234,6 +236,7 @@ _JT_ORIGINAL_ASB = asb
 _JT_STOP_CAUSE = {1:'unknown',2:'unknown',3:'unknown',4:'unknown',5:'unknown',6:'unknown'}
 _JT_PREV_COLSTOP = {1:False,2:False,3:False,4:False,5:False,6:False}
 _JT_EXCHANGE_ID = 1
+_JT_ORB_TOUCH_PROTECT_UNTIL = 0.0
 
 def colpts():
     global _JT_EXCHANGE_ID
@@ -524,7 +527,8 @@ def _jt_log_new_stops(self, observer):
         f"Identité visuelle TRFS/TRMA: {tr_identity_swaps} remplacement(s), 4 attendus.",
     )
 
-    # Canonical power aura: exactly the same rule as actual launchability.
+    # Canonical rotating aura: b1s..b6s are the animated select/select0..15 overlays.
+    # Keep the power item icons historical; only the aura follows actual launchability.
     start, end = method_bounds(lines, "affbt")
     method_indent = len(lines[start]) - len(lines[start].lstrip(" \t"))
     body_indent = None
@@ -537,27 +541,59 @@ def _jt_log_new_stops(self, observer):
             break
     require(body_indent is not None, "Indentation de affbt introuvable.")
     aura_block = [
-        body_indent + "self.b1.source='stsf1.png' if jt_power_available(1) else 'stsf0.png'" + newline,
-        body_indent + "self.b2.source='sth1.png' if jt_power_available(2) else 'sth0.png'" + newline,
-        body_indent + "self.b3.source='stta1.png' if jt_power_available(3) else 'stta0.png'" + newline,
-        body_indent + "self.b4.source='trfs1.png' if jt_power_available(4) else 'trfs0.png'" + newline,
-        body_indent + "self.b5.source='trph1.png' if jt_power_available(5) else 'trph0.png'" + newline,
-        body_indent + "self.b6.source='trma1.png' if jt_power_available(6) else 'trma0.png'" + newline,
+        body_indent + "self.b1s.size=(mdo,mdo) if jt_power_available(1) else (0,0)" + newline,
+        body_indent + "self.b2s.size=(mdo,mdo) if jt_power_available(2) else (0,0)" + newline,
+        body_indent + "self.b3s.size=(mdo,mdo) if jt_power_available(3) else (0,0)" + newline,
+        body_indent + "self.b4s.size=(mdo,mdo) if jt_power_available(4) else (0,0)" + newline,
+        body_indent + "self.b5s.size=(mdo,mdo) if jt_power_available(5) else (0,0)" + newline,
+        body_indent + "self.b6s.size=(mdo,mdo) if jt_power_available(6) else (0,0)" + newline,
     ]
     lines[end:end] = aura_block
 
-    # Record stop causes, but emit diagnostics only on transitions.
+    # Touch safety: the tap that starts charge must never freeze an orb, then orb
+    # stop taps remain protected for two seconds. Full cinematics also swallow
+    # gameplay touches while the video is still covering the board.
     start, end = method_bounds(lines, "on_touch_down")
-    insertions = []
+    global_lines = [
+        index
+        for index in range(start + 1, min(end, start + 40))
+        if lines[index].lstrip().startswith("global ")
+    ]
+    require(global_lines, "Globals de on_touch_down introuvables.")
+    insert_at = max(global_lines) + 1
+    touch_body_indent = lines[global_lines[-1]][
+        : len(lines[global_lines[-1]]) - len(lines[global_lines[-1]].lstrip(" \t"))
+    ]
+    lines[insert_at:insert_at] = [
+        touch_body_indent + "global _JT_ORB_TOUCH_PROTECT_UNTIL" + newline,
+        touch_body_indent + "_jt_touch_start_indexa=indexa" + newline,
+        touch_body_indent + "if getattr(self, '_jt_scene_cinematic_lock', False):" + newline,
+        touch_body_indent + "\treturn True" + newline,
+    ]
+
+    start, end = method_bounds(lines, "on_touch_down")
+    replacements = []
     for index in range(start, end):
-        stripped = lines[index].strip().replace(" ", "")
-        if stripped.startswith("colstop[") and stripped.endswith("]=True"):
-            slot_text = stripped[len("colstop["):-len("]=True")]
+        compact = lines[index].strip().replace(" ", "")
+        if compact.startswith("colstop[") and compact.endswith("]=True"):
+            slot_text = compact[len("colstop["):-len("]=True")]
             if slot_text.isdigit() and 1 <= int(slot_text) <= 6:
                 prefix = lines[index][: len(lines[index]) - len(lines[index].lstrip(" \t"))]
-                insertions.append((index + 1, prefix + f"_JT_STOP_CAUSE[{slot_text}]='human'" + newline))
-    for index, line in reversed(insertions):
-        lines[index:index] = [line]
+                original = lines[index].lstrip(" \t").rstrip("\r\n")
+                replacements.append(
+                    (
+                        index,
+                        [
+                            prefix + "if _jt_touch_start_indexa!=1 and time.time()>=_JT_ORB_TOUCH_PROTECT_UNTIL:" + newline,
+                            prefix + "\t" + original + newline,
+                            prefix + "\t" + f"_JT_STOP_CAUSE[{slot_text}]='human'" + newline,
+                        ],
+                    )
+                )
+    require(len(replacements) == 6, f"Protections orbes tactiles: {len(replacements)} arrêt(s), 6 attendus.")
+    for index, replacement in reversed(replacements):
+        lines[index:index + 1] = replacement
+
     start, end = method_bounds(lines, "on_touch_down")
     touch_return = None
     for index in range(end - 1, start, -1):
@@ -569,7 +605,10 @@ def _jt_log_new_stops(self, observer):
         : len(lines[touch_return]) - len(lines[touch_return].lstrip(" \t"))
     ]
     lines[touch_return:touch_return] = [
-        touch_body_indent + "jt_sync_scene_now()" + newline
+        touch_body_indent + "if _jt_touch_start_indexa==1 and indexa in (2,3,4):" + newline,
+        touch_body_indent + "\t_JT_ORB_TOUCH_PROTECT_UNTIL=max(_JT_ORB_TOUCH_PROTECT_UNTIL,time.time()+2.0)" + newline,
+        touch_body_indent + "\tprint('[JT-ORB] touch protection 2.0s state={}'.format(indexa),flush=True)" + newline,
+        touch_body_indent + "jt_sync_scene_now()" + newline,
     ]
 
     start, end = method_bounds(lines, "carupdate")
@@ -797,6 +836,8 @@ def prepare(archive, destination, spec, media_root, runtime):
             "assets/powers/trfs-fire-storm.mp4",
             "assets/powers/trph-phoenix-attack.mp4",
             "assets/powers/trma-meteor-attack.mp4",
+            "assets/finishing/steg-finishing-trex.mp4",
+            "assets/finishing/trex-finishing-steg.mp4",
             "assets/combat/Stegtrexegalitechargeboutonjaune.mp4",
             "assets/combat/StegVsTrexvaetviensremolacebisorigune.mp4",
             "assets/combat/Stegtrexresultstegwin.mp4",
@@ -820,7 +861,7 @@ def prepare(archive, destination, spec, media_root, runtime):
         shutil.copyfile(spec, stage / "buildozer.spec")
 
         report = {
-            "mission": "JT-POWER-VIDEOS-001",
+            "mission": "JT-CINEMATIC-FINISHING-001",
             "version": VERSION,
             "numeric_version": NUMERIC_VERSION,
             "package": "com.junedady.junetrex",
@@ -837,19 +878,22 @@ def prepare(archive, destination, spec, media_root, runtime):
             "changes": [
                 "a.png -> A.png: 4 références",
                 "boutbleu0.png -> boutBleu0.png: 4 références",
-                "version 1.0.6 / versionCode 106",
+                "version 1.0.7 / versionCode 107",
                 "Python cible 3.12.14 pour compatibilité ffpyplayer",
                 "titre June T-Rex",
                 "menu music deferred until intro end",
                 "one random intro per process launch",
                 "states 1/2-4/5-7/8/9 mapped to combat videos; charge uses corrected red/blue gauge video",
                 "power states 21/22/23/24/25/26 mapped to STSF/STLS/STTA/TRFS/TRPH/TRMA videos",
+                "finishing states 10/11 mapped to Steg-finishes-Trex / Trex-finishes-Steg videos",
+                "power and finishing videos are play-to-end cinematics; gameplay touch is locked while they cover the board",
                 "combat videos aspect-fill with native MP4 audio after first usable frame; intros remain aspect-fit with audio",
                 "one scene player per state family with generation-safe callbacks",
                 "legacy scene soundtrack remains fallback until first usable video frame and on media failure",
                 "POWER_COSTS ST=60/40/60 TR=60/60/80 with strict energy>cost",
                 "power availability shared by UI, touch and AI; right sound lock corrected",
-                "power aura frames are forced from jt_power_available(slot), exactly matching launchability",
+                "rotating select/select0..15 aura visibility is forced from jt_power_available(slot); power item icons remain historical",
+                "charge-start tap cannot stop an orb and orb touch-stop is protected for two seconds",
                 "TRFS slot 4 / TRMA slot 6 visual identity corrected",
                 "score/stop/letter diagnostics added without changing legacy score",
                 "pause/resume/shutdown video lifecycle hooks",
