@@ -11,8 +11,8 @@ import zipfile
 from pathlib import Path, PurePosixPath
 
 
-VERSION = "1.0.7"
-NUMERIC_VERSION = "107"
+VERSION = "1.0.8"
+NUMERIC_VERSION = "108"
 ARCHIVE_SIZE = 327992765
 ARCHIVE_SHA256 = (
     "f73ca1fd5e96ca6e11df5987bda8b2e59"
@@ -237,6 +237,9 @@ _JT_STOP_CAUSE = {1:'unknown',2:'unknown',3:'unknown',4:'unknown',5:'unknown',6:
 _JT_PREV_COLSTOP = {1:False,2:False,3:False,4:False,5:False,6:False}
 _JT_EXCHANGE_ID = 1
 _JT_ORB_TOUCH_PROTECT_UNTIL = 0.0
+
+def jt_orb_protected():
+    return indexa==1 and Clock.get_time() < _JT_ORB_TOUCH_PROTECT_UNTIL
 
 def colpts():
     global _JT_EXCHANGE_ID
@@ -550,9 +553,9 @@ def _jt_log_new_stops(self, observer):
     ]
     lines[end:end] = aura_block
 
-    # Touch safety: the tap that starts charge must never freeze an orb, then orb
-    # stop taps remain protected for two seconds. Full cinematics also swallow
-    # gameplay touches while the video is still covering the board.
+    # Touch safety: power/finishing cinematics swallow gameplay touches.
+    # Orb stop controls are active only in the real orb phase and only after the
+    # two-second charge-entry freeze/protection window has elapsed.
     start, end = method_bounds(lines, "on_touch_down")
     global_lines = [
         index
@@ -565,8 +568,6 @@ def _jt_log_new_stops(self, observer):
         : len(lines[global_lines[-1]]) - len(lines[global_lines[-1]].lstrip(" \t"))
     ]
     lines[insert_at:insert_at] = [
-        touch_body_indent + "global _JT_ORB_TOUCH_PROTECT_UNTIL" + newline,
-        touch_body_indent + "_jt_touch_start_indexa=indexa" + newline,
         touch_body_indent + "if getattr(self, '_jt_scene_cinematic_lock', False):" + newline,
         touch_body_indent + "\treturn True" + newline,
     ]
@@ -584,7 +585,7 @@ def _jt_log_new_stops(self, observer):
                     (
                         index,
                         [
-                            prefix + "if _jt_touch_start_indexa!=1 and time.time()>=_JT_ORB_TOUCH_PROTECT_UNTIL:" + newline,
+                            prefix + "if indexa==1 and not jt_orb_protected():" + newline,
                             prefix + "\t" + original + newline,
                             prefix + "\t" + f"_JT_STOP_CAUSE[{slot_text}]='human'" + newline,
                         ],
@@ -605,11 +606,54 @@ def _jt_log_new_stops(self, observer):
         : len(lines[touch_return]) - len(lines[touch_return].lstrip(" \t"))
     ]
     lines[touch_return:touch_return] = [
-        touch_body_indent + "if _jt_touch_start_indexa==1 and indexa in (2,3,4):" + newline,
-        touch_body_indent + "\t_JT_ORB_TOUCH_PROTECT_UNTIL=max(_JT_ORB_TOUCH_PROTECT_UNTIL,time.time()+2.0)" + newline,
-        touch_body_indent + "\tprint('[JT-ORB] touch protection 2.0s state={}'.format(indexa),flush=True)" + newline,
         touch_body_indent + "jt_sync_scene_now()" + newline,
     ]
+
+    # Arm the two-second freeze exactly when a red/blue charge state (2/3/4)
+    # completes and the historical engine enters the six-orb phase (indexa=1).
+    start, end = method_bounds(lines, "anim_1")
+    anim_global_lines = [
+        index
+        for index in range(start + 1, min(end, start + 20))
+        if lines[index].lstrip().startswith("global ")
+    ]
+    require(anim_global_lines, "Globals de anim_1 introuvables.")
+    anim_global_at = max(anim_global_lines) + 1
+    anim_body_indent = lines[anim_global_lines[-1]][
+        : len(lines[anim_global_lines[-1]]) - len(lines[anim_global_lines[-1]].lstrip(" \t"))
+    ]
+    lines[anim_global_at:anim_global_at] = [
+        anim_body_indent + "global _JT_ORB_TOUCH_PROTECT_UNTIL" + newline,
+    ]
+    start, end = method_bounds(lines, "anim_1")
+    transition_matches = [
+        index for index in range(start, end)
+        if lines[index].strip().replace(" ", "") == "anim1,indexa=0,1"
+    ]
+    require(len(transition_matches) == 1, f"Transition charge→orbes: {len(transition_matches)} occurrence(s), 1 attendue.")
+    transition = transition_matches[0]
+    prefix = lines[transition][: len(lines[transition]) - len(lines[transition].lstrip(" \t"))]
+    lines[transition:transition + 1] = [
+        prefix + "_jt_charge_state=indexa" + newline,
+        prefix + "anim1,indexa=0,1" + newline,
+        prefix + "if _jt_charge_state in (2,3,4):" + newline,
+        prefix + "\t_JT_ORB_TOUCH_PROTECT_UNTIL=Clock.get_time()+2.0" + newline,
+        prefix + "\tprint('[JT-ORB] charge-entry freeze+protection 2.0s from_state={}'.format(_jt_charge_state),flush=True)" + newline,
+    ]
+
+    start, end = method_bounds(lines, "carupdate")
+    car_guard_rules = {
+        "if car2on and indexa==1:": "if car2on and indexa==1 and not jt_orb_protected():",
+        "if indexa==1 and not stopd and not stopg:": "if indexa==1 and not stopd and not stopg and not jt_orb_protected():",
+    }
+    car_guard_hits = {key: 0 for key in car_guard_rules}
+    for index in range(start, end):
+        stripped = lines[index].strip()
+        if stripped in car_guard_rules:
+            prefix = lines[index][: len(lines[index]) - len(lines[index].lstrip(" \t"))]
+            lines[index] = prefix + car_guard_rules[stripped] + newline
+            car_guard_hits[stripped] += 1
+    require(all(value == 1 for value in car_guard_hits.values()), f"Gardes timers orbes incohérentes: {car_guard_hits}.")
 
     start, end = method_bounds(lines, "carupdate")
     for index in range(start, end):
@@ -624,6 +668,19 @@ def _jt_log_new_stops(self, observer):
         : len(lines[start + 1]) - len(lines[start + 1].lstrip(" \t"))
     ]
     lines[end:end] = [car_body_indent + "jt_sync_scene_now()" + newline]
+
+    start, end = method_bounds(lines, "colvv")
+    moving_branches = [
+        index for index in range(start, end)
+        if lines[index].strip() == "if not colstop[i]:"
+    ]
+    require(len(moving_branches) == 1, f"Branche mouvement orbes: {len(moving_branches)} occurrence(s), 1 attendue.")
+    moving_branch = moving_branches[0]
+    prefix = lines[moving_branch][: len(lines[moving_branch]) - len(lines[moving_branch].lstrip(" \t"))]
+    lines[moving_branch + 1:moving_branch + 1] = [
+        prefix + "\tif jt_orb_protected():" + newline,
+        prefix + "\t\tcontinue" + newline,
+    ]
 
     start, end = method_bounds(lines, "colvv")
     ai_insertions = []
@@ -878,7 +935,7 @@ def prepare(archive, destination, spec, media_root, runtime):
             "changes": [
                 "a.png -> A.png: 4 références",
                 "boutbleu0.png -> boutBleu0.png: 4 références",
-                "version 1.0.7 / versionCode 107",
+                "version 1.0.8 / versionCode 108",
                 "Python cible 3.12.14 pour compatibilité ffpyplayer",
                 "titre June T-Rex",
                 "menu music deferred until intro end",
@@ -893,7 +950,7 @@ def prepare(archive, destination, spec, media_root, runtime):
                 "POWER_COSTS ST=60/40/60 TR=60/60/80 with strict energy>cost",
                 "power availability shared by UI, touch and AI; right sound lock corrected",
                 "rotating select/select0..15 aura visibility is forced from jt_power_available(slot); power item icons remain historical",
-                "charge-start tap cannot stop an orb and orb touch-stop is protected for two seconds",
+                "charge 2/3/4 -> orb phase arms a Clock-based two-second freeze: positions, orb AI, timeout and human stops are paused",
                 "TRFS slot 4 / TRMA slot 6 visual identity corrected",
                 "score/stop/letter diagnostics added without changing legacy score",
                 "pause/resume/shutdown video lifecycle hooks",
