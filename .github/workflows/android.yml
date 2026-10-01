@@ -114,6 +114,7 @@ jobs:
               "_jt_scene_video_active",
               "_jt_set_native_scene_audio",
               "[JT-SCENE] AUDIO_LEGACY",
+              "self._jt_media.set_legacy_catalog(namea, longanim1, genrea, sona)",
           )
           for token in required_main:
               if token not in main:
@@ -148,6 +149,12 @@ jobs:
               "AUDIO_NATIVE enabled",
               "player.volume = 1.0",
               "audio=pending-first-frame",
+              "JUNE T-REX — ADMIN MEDIA",
+              "20 taps bas-droite pour ouvrir",
+              "VIDEO ACTIVE",
+              "LEGACY / FALLBACK",
+              "_on_admin_trigger",
+              "_legacy_directory",
           )
           for token in required_runtime:
               if token not in runtime:
@@ -201,6 +208,10 @@ jobs:
           assert main.count("stamd-=cost") == 4
           assert main.count("if not getattr(self, '_jt_scene_video_active', False):") >= 2
           assert "audio=muted" not in runtime
+          assert "set_legacy_catalog" in runtime
+          assert "Window.bind(on_touch_down=self._on_admin_trigger)" in runtime
+          assert "self._status_dot_color.rgba = (0.0, 1.0, 0.0, alpha)" in runtime
+          assert "self._status_dot_color.rgba = (1.0, 0.0, 0.0, alpha)" in runtime
 
           compile(main, "app/main.py", "exec")
           compile(runtime, "app/jtrex_media_runtime.py", "exec")
@@ -357,9 +368,9 @@ jobs:
             exit 1
           fi
           mkdir -p artifacts
-          cp "${apks[0]}" artifacts/JuneT-Rex-1.0.4-debug.apk
+          cp "${apks[0]}" artifacts/JuneT-Rex-1.0.5-debug.apk
           cd artifacts
-          sha256sum JuneT-Rex-1.0.4-debug.apk > SHA256SUMS.txt
+          sha256sum JuneT-Rex-1.0.5-debug.apk > SHA256SUMS.txt
 
       - name: Upload diagnostic files
         if: always()
@@ -382,9 +393,9 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: JuneT-Rex-1.0.4-debug
+          name: JuneT-Rex-1.0.5-debug
           path: |
-            artifacts/JuneT-Rex-1.0.4-debug.apk
+            artifacts/JuneT-Rex-1.0.5-debug.apk
             artifacts/SHA256SUMS.txt
           if-no-files-found: error
           compression-level: 0
