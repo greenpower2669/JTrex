@@ -59,31 +59,49 @@ SCENES = {
         "states": frozenset((21,)),
         "file": "assets/powers/stsf-sanctuary-force.mp4",
         "loop": False,
+        "play_to_end": True,
     },
     "power-stls": {
         "states": frozenset((22,)),
         "file": "assets/powers/stls-lifestream.mp4",
         "loop": False,
+        "play_to_end": True,
     },
     "power-stta": {
         "states": frozenset((23,)),
         "file": "assets/powers/stta-tornado-attack.mp4",
         "loop": False,
+        "play_to_end": True,
     },
     "power-trfs": {
         "states": frozenset((24,)),
         "file": "assets/powers/trfs-fire-storm.mp4",
         "loop": False,
+        "play_to_end": True,
     },
     "power-trph": {
         "states": frozenset((25,)),
         "file": "assets/powers/trph-phoenix-attack.mp4",
         "loop": False,
+        "play_to_end": True,
     },
     "power-trma": {
         "states": frozenset((26,)),
         "file": "assets/powers/trma-meteor-attack.mp4",
         "loop": False,
+        "play_to_end": True,
+    },
+    "finish-st": {
+        "states": frozenset((10,)),
+        "file": "assets/finishing/steg-finishing-trex.mp4",
+        "loop": False,
+        "play_to_end": True,
+    },
+    "finish-tr": {
+        "states": frozenset((11,)),
+        "file": "assets/finishing/trex-finishing-steg.mp4",
+        "loop": False,
+        "play_to_end": True,
     },
 }
 
@@ -152,6 +170,7 @@ class JTMediaController:
         self._scene_generation = 0
         self._scene_has_frame = False
         self._scene_audio_native = False
+        self._scene_eos_reached = False
         self._scene_timeout = None
         self._scene_frame_callback = None
         self._scene_eos_callback = None
@@ -173,6 +192,7 @@ class JTMediaController:
         self._indicator_phase = False
 
         self.root._jt_scene_video_active = False
+        self.root._jt_scene_cinematic_lock = False
         # Compatibility with the first wait-only integration.
         self.root._jt_wait_video_active = False
 
@@ -225,7 +245,7 @@ class JTMediaController:
         self._status_dot_shape.size = self._status_dot.size
 
     def _update_status_indicator(self, dt):
-        if not self._intro_done:
+        if not self._intro_done or not self._admin_enabled:
             self._status_dot_color.rgba = (1, 0, 0, 0)
             self._status_label.text = ""
             self._status_label.opacity = 0
@@ -512,6 +532,22 @@ class JTMediaController:
             return
         self._engine_state = indexa
         key = self._key_for_state(indexa)
+
+        if self._scene_player is not None and self._scene_key is not None:
+            current_scene = SCENES[self._scene_key]
+            if (
+                current_scene.get("play_to_end", False)
+                and not self._scene_eos_reached
+                and indexa not in current_scene["states"]
+            ):
+                texture = self._scene_player.texture
+                if texture is not None and self.root._jt_scene_video_active:
+                    bounds_pos, bounds_size = self._game_bounds()
+                    self._cover_rectangle(
+                        self.root.deux, texture, bounds_pos, bounds_size
+                    )
+                return
+
         if key == self._scene_key and self._scene_player is not None:
             self._scene_state = indexa
             # Families 2/3/4 and 5/6/7 deliberately keep one player.
@@ -546,7 +582,9 @@ class JTMediaController:
         generation = self._scene_generation
         self._scene_has_frame = False
         self._scene_audio_native = False
+        self._scene_eos_reached = False
         self.root._jt_scene_video_active = False
+        self.root._jt_scene_cinematic_lock = False
         self.root._jt_wait_video_active = False
 
         if not path or CoreVideo is None:
@@ -562,7 +600,12 @@ class JTMediaController:
         try:
             self._scene_rect_pos = tuple(self.root.deux.pos)
             self._scene_rect_size = tuple(self.root.deux.size)
-            eos_policy = "loop" if scene["loop"] else "pause"
+            if scene["loop"]:
+                eos_policy = "loop"
+            elif scene.get("play_to_end", False):
+                eos_policy = "stop"
+            else:
+                eos_policy = "pause"
             player = CoreVideo(filename=path, eos=eos_policy, autoplay=False)
             player.volume = 0.0
 
@@ -576,12 +619,20 @@ class JTMediaController:
             self._scene_eos_callback = eos_callback
             player.bind(on_frame=frame_callback, on_eos=eos_callback)
             self._scene_player = player
+            self.root._jt_scene_cinematic_lock = bool(
+                scene.get("play_to_end", False)
+            )
             self._scene_timeout = Clock.schedule_once(
                 lambda dt: self._scene_frame_timeout(generation), 4.0
             )
             print(
-                "[JT-SCENE] enter key={} state={} file={} loop={} audio=pending-first-frame generation={}".format(
-                    key, indexa, scene["file"], scene["loop"], generation
+                "[JT-SCENE] enter key={} state={} file={} loop={} play_to_end={} audio=pending-first-frame generation={}".format(
+                    key,
+                    indexa,
+                    scene["file"],
+                    scene["loop"],
+                    scene.get("play_to_end", False),
+                    generation,
                 ),
                 flush=True,
             )
@@ -658,13 +709,22 @@ class JTMediaController:
     def _on_scene_eos(self, player, generation):
         if player is not self._scene_player or generation != self._scene_generation:
             return
-        # eos=loop handles wait; eos=pause keeps the last decoded frame.
+        self._scene_eos_reached = True
+        key = self._scene_key
+        scene = SCENES.get(key, {})
         print(
-            "[JT-SCENE] eos key={} generation={} state-machine=unchanged".format(
-                self._scene_key, generation
+            "[JT-SCENE] eos key={} generation={} play_to_end={} state-machine=unchanged".format(
+                key, generation, scene.get("play_to_end", False)
             ),
             flush=True,
         )
+        if scene.get("play_to_end", False):
+            engine_state = self._engine_state
+            self._stop_scene("eos-complete", preserve_failure=False)
+            if engine_state is not None:
+                Clock.schedule_once(
+                    lambda dt, state=engine_state: self.sync_scene_state(state), 0
+                )
 
     def _scene_frame_timeout(self, generation):
         if generation != self._scene_generation:
@@ -699,7 +759,9 @@ class JTMediaController:
 
         self.root._jt_scene_video_active = False
         self.root._jt_wait_video_active = False
+        self.root._jt_scene_cinematic_lock = False
         self._scene_has_frame = False
+        self._scene_eos_reached = False
 
         if player is not None:
             try:
