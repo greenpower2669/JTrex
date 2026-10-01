@@ -11,8 +11,8 @@ import zipfile
 from pathlib import Path, PurePosixPath
 
 
-VERSION = "1.0.4"
-NUMERIC_VERSION = "104"
+VERSION = "1.0.5"
+NUMERIC_VERSION = "105"
 ARCHIVE_SIZE = 327992765
 ARCHIVE_SHA256 = (
     "f73ca1fd5e96ca6e11df5987bda8b2e59"
@@ -351,6 +351,7 @@ def _jt_log_new_stops(self, observer):
         "        try:" + newline,
         "            from jtrex_media_runtime import JTMediaController" + newline,
         "            self._jt_media = JTMediaController(self)" + newline,
+        "            self._jt_media.set_legacy_catalog(namea, longanim1, genrea, sona)" + newline,
         "            self._jt_media.start_intro(self._jt_start_gameplay)" + newline,
         "        except Exception as exc:" + newline,
         '            print("[JT-INTRO][ERROR] controller={!r}; continuing".format('
@@ -785,7 +786,7 @@ def prepare(archive, destination, spec, media_root, runtime):
         shutil.copyfile(spec, stage / "buildozer.spec")
 
         report = {
-            "mission": "JT-MEDIA-AUDIO-001",
+            "mission": "JT-MEDIA-ADMIN-001",
             "version": VERSION,
             "numeric_version": NUMERIC_VERSION,
             "package": "com.junedady.junetrex",
@@ -802,7 +803,7 @@ def prepare(archive, destination, spec, media_root, runtime):
             "changes": [
                 "a.png -> A.png: 4 références",
                 "boutbleu0.png -> boutBleu0.png: 4 références",
-                "version 1.0.4 / versionCode 104",
+                "version 1.0.5 / versionCode 105",
                 "Python cible 3.12.14 pour compatibilité ffpyplayer",
                 "titre June T-Rex",
                 "menu music deferred until intro end",
@@ -816,6 +817,9 @@ def prepare(archive, destination, spec, media_root, runtime):
                 "TRFS slot 4 / TRMA slot 6 visual identity corrected",
                 "score/stop/letter diagnostics added without changing legacy score",
                 "pause/resume/shutdown video lifecycle hooks",
+                "hidden media admin opens after 20 bottom-right taps",
+                "bottom-left blinking dot: green for actual MP4 rendering, red for legacy/fallback",
+                "admin lists every historical animation prefix/directory and mapped MP4 availability",
             ],
             "game_executed": False,
         }
