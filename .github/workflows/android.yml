@@ -96,6 +96,7 @@ jobs:
           set -euo pipefail
           python3 - <<'PY'
           import ast
+          import json
           from pathlib import Path
 
           main = Path("app/main.py").read_text(encoding="utf-8")
@@ -135,6 +136,13 @@ jobs:
               "_jt_finishing_complete_pending",
               "_jt_finishing_video_hold",
               "[JT-FINISH] video-complete",
+              "JT_MP4_ONLY_STATES=frozenset((1,2,3,4,5,6,7,8,9,10,11,21,22,23,24,25,26))",
+              "indexa not in JT_MP4_ONLY_STATES",
+              "def jt_hide_power_cinematic_ui(root):",
+              "def jt_hide_finishing_hud(root):",
+              "_jt_power_video_hold",
+              "self._jt_power_controls_were_hidden=True",
+              "jt_hide_finishing_hud(self)",
           )
           for token in required_main:
               if token not in main:
@@ -195,6 +203,14 @@ jobs:
               "[JT-FINISH] hold historical state until real MP4 EOS",
               "[JT-FINISH] real MP4 EOS; release historical finish state=",
               "self.root._jt_finishing_complete_pending = finishing_state",
+              "POWER_SCENE_KEYS",
+              "MP4_ONLY_STATES",
+              "_jt_power_video_hold = key in POWER_SCENE_KEYS",
+              "[JT-POWER-VIDEO] hold controls/timers until real MP4 EOS",
+              "[JT-WAIT] remember position=",
+              "[JT-WAIT] resume fraction=",
+              "MP4-ONLY ",
+              "20-tap mode enabled",
           )
           for token in required_runtime:
               if token not in runtime:
@@ -274,13 +290,19 @@ jobs:
           assert "_JT_ORB_TOUCH_PROTECT_UNTIL=Clock.get_time()+2.0" in main
           assert "if car2on and indexa==1 and not jt_orb_protected():" in main
           assert "if indexa==1 and not stopd and not stopg and not jt_orb_protected():" in main
-          assert main.count("if not getattr(self, '_jt_scene_video_active', False):") >= 2
+          assert main.count("if not getattr(self, '_jt_scene_video_active', False):") >= 1
+          assert "if not getattr(self, '_jt_scene_video_active', False) and indexa not in JT_MP4_ONLY_STATES:" in main
+          assert main.count("if getattr(self, '_jt_power_video_hold', False):") >= 3
+          assert "if getattr(self, '_jt_power_video_hold', False) and indexa in (10,11):" in main
+          assert "jt_hide_power_cinematic_ui(self)" in main
+          assert "jt_hide_finishing_hud(self)" in main
           assert main.count("if getattr(self, '_jt_finishing_video_hold', False):") == 1
           assert main.count("if _jt_finish_pending==indexa:") == 1
           assert "[JT-FINISH] video-complete state={} -> menu" in main
+          power_finish_bridge = main.index("if getattr(self, '_jt_power_video_hold', False) and indexa in (10,11):")
           finish_gate = main.index("if indexa in (10,11):")
           legacy_finish_exit = main.index("if indexa==10 or indexa==11:")
-          assert finish_gate < legacy_finish_exit
+          assert power_finish_bridge < finish_gate < legacy_finish_exit
           pending_at = runtime.index("self.root._jt_finishing_complete_pending = finishing_state")
           stop_at = runtime.index('self._stop_scene("eos-complete", preserve_failure=False)')
           assert pending_at < stop_at
@@ -291,10 +313,33 @@ jobs:
           assert "if not self._intro_done or not self._admin_enabled:" in runtime
           assert "self._status_dot_color.rgba = (0.0, 1.0, 0.0, alpha)" in runtime
           assert "self._status_dot_color.rgba = (1.0, 0.0, 0.0, alpha)" in runtime
+          assert "self._wait_resume_fraction = (position % duration) / duration" in runtime
+          assert "player.seek(resume, precise=True)" in runtime
+          assert "self.root._jt_power_video_hold = False" in runtime
+
+          preparation = json.loads(Path("app/android-preparation.json").read_text(encoding="utf-8"))
+          expected_pruned_dirs = {
+              "dinos1","chargetr","chargest","horseg2ko","egtrwin","eg2ko",
+              "stwin","trwin","finishst","finishtr",
+              "stsf","stls","stta","trfs","trph","trma",
+          }
+          assert set(preparation["pruned_legacy_image_dirs"]) == expected_pruned_dirs
+          assert preparation["pruned_legacy_image_files"] > 0
+          assert preparation["pruned_legacy_image_bytes"] > 0
+          assert preparation["mp4_only_states"] == [1,2,3,4,5,6,7,8,9,10,11,21,22,23,24,25,26]
+          image_exts = {".png",".jpg",".jpeg",".gif"}
+          for directory in expected_pruned_dirs:
+              folder = Path("app") / directory
+              if folder.is_dir():
+                  leftovers = [
+                      path for path in folder.rglob("*")
+                      if path.is_file() and path.suffix.lower() in image_exts
+                  ]
+                  assert not leftovers, (directory, leftovers[:3])
 
           compile(main, "app/main.py", "exec")
           compile(runtime, "app/jtrex_media_runtime.py", "exec")
-          print("JT validation: generated Python compiles; power/orb semantics and finishing EOS hold pass")
+          print("JT validation: Python compiles; gauge interaction preserved, power EOS gate, wait resume, finishing HUD and MP4 frame pruning pass")
           PY
 
       - name: Install Buildozer system dependencies
@@ -455,9 +500,9 @@ jobs:
             exit 1
           fi
           mkdir -p artifacts
-          cp "${apks[0]}" artifacts/JuneT-Rex-1.0.9-debug.apk
+          cp "${apks[0]}" artifacts/JuneT-Rex-1.0.10-debug.apk
           cd artifacts
-          sha256sum JuneT-Rex-1.0.9-debug.apk > SHA256SUMS.txt
+          sha256sum JuneT-Rex-1.0.10-debug.apk > SHA256SUMS.txt
 
       - name: Upload diagnostic files
         if: always()
@@ -480,9 +525,9 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: JuneT-Rex-1.0.9-debug
+          name: JuneT-Rex-1.0.10-debug
           path: |
-            artifacts/JuneT-Rex-1.0.9-debug.apk
+            artifacts/JuneT-Rex-1.0.10-debug.apk
             artifacts/SHA256SUMS.txt
           if-no-files-found: error
           compression-level: 0
