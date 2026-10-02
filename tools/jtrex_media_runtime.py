@@ -833,6 +833,9 @@ class JTMediaController:
             self._scene_timeout = None
 
         player = self._scene_player
+        if key == "wait" and reason == "state=0":
+            self._wait_resume_fraction = 0.0
+            print("[JT-WAIT] reset resume at menu", flush=True)
         if (
             key == "wait"
             and player is not None
