@@ -132,6 +132,9 @@ jobs:
               "if car2on and indexa==1 and not jt_orb_protected():",
               "if indexa==1 and not stopd and not stopg and not jt_orb_protected():",
               "_jt_scene_cinematic_lock",
+              "_jt_finishing_complete_pending",
+              "_jt_finishing_video_hold",
+              "[JT-FINISH] video-complete",
           )
           for token in required_main:
               if token not in main:
@@ -189,6 +192,9 @@ jobs:
               '"play_to_end": True',
               "eos-complete",
               "_jt_scene_cinematic_lock",
+              "[JT-FINISH] hold historical state until real MP4 EOS",
+              "[JT-FINISH] real MP4 EOS; release historical finish state=",
+              "self.root._jt_finishing_complete_pending = finishing_state",
           )
           for token in required_runtime:
               if token not in runtime:
@@ -269,6 +275,16 @@ jobs:
           assert "if car2on and indexa==1 and not jt_orb_protected():" in main
           assert "if indexa==1 and not stopd and not stopg and not jt_orb_protected():" in main
           assert main.count("if not getattr(self, '_jt_scene_video_active', False):") >= 2
+          assert main.count("if getattr(self, '_jt_finishing_video_hold', False):") == 1
+          assert main.count("if _jt_finish_pending==indexa:") == 1
+          assert "[JT-FINISH] video-complete state={} -> menu" in main
+          finish_gate = main.index("if indexa in (10,11):")
+          legacy_finish_exit = main.index("if indexa==10 or indexa==11:")
+          assert finish_gate < legacy_finish_exit
+          pending_at = runtime.index("self.root._jt_finishing_complete_pending = finishing_state")
+          stop_at = runtime.index('self._stop_scene("eos-complete", preserve_failure=False)')
+          assert pending_at < stop_at
+          assert "if finishing_state in (10, 11):\n                return" in runtime
           assert "audio=muted" not in runtime
           assert "set_legacy_catalog" in runtime
           assert "Window.bind(on_touch_down=self._on_admin_trigger)" in runtime
@@ -278,7 +294,7 @@ jobs:
 
           compile(main, "app/main.py", "exec")
           compile(runtime, "app/jtrex_media_runtime.py", "exec")
-          print("JT validation: generated Python compiles; power boundaries and Clock-based orb freeze semantics pass")
+          print("JT validation: generated Python compiles; power/orb semantics and finishing EOS hold pass")
           PY
 
       - name: Install Buildozer system dependencies
@@ -439,9 +455,9 @@ jobs:
             exit 1
           fi
           mkdir -p artifacts
-          cp "${apks[0]}" artifacts/JuneT-Rex-1.0.8-debug.apk
+          cp "${apks[0]}" artifacts/JuneT-Rex-1.0.9-debug.apk
           cd artifacts
-          sha256sum JuneT-Rex-1.0.8-debug.apk > SHA256SUMS.txt
+          sha256sum JuneT-Rex-1.0.9-debug.apk > SHA256SUMS.txt
 
       - name: Upload diagnostic files
         if: always()
@@ -464,9 +480,9 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: JuneT-Rex-1.0.8-debug
+          name: JuneT-Rex-1.0.9-debug
           path: |
-            artifacts/JuneT-Rex-1.0.8-debug.apk
+            artifacts/JuneT-Rex-1.0.9-debug.apk
             artifacts/SHA256SUMS.txt
           if-no-files-found: error
           compression-level: 0
