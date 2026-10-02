@@ -193,6 +193,8 @@ class JTMediaController:
 
         self.root._jt_scene_video_active = False
         self.root._jt_scene_cinematic_lock = False
+        self.root._jt_finishing_video_hold = False
+        self.root._jt_finishing_complete_pending = None
         # Compatibility with the first wait-only integration.
         self.root._jt_wait_video_active = False
 
@@ -669,6 +671,15 @@ class JTMediaController:
         self.root._jt_wait_video_active = self._scene_key == "wait"
 
         if first_frame:
+            if self._scene_key in ("finish-st", "finish-tr"):
+                self.root._jt_finishing_video_hold = True
+                self.root._jt_finishing_complete_pending = None
+                print(
+                    "[JT-FINISH] hold historical state until real MP4 EOS key={} state={}".format(
+                        self._scene_key, self._scene_state
+                    ),
+                    flush=True,
+                )
             callback = getattr(self.app, "_jt_set_native_scene_audio", None)
             if callback is not None:
                 try:
@@ -720,7 +731,22 @@ class JTMediaController:
         )
         if scene.get("play_to_end", False):
             engine_state = self._engine_state
+            finishing_state = (
+                self._scene_state
+                if key in ("finish-st", "finish-tr")
+                else None
+            )
+            if finishing_state in (10, 11):
+                self.root._jt_finishing_complete_pending = finishing_state
+                print(
+                    "[JT-FINISH] real MP4 EOS; release historical finish state={}".format(
+                        finishing_state
+                    ),
+                    flush=True,
+                )
             self._stop_scene("eos-complete", preserve_failure=False)
+            if finishing_state in (10, 11):
+                return
             if engine_state is not None:
                 Clock.schedule_once(
                     lambda dt, state=engine_state: self.sync_scene_state(state), 0
@@ -760,6 +786,7 @@ class JTMediaController:
         self.root._jt_scene_video_active = False
         self.root._jt_wait_video_active = False
         self.root._jt_scene_cinematic_lock = False
+        self.root._jt_finishing_video_hold = False
         self._scene_has_frame = False
         self._scene_eos_reached = False
 
