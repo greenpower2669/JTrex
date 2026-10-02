@@ -105,6 +105,13 @@ SCENES = {
     },
 }
 
+POWER_SCENE_KEYS = frozenset((
+    "power-stsf", "power-stls", "power-stta",
+    "power-trfs", "power-trph", "power-trma",
+))
+FINISH_SCENE_KEYS = frozenset(("finish-st", "finish-tr"))
+MP4_ONLY_STATES = frozenset((1,2,3,4,5,6,7,8,9,10,11,21,22,23,24,25,26))
+
 
 class IntroOverlay(Widget):
     """Black letterbox overlay that swallows touches during the intro."""
@@ -177,6 +184,8 @@ class JTMediaController:
         self._scene_failed_key = None
         self._scene_rect_pos = None
         self._scene_rect_size = None
+        self._wait_resume_fraction = 0.0
+        self._wait_seek_pending = False
         self._paused_player = None
         self._engine_state = None
         self._legacy_names = {}
@@ -193,6 +202,7 @@ class JTMediaController:
 
         self.root._jt_scene_video_active = False
         self.root._jt_scene_cinematic_lock = False
+        self.root._jt_power_video_hold = False
         self.root._jt_finishing_video_hold = False
         self.root._jt_finishing_complete_pending = None
         # Compatibility with the first wait-only integration.
@@ -264,6 +274,8 @@ class JTMediaController:
             if self._admin_enabled:
                 prefix = self._legacy_names.get(self._engine_state, "")
                 directory = self._legacy_directory(prefix) if prefix else "LEGACY"
+                if self._engine_state in MP4_ONLY_STATES:
+                    directory = "MP4-ONLY " + directory
                 self._status_label.text = directory
                 self._status_label.opacity = 1
             else:
@@ -352,9 +364,14 @@ class JTMediaController:
                 )
             )
             lines.append("      video={}".format(video_file))
+            fallback = (
+                "SUPPRIME (MP4-ONLY) " + legacy_dir
+                if state in MP4_ONLY_STATES
+                else legacy_dir
+            )
             lines.append(
                 "      fallback={}  prefix={}  frames={}  mode={}  son={}".format(
-                    legacy_dir, legacy_prefix or "(aucun)", length, genre, sound
+                    fallback, legacy_prefix or "(aucun)", length, genre, sound
                 )
             )
         return "\n".join(lines)
@@ -533,6 +550,8 @@ class JTMediaController:
         if not self._intro_done:
             return
         self._engine_state = indexa
+        if indexa == 0 and self._scene_key != "wait":
+            self._wait_resume_fraction = 0.0
         key = self._key_for_state(indexa)
 
         if self._scene_player is not None and self._scene_key is not None:
@@ -585,8 +604,12 @@ class JTMediaController:
         self._scene_has_frame = False
         self._scene_audio_native = False
         self._scene_eos_reached = False
+        self._wait_seek_pending = (
+            key == "wait" and self._wait_resume_fraction > 0.001
+        )
         self.root._jt_scene_video_active = False
         self.root._jt_scene_cinematic_lock = False
+        self.root._jt_power_video_hold = False
         self.root._jt_wait_video_active = False
 
         if not path or CoreVideo is None:
@@ -624,6 +647,14 @@ class JTMediaController:
             self.root._jt_scene_cinematic_lock = bool(
                 scene.get("play_to_end", False)
             )
+            self.root._jt_power_video_hold = key in POWER_SCENE_KEYS
+            if self.root._jt_power_video_hold:
+                print(
+                    "[JT-POWER-VIDEO] hold controls/timers until real MP4 EOS key={} state={}".format(
+                        key, indexa
+                    ),
+                    flush=True,
+                )
             self._scene_timeout = Clock.schedule_once(
                 lambda dt: self._scene_frame_timeout(generation), 4.0
             )
@@ -661,6 +692,31 @@ class JTMediaController:
             return
 
         first_frame = not self._scene_has_frame
+        if (
+            first_frame
+            and self._scene_key == "wait"
+            and self._wait_seek_pending
+        ):
+            self._wait_seek_pending = False
+            resume = self._wait_resume_fraction % 1.0
+            try:
+                try:
+                    player.seek(resume, precise=True)
+                except TypeError:
+                    player.seek(resume)
+                print(
+                    "[JT-WAIT] resume fraction={:.4f}".format(resume),
+                    flush=True,
+                )
+                return
+            except Exception as exc:
+                print(
+                    "[JT-WAIT][WARN] resume seek failed fraction={:.4f} error={!r}".format(
+                        resume, exc
+                    ),
+                    flush=True,
+                )
+
         self._scene_has_frame = True
         if self._scene_timeout is not None:
             self._scene_timeout.cancel()
@@ -671,7 +727,7 @@ class JTMediaController:
         self.root._jt_wait_video_active = self._scene_key == "wait"
 
         if first_frame:
-            if self._scene_key in ("finish-st", "finish-tr"):
+            if self._scene_key in FINISH_SCENE_KEYS:
                 self.root._jt_finishing_video_hold = True
                 self.root._jt_finishing_complete_pending = None
                 print(
@@ -733,7 +789,7 @@ class JTMediaController:
             engine_state = self._engine_state
             finishing_state = (
                 self._scene_state
-                if key in ("finish-st", "finish-tr")
+                if key in FINISH_SCENE_KEYS
                 else None
             )
             if finishing_state in (10, 11):
@@ -777,6 +833,24 @@ class JTMediaController:
             self._scene_timeout = None
 
         player = self._scene_player
+        if (
+            key == "wait"
+            and player is not None
+            and reason not in ("state=0", "shutdown")
+        ):
+            try:
+                duration = float(getattr(player, "duration", 0.0) or 0.0)
+                position = float(getattr(player, "position", 0.0) or 0.0)
+                if duration > 0.0:
+                    self._wait_resume_fraction = (position % duration) / duration
+                    print(
+                        "[JT-WAIT] remember position={:.3f}s duration={:.3f}s fraction={:.4f}".format(
+                            position, duration, self._wait_resume_fraction
+                        ),
+                        flush=True,
+                    )
+            except Exception as exc:
+                print("[JT-WAIT][WARN] remember position={!r}".format(exc), flush=True)
         frame_callback = self._scene_frame_callback
         eos_callback = self._scene_eos_callback
         self._scene_player = None
@@ -786,7 +860,9 @@ class JTMediaController:
         self.root._jt_scene_video_active = False
         self.root._jt_wait_video_active = False
         self.root._jt_scene_cinematic_lock = False
+        self.root._jt_power_video_hold = False
         self.root._jt_finishing_video_hold = False
+        self._wait_seek_pending = False
         self._scene_has_frame = False
         self._scene_eos_reached = False
 
