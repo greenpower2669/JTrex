@@ -528,3 +528,8 @@ Décisions Fab : les vidéos des pouvoirs 21..26 doivent être lues intégraleme
 ## 2026-10-02 — JT-ORB-PROTECT-002 — correction de la protection de charge
 
 Le candidat 1.0.7 ne doit pas être considéré comme final : audit du main généré après le run #48 a démontré une garde inversée sur les arrêts humains et l'absence de gel physique des orbes. Décision appliquée en 1.0.8 : à la fin d'une charge historique 2/3/4 entrant en indexa 1, armer exactement 2,0 s via `Clock.get_time()`. Pendant cette fenêtre, aucune position d'orbe ne bouge, aucun stop IA ou humain n'est accepté et les timers `car2` / `car` sont suspendus. Ne pas bloquer les taps de confrontation hors phase 1 et ne pas modifier score/dégâts/règles de pouvoir. La chaîne native reste inchangée. Run #49 du SHA 865591a8d9518d9da26533ec403c6794fc1d4fd2 : success complet ; APK 1.0.8 SHA-256 a27dfb9e49e11803ca006a0fb9307a47d7d15f9eb78fd3b8e9dd76667db7523b. Aucun merge main, aucune release. Validation téléphone Fab obligatoire avant de déclarer le lot validé en usage réel.
+
+
+## 2026-10-02 — JT-FINISH-EOS-002 — finishing jusqu'au vrai EOS
+
+Retour Fab : les vidéos finishing des états 10/11 doivent être visibles et jouées intégralement. La transition historique JPEG `longanim1-3 -> indexa 0` ne doit plus être autorisée à interrompre un MP4 ayant fourni sa première frame. Règle : avant première frame ou échec vidéo = fallback historique inchangé ; après première frame = état 10/11 maintenu sans progression legacy ; à EOS MP4 réel = libération unique vers le menu sans seconde application de gameplay et sans queue JPEG. Les pouvoirs restent selon leur contrat play-to-end existant et ne doivent pas hériter de ce gel finishing spécifique. Candidat : 1.0.9 / versionCode 109, run #50.

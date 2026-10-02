@@ -597,3 +597,19 @@ Commande interne associée :
 - [x] SHA-256 APK : a27dfb9e49e11803ca006a0fb9307a47d7d15f9eb78fd3b8e9dd76667db7523b.
 - [ ] Fab : valider sur téléphone le gel réel 2 s, l'absence de stop humain/IA durant la fenêtre, puis le retour normal du contrôle.
 - [ ] Fab : valider sur téléphone les six pouvoirs jusqu'à EOS, les deux finishing, les auras tournantes et le mode admin 20 taps.
+
+
+## 2026-10-02 — JT-FINISH-EOS-002 — 1.0.9
+
+- [x] Reproduire par audit la coupure des finishing malgré `play_to_end`.
+- [x] Identifier la sortie legacy 10/11 à `longanim1[indexa]-3`.
+- [x] Comparer durée legacy état 11 (~6,24 s) au MP4 T-Rex finishing (8,336 s).
+- [x] Conserver fallback historique tant qu'aucune première frame vidéo n'est exploitable.
+- [x] Geler uniquement les états finishing 10/11 dès la première vraie frame MP4.
+- [x] Faire de l'EOS MP4 l'unique libération vers le menu quand la vraie vidéo a pris la main.
+- [x] Éviter le redémarrage du même finishing après EOS.
+- [x] Ne pas modifier les pouvoirs 21..26, dégâts, score ou chaîne native.
+- [x] CI #50 : génération + compilation Python + tests sémantiques finishing EOS verts.
+- [x] CI #50 : FFprobe des médias verts.
+- [ ] CI #50 : build APK 1.0.9 complet / artifact à confirmer.
+- [ ] Fab : vérifier sur téléphone que les deux finishing sont visibles et audibles jusqu'à leur toute dernière image/son.

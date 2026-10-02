@@ -780,3 +780,8 @@ JTMediaController : SCENES power-* et finish-* portent play_to_end=True. sync_sc
 ## 2026-10-02 — JT-ORB-PROTECT-002 — architecture 1.0.8
 
 Le verrou orbes est centralisé par `jt_orb_protected()` : vrai uniquement si `indexa==1` et `Clock.get_time() < _JT_ORB_TOUCH_PROTECT_UNTIL`. `anim_1` capture l'état sortant avant `anim1,indexa=0,1` et arme +2 s seulement si l'état sortant vaut 2/3/4. `on_touch_down` ne pose `colstop[1..6]` que si `indexa==1 and not jt_orb_protected()`; les taps rouge/bleu de charge restent indépendants. `colvv` fait `continue` avant déplacement/IA pendant la protection, donc les positions restent réellement fixes et aucun stop IA n'est créé. `carupdate` suspend `car2` et `car` pendant la même fenêtre. La CI #49 teste désormais la frontière Clock et interdit explicitement l'ancienne garde inversée. Build 1.0.8 : 865591a8d9518d9da26533ec403c6794fc1d4fd2.
+
+
+## 2026-10-02 — JT-FINISH-EOS-002 — chemin technique 1.0.9
+
+`JTMediaController._on_scene_frame` active `root._jt_finishing_video_hold=True` uniquement sur la première frame exploitable de `finish-st` / `finish-tr`. Le fallback historique reste donc vivant avant cette première frame et en cas d'échec/timeout. Dans `anim_1`, un garde placé avant toute logique legacy 10/11 : (1) consomme `_jt_finishing_complete_pending` et effectue une sortie unique vers indexa 0 ; (2) sinon retourne immédiatement tant que `_jt_finishing_video_hold` est vrai. `_on_scene_eos` pose `_jt_finishing_complete_pending=10/11` avant `_stop_scene`, puis ne resynchronise pas le même finishing afin d'éviter un redémarrage vidéo. `_stop_scene` libère toujours le hold. Ainsi, aucune sortie historique `longanim1-3` ne peut couper un MP4 déjà réellement affiché.
