@@ -11,8 +11,8 @@ import zipfile
 from pathlib import Path, PurePosixPath
 
 
-VERSION = "1.0.11"
-NUMERIC_VERSION = "111"
+VERSION = "1.0.12"
+NUMERIC_VERSION = "112"
 ARCHIVE_SIZE = 327992765
 ARCHIVE_SHA256 = (
     "f73ca1fd5e96ca6e11df5987bda8b2e59"
@@ -148,7 +148,9 @@ def adapt_main(source):
         + newline
         + "\tenergy=stamg if slot<4 else stamd"
         + newline
-        + "\treturn indexa==1 and not selected[slot] and energy>POWER_COSTS[slot]"
+        + "\tphase=globals().get('_JT_PHASES')"
+        + newline
+        + "\treturn indexa==1 and (phase is None or phase.round_active) and not selected[slot] and energy>POWER_COSTS[slot]"
         + newline
         + "def jt_refresh_power_flags():"
         + newline
@@ -419,6 +421,7 @@ def _jt_log_new_stops(self, observer):
         "        try:" + newline,
         "            from jtrex_media_runtime import JTMediaController" + newline,
         "            self._jt_media = JTMediaController(self)" + newline,
+        "            self._jt_media.set_engine(globals())" + newline,
         "            self._jt_media.set_legacy_catalog(namea, longanim1, genrea, sona)" + newline,
         "            self._jt_media.start_intro(self._jt_start_gameplay)" + newline,
         "        except Exception as exc:" + newline,
@@ -445,7 +448,7 @@ def _jt_log_new_stops(self, observer):
         "        Clock.schedule_interval(self.root.affpv, 0.5)" + newline,
         "        Clock.schedule_interval(self.root.mc1, 0.03)" + newline,
         "        Clock.schedule_interval(self.root.affbt, 0.05)" + newline,
-        "        Clock.schedule_interval(self.root.carupdate, 1)" + newline,
+        "        # carupdate is scheduled by the presentation phase after START." + newline,
         newline,
         "    def _jt_set_native_scene_audio(self, active, state):" + newline,
         "        global ma, sona0, sona" + newline,
@@ -534,7 +537,9 @@ def _jt_log_new_stops(self, observer):
     for index in range(load_index, loop_end + 1):
         lines[index] = audio_indent + audio_unit + lines[index][len(audio_indent):]
     lines[load_index:load_index] = [
-        audio_indent + "if not getattr(self, '_jt_scene_video_active', False):" + newline
+        audio_indent + "if not getattr(self, '_jt_scene_video_active', False):" + newline,
+        audio_indent + audio_unit
+        + "print('[JT-SCENE] AUDIO_LEGACY start state={} anim={} source={}'.format(indexa,anim1,sona0),flush=True)" + newline,
     ]
 
     # Rebuild power availability from one canonical rule.
@@ -738,6 +743,17 @@ def _jt_log_new_stops(self, observer):
         car_body_indent + "\treturn" + newline,
     ]
 
+    # An AI power can be selected inside carupdate itself. Leave immediately
+    # before the legacy non-orb branch resets car2 to 10 in that same callback.
+    start, end = method_bounds(lines, "carupdate")
+    after_ai = [i for i in range(start, end) if lines[i].strip() == "allstopcar=0"]
+    require(len(after_ai) == 1, "Sortie IA avant chronomètres introuvable.")
+    lines[after_ai[0]:after_ai[0]] = [
+        car_body_indent + "if indexa in (21,22,23,24,25,26):" + newline,
+        car_body_indent + "\tjt_sync_scene_now()" + newline,
+        car_body_indent + "\treturn" + newline,
+    ]
+
     start, end = method_bounds(lines, "carupdate")
     car_guard_rules = {
         "if car2on and indexa==1:": "if car2on and indexa==1 and not jt_orb_protected():",
@@ -827,6 +843,12 @@ def _jt_log_new_stops(self, observer):
     lines[start:end] = lifecycle
 
     result = "".join(lines)
+    result = replace_exact(
+        result, "class mainApp(App):",
+        "from jtrex_phase_runtime import install_phase_hooks" + newline
+        + "install_phase_hooks(jah, globals())" + newline + newline
+        + "class mainApp(App):", 1,
+    )
     require(
         result.count("[JT-START] on_start") == 1,
         "Trace JT-START incohérente après adaptation média.",
@@ -992,6 +1014,10 @@ def prepare(archive, destination, spec, media_root, runtime):
             }
 
         shutil.copyfile(runtime, stage / "jtrex_media_runtime.py")
+        phase_runtime = runtime.with_name("jtrex_phase_runtime.py")
+        require(phase_runtime.is_file(), "Runtime de phases absent.")
+        shutil.copyfile(phase_runtime, stage / "jtrex_phase_runtime.py")
+        compile(phase_runtime.read_text(encoding="utf-8"), "jtrex_phase_runtime.py", "exec")
         compile(
             (stage / "jtrex_media_runtime.py").read_text(encoding="utf-8"),
             "jtrex_media_runtime.py",
@@ -1078,6 +1104,7 @@ def prepare(archive, destination, spec, media_root, runtime):
             "historical_main_sha256": MAIN_SHA256,
             "prepared_main_sha256": digest(main),
             "runtime_sha256": digest(stage / "jtrex_media_runtime.py"),
+            "phase_runtime_sha256": digest(stage / "jtrex_phase_runtime.py"),
             "buildozer_spec_sha256": digest(stage / "buildozer.spec"),
             "extracted_historical_files": len(extracted),
             "pruned_legacy_image_files": pruned_legacy_image_files,
@@ -1092,7 +1119,10 @@ def prepare(archive, destination, spec, media_root, runtime):
             "changes": [
                 "a.png -> A.png: 4 références",
                 "boutbleu0.png -> boutBleu0.png: 4 références",
-                "version 1.0.11 / versionCode 111",
+                f"version {VERSION} / versionCode {NUMERIC_VERSION}",
+                "explicit presentation phases own UI masking, inputs and round countdown scheduling",
+                "ROUND N yellow 1s then animated START 1.1s; gameplay released only at presentation completion",
+                "power EOS latches completion without replay or impact; resumes live engine state after both media and historical action complete",
                 "Python cible 3.12.14 pour compatibilité ffpyplayer",
                 "titre June T-Rex",
                 "menu music deferred until intro end",

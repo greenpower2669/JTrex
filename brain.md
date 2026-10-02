@@ -1128,3 +1128,19 @@ Audit post-CI du candidat 1.0.7 : la première garde 2 s était sémantiquement 
 ## 2026-10-02 — JT-FINISH-EOS-002 — finishing réellement complet
 
 Retour téléphone Fab sur 1.0.8 : les finishing T-Rex / Steg restent coupés ou ne sont pas visibles jusqu'au bout. Audit du main généré : les états historiques 10/11 contiennent une sortie propre à l'ancienne animation JPEG à `anim1==longanim1[indexa]-3`, donc le moteur peut revenir à indexa 0 avant l'EOS du nouveau MP4. Écart mesuré particulièrement net pour l'état 11 : legacy 104 frames à ~0,06 s ≈ 6,24 s, alors que `trex-finishing-steg.mp4` dure 8,336 s. Le contrat 1.0.9 / versionCode 109 devient : tant qu'aucune vraie frame MP4 n'est affichée, l'historique reste fallback ; dès la première vraie frame d'un finishing, l'avancement historique de l'état 10/11 est gelé ; seul l'EOS réel du MP4 pose une demande de fin ; au tick historique suivant, l'état final est libéré directement vers le menu sans rejouer la queue JPEG. Les pouvoirs 21..26 ne sont pas concernés par ce gel finishing.
+
+## 2026-10-02 — JT-PHASES-001 — candidat 1.0.12/code112
+
+Base réelle e60561d3a2ecaf3441b005cd2e5805ecfc030854; main historique SHA256 3673fb85d12bea18276e485c5956530b4b8c0dda283cacb022e784bfe8c35231 vérifié. Le contrat ci-dessous complète les anciens gardes partiels.
+
+Une phase entoure indexa : INTRO, MENU, PRE_ROUND, ROUND_ACTIVE, CHARGE_INTERACTIVE, YELLOW_INTERACTIVE, POWER, FINISH, VERDICT. Le moteur conserve ses index, impacts et calculs.
+
+Premier état1 du combat, puis chaque échange scoré : ROUND N jaune1s, START! animé1,1s, VV en fond. Seuls frise/vies et deux chronos figés visibles. La fin effective de START libère le jeu; premier tick une seconde après. Le compteur local suit `_JT_EXCHANGE_ID`, est remis à zéro au menu et n'avance pas pour un pouvoir. car2 retrouve10 au nouvel échange; au retour d'un pouvoir, car/car2 reprennent leur valeur suspendue. Protection charge2s en parallèle de la présentation.
+
+POWER masque tous les Rectangle gameplay sauf le fond vidéo et les quatre Labels de chrono. carupdate, colvv, commandes et animations parasites sont suspendus. mc1/anim_1 peuvent uniquement terminer le pouvoir courant. Résultat1 ou10/11 : attendre EOS. Si EOS précède le calcul, garder la dernière frame aspect-fill sans rejouer le même MP4; terminer l'impact historique une seule fois. Aucun dégât/soin à l'EOS. Un pouvoir fatal attend sa vidéo puis le bon finishing.
+
+FINISH masque le HUD et attend le lecteur; le pending historique est ensuite consommé une seule fois. Média indisponible ou sans première frame : échec borné explicite, fin logique autorisée; aucune banque JPEG restaurée.
+
+Jauges2/3/4 et5/6/7 : interactions inchangées, un lecteur par famille. Verdicts8/9 : durée logique historique. Score, impacts, gains, coûts stricts/fractionnaires, selected, auras inchangés. `jt_power_available` exige ROUND_ACTIVE : aucune annonce de disponibilité pendant PRE_ROUND/POWER.
+
+16 tests exécutent main adapté et contrôleur réels avec IO Kivy/décodeur simulées : UI/temps, START, deux jauges, pouvoirs courts/longs, impacts uniques, pouvoir fatal dans les deux sens, round suivant, pause, anciens callbacks, VV, échec média et IA fractionnaire. Ce n'est pas une validation du rendu/son Android. Le doublon vocal de Fab reste à corréler aux traces.

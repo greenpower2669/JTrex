@@ -785,3 +785,23 @@ Le verrou orbes est centralisé par `jt_orb_protected()` : vrai uniquement si `i
 ## 2026-10-02 — JT-FINISH-EOS-002 — chemin technique 1.0.9
 
 `JTMediaController._on_scene_frame` active `root._jt_finishing_video_hold=True` uniquement sur la première frame exploitable de `finish-st` / `finish-tr`. Le fallback historique reste donc vivant avant cette première frame et en cas d'échec/timeout. Dans `anim_1`, un garde placé avant toute logique legacy 10/11 : (1) consomme `_jt_finishing_complete_pending` et effectue une sortie unique vers indexa 0 ; (2) sinon retourne immédiatement tant que `_jt_finishing_video_hold` est vrai. `_on_scene_eos` pose `_jt_finishing_complete_pending=10/11` avant `_stop_scene`, puis ne resynchronise pas le même finishing afin d'éviter un redémarrage vidéo. `_stop_scene` libère toujours le hold. Ainsi, aucune sortie historique `longanim1-3` ne peut couper un MP4 déjà réellement affiché.
+
+## 2026-10-02 — JT-PHASES-001 — cartographie 1.0.12
+
+Nouveau `tools/jtrex_phase_runtime.py`, copié avec le main généré. `install_phase_hooks(jah, globals())` enveloppe on_touch_down/move/up, carupdate, colvv, anim_1, mc1, savemc1, affbt, affpv, screen_up, pter, ga, da. `_JT_PHASE_ORIGINALS` conserve les fonctions; `_JT_PHASES` partage le contrôleur.
+
+`JTPhaseController.sync` observe indexa et `_JT_EXCHANGE_ID`, conserve cinematic_state jusqu'à fin média ET sortie logique. `allows` centralise les autorisations. `apply_ui` masque tous les Rectangle root sauf deux et ses Labels après chaque callback autorisé, y compris affpv. Ce dernier conserve son clamp historique des dégâts négatifs après soin. Les anciens booléens restent compatibles, la politique de phase couvre leurs trous.
+
+`_set_phase` annule/recrée l'unique ClockEvent carupdate, restaure les tailles capturées, force affbt/affpv une fois. PRE_ROUND montre seulement cadre/calque/pvg/pvd et label/labelf/label2/label2f. Diagnostics admin détenus par le contrôleur média, hors inventaire gameplay. Orbes/cadretr/c3cg/c3cd ne peuvent plus échapper au masque.
+
+`JTMediaController.set_engine(globals())` installe avant intro. `RoundOverlay` : ROUND puis START! jaune, ombre, zoom avec dépassement, fondu; progression par frames Clock suspendue en pause. Token invalide les anciennes animations. finish_start vérifie phase/token/indexa/protection charge avant ROUND_ACTIVE.
+
+`_on_scene_eos` pose `_scene_completed_key`; pas de redémarrage du pouvoir court tant que son état logique demeure. `_sync_current_scene` différé relit le vrai indexa, sans état périmé capturé. EOS n'applique aucun effet. Finishing : pending consommé par anim_1, aucun redémarrage immédiat. Dernière frame conservée aspect-fill jusqu'à la transition suivante.
+
+Préparateur : version112, installation wrappers, copie/compilation/hash du runtime de phases, suppression du schedule carupdate indépendant, disponibilité liée à ROUND_ACTIVE. Après activation IA dans carupdate : sortie avant le else qui remettait car2 à10; probabilités/coûts/effets inchangés.
+
+Chronologie : menu0 → charge4 (taps→2/3) → moteur1/protection2s → PRE_ROUND/ROUND/START → ROUND_ACTIVE. colvv→colpts incrémente échange, choisit7 ou8/9 → séquence historique → moteur1 → PRE_ROUND suivant. Pouvoir21..26 → impact historique → moteur1 ou10/11 retenu sous POWER → EOS → ROUND_ACTIVE ou FINISH → EOS/pending → menu0.
+
+Traces bornées : JT-PHASE (anim/car/car2/key/génération), JT-ROUND, entrée MP4 fichier/génération, EOS fichier/position/durée/état réel, AUDIO_LEGACY start source exacte, AUDIO_NATIVE enabled, AUDIO_STOP. Admin : phase/round/car/car2/génération. Nécessaires pour attribuer le doublon vocal sans présupposé.
+
+CI : unittest avec JT_GENERATED_MAIN=app/main.py; harness simule uniquement IO Kivy/vidéo. Nouveau module et tests inclus dans triggers, phase-tests.log dans diagnostics. Chaîne native inchangée.

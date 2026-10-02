@@ -613,3 +613,22 @@ Commande interne associée :
 - [x] CI #50 : FFprobe des médias verts.
 - [ ] CI #50 : build APK 1.0.9 complet / artifact à confirmer.
 - [ ] Fab : vérifier sur téléphone que les deux finishing sont visibles et audibles jusqu'à leur toute dernière image/son.
+
+## 2026-10-02 — JT-PHASES-001 — état courant, candidat 1.0.12/code112
+
+Les sections antérieures conservent l'historique.
+
+- [x] Auditer branche e60561d, main historique vérifié/généré, écrivains UI, timers et contrôleur média.
+- [x] Reproduire HUD parasite, chrono pré-round et redémarrage pouvoir court.
+- [x] Ajouter phases, ROUND N/START!, chrono unique et cinématiques exclusives; conserver jauges interactives.
+- [x] Corriger car2 lors du lancement IA, sans changement de coût/probabilité/effet.
+- [x] 16 tests sur moteur généré/IO simulées; compilation Python et assertions code/helpers existantes vertes.
+- [x] Préserver chaîne native/médias/pruning/score/coûts/auras/admin; traces audio ciblées ajoutées.
+- [ ] Obtenir build CI et consigner commit/run/SHA256 APK; aucune release ni merge main.
+- [ ] Fab : charge rouge/bleu interactive, puis VV/vies/deux chronos figés, ROUND1 jaune~1s, START! animé; aucun tick avant sa fin.
+- [ ] Fab : égalité jaune interactive puis ROUND2 au prochain échange; aucun nouveau ROUND au simple retour de pouvoir.
+- [ ] Fab : six pouvoirs sans UI/chrono/orbes actifs avant EOS; noter car/car2 avant/après. Humain/IA et seuils40/40,5;60/60,5;80/80,5, selected.
+- [ ] Fab : pouvoir fatal ST puis TR, pouvoir intégral → bon finishing intégral sans HUD → menu unique.
+- [ ] Fab : VV reprise proche de sa position, boucle naturelle; pause/reprise pendant START et pouvoir.
+- [ ] Fab : rendu/ratios, audio MP4, admin20taps.
+- [ ] Doublon vocal : capture et traces JT-PHASE/JT-SCENE (fichier/génération/EOS/position/durée/AUDIO_LEGACY/AUDIO_NATIVE), attribuer seulement après preuve.

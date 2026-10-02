@@ -533,3 +533,25 @@ Le candidat 1.0.7 ne doit pas être considéré comme final : audit du main gén
 ## 2026-10-02 — JT-FINISH-EOS-002 — finishing jusqu'au vrai EOS
 
 Retour Fab : les vidéos finishing des états 10/11 doivent être visibles et jouées intégralement. La transition historique JPEG `longanim1-3 -> indexa 0` ne doit plus être autorisée à interrompre un MP4 ayant fourni sa première frame. Règle : avant première frame ou échec vidéo = fallback historique inchangé ; après première frame = état 10/11 maintenu sans progression legacy ; à EOS MP4 réel = libération unique vers le menu sans seconde application de gameplay et sans queue JPEG. Les pouvoirs restent selon leur contrat play-to-end existant et ne doivent pas hériter de ce gel finishing spécifique. Candidat : 1.0.9 / versionCode 109, run #50.
+
+## 2026-10-02 — JT-PHASES-001 — ordre actif de Fab, candidat 1.0.12
+
+Cet ordre complète les missions historiques. Fab autorise explicitement Astra à auditer le code public puis corriger `port/android-first-apk`; ce n'est plus le seul relais documentaire Astra → Sol. Base auditée : `e60561d3a2ecaf3441b005cd2e5805ecfc030854`, téléphone 1.0.11/code111, run53 vert selon la passation de Fab/Sol.
+
+Intention : une phase de présentation explicite autour du moteur, sans déplacer les dégâts/soins vers l'EOS.
+
+Contrat de Fab :
+- INTRO : trois intros aléatoires, aspect-fit/audio, moteur différé.
+- PRÉ-ROUND : VV en boucle, frise/vies et deux chronos visibles mais figés; ROUND N jaune ~1 s puis START! animé. Fin réelle de START avant commandes/orbes/chronos. Numérotation par échange scoré; pas de nouvelle présentation au retour d'un pouvoir.
+- ROUND actif : logique historique, coûts ST60/40/60 et TR60/60/80, strict énergie>coût, énergie fractionnaire, selected une fois par combat.
+- JAUGES2/3/4 et5/6/7 : boutons/jauges/interactions historiques visibles et actifs; aucune cinématique exclusive.
+- POUVOIRS21..26 : UI gameplay masquée, orbes/tactile/car/car2 suspendus; seul le calcul historique du pouvoir continue jusqu'à son résultat. Attendre aussi EOS avant reprise. EOS n'applique aucun effet et ne rejoue pas le MP4 si le calcul n'est pas terminé.
+- POUVOIR fatal : finir le pouvoir MP4, puis finishing10/11 intégral, puis sortie historique.
+- FINISHING : aucun HUD; attendre EOS. Échec média explicite/borné sans blocage définitif.
+- VV : continuité par fraction/seek après interruption, boucle naturelle à sa fin.
+
+Préserver score cubique, seuil strict20000, lettres, dégâts/soins/gains, auras, menu/niveaux, moteur hérité hors suspension de présentation, admin20taps invisible avant activation, protection charge→orbes2s (chevauche ROUND/START), pruning exact-prefix validé, médias et chaîne native. Deux ABI et icône inchangées.
+
+Le doublon « Tyrannosaurus Win » doit être attribué après corrélation fichier/génération/état/position/audio et capture téléphone, jamais supposé legacy.
+
+Livrer candidat après1.0.11, tests du main généré, CI renforcée sans refonte native, APK debug et commit/run/SHA256. Pas de merge main, pas de release. Synchroniser les cinq mémoires; distinguer simulation, build Android et validation téléphone.

@@ -8,6 +8,8 @@ on:
       - 'buildozer.spec'
       - 'tools/prepare_android.py'
       - 'tools/jtrex_media_runtime.py'
+      - 'tools/jtrex_phase_runtime.py'
+      - 'tests/**'
       - 'tools/p4a-ffmpeg-6.1.2.py'
       - 'tools/patches/p4a-venv-clear.patch'
       - 'tools/patches/p4a-python312-grp-api21.patch'
@@ -366,6 +368,13 @@ jobs:
           print("JT validation: Python compiles; gauge interaction preserved, power EOS gate, wait resume, finishing HUD and MP4 frame pruning pass")
           PY
 
+      - name: Exercise actual generated engine and presentation phases
+        shell: bash
+        run: |
+          set -euo pipefail
+          JT_GENERATED_MAIN=app/main.py python3 -W ignore::SyntaxWarning \
+            -m unittest discover -s tests -v 2>&1 | tee phase-tests.log
+
       - name: Install Buildozer system dependencies
         shell: bash
         run: |
@@ -524,9 +533,9 @@ jobs:
             exit 1
           fi
           mkdir -p artifacts
-          cp "${apks[0]}" artifacts/JuneT-Rex-1.0.11-debug.apk
+          cp "${apks[0]}" artifacts/JuneT-Rex-1.0.12-debug.apk
           cd artifacts
-          sha256sum JuneT-Rex-1.0.11-debug.apk > SHA256SUMS.txt
+          sha256sum JuneT-Rex-1.0.12-debug.apk > SHA256SUMS.txt
 
       - name: Upload diagnostic files
         if: always()
@@ -539,6 +548,7 @@ jobs:
             toolchain.txt
             p4a-patch.txt
             main-hooks.txt
+            phase-tests.log
             media-inspection/
             app/android-preparation.json
           if-no-files-found: warn
@@ -549,9 +559,9 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: JuneT-Rex-1.0.11-debug
+          name: JuneT-Rex-1.0.12-debug
           path: |
-            artifacts/JuneT-Rex-1.0.11-debug.apk
+            artifacts/JuneT-Rex-1.0.12-debug.apk
             artifacts/SHA256SUMS.txt
           if-no-files-found: error
           compression-level: 0

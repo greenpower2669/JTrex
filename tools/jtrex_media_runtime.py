@@ -21,6 +21,7 @@ from kivy.uix.label import Label
 from kivy.uix.popup import Popup
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.widget import Widget
+from jtrex_phase_runtime import JTPhaseController
 
 
 INTRO_FILES = (
@@ -161,6 +162,56 @@ class IntroOverlay(Widget):
         return True
 
 
+class RoundOverlay(Widget):
+    """ROUND followed by a rendered START animation; completion releases play."""
+    def __init__(self, media, number, token, **kwargs):
+        super().__init__(**kwargs)
+        self.media, self.token = media, token
+        self.stage, self.elapsed = "ROUND", 0.0
+        self.shadow = Label(text="ROUND {}".format(number), bold=True, color=(0, 0, 0, .9))
+        self.title = Label(text=self.shadow.text, bold=True, color=(1, .9, .05, 1))
+        self.add_widget(self.shadow)
+        self.add_widget(self.title)
+        self.bind(size=self._layout, pos=self._layout)
+        self._layout()
+        self.event = Clock.schedule_interval(self._tick, 1.0 / 60.0)
+
+    def _layout(self, *args):
+        self.title.pos, self.title.size = self.pos, self.size
+        self.shadow.pos = (self.x + dp(4), self.y - dp(4))
+        self.shadow.size = self.size
+        self._font = min(self.width * .16, self.height * .32)
+        self.title.font_size = self.shadow.font_size = self._font * .55
+
+    def _tick(self, dt):
+        phase = self.media.phases
+        if phase is None or phase.paused:
+            return
+        # A delayed UI frame must not skip the visible presentation entirely.
+        self.elapsed += min(max(dt, 0), .1)
+        if self.stage == "ROUND":
+            if self.elapsed < 1.0:
+                return
+            self.stage, self.elapsed = "START", 0.0
+            self.title.text = self.shadow.text = "START!"
+            print("[JT-ROUND] START animation round={} token={}".format(phase.round_number, self.token), flush=True)
+        progress = min(self.elapsed / 1.1, 1.0)
+        if progress < .3:
+            t = progress / .3 - 1
+            # Back easing gives START a short overshoot without flashing.
+            scale = .45 + .55 * (1 + 2.70158*t*t*t + 1.70158*t*t)
+        else:
+            scale = 1.0 + .12 * max(0, (progress - .75) / .25)
+        self.title.font_size = self.shadow.font_size = self._font * scale
+        alpha = 1.0 if progress < .75 else max(0, (1-progress)/.25)
+        self.title.opacity = self.shadow.opacity = alpha
+        if progress >= 1:
+            phase.finish_start(self.token)
+
+    def close(self):
+        self.event.cancel()
+
+
 class JTMediaController:
     def __init__(self, app):
         self.app = app
@@ -188,6 +239,10 @@ class JTMediaController:
         self._wait_seek_pending = False
         self._paused_player = None
         self._engine_state = None
+        self._engine = None
+        self.phases = None
+        self._round_overlay = None
+        self._scene_completed_key = None
         self._legacy_names = {}
         self._legacy_lengths = {}
         self._legacy_genres = {}
@@ -239,6 +294,29 @@ class JTMediaController:
 
         provider = getattr(CoreVideo, "__module__", repr(CoreVideo))
         print("[JT-MEDIA] video provider={}".format(provider), flush=True)
+
+    def set_engine(self, engine):
+        self._engine = engine
+        self.phases = JTPhaseController(self, engine, Clock, Rectangle, Label)
+        engine['_JT_PHASES'] = self.phases
+        self.phases.sync()
+
+    def present_round(self, number, token):
+        self.cancel_round_presentation()
+        self._round_overlay = RoundOverlay(self, number, token, size_hint=(1, 1))
+        self.root.add_widget(self._round_overlay)
+        print("[JT-ROUND] ROUND {} token={} timers=frozen".format(number, token), flush=True)
+
+    def cancel_round_presentation(self):
+        if self._round_overlay is not None:
+            self._round_overlay.close()
+            self.root.remove_widget(self._round_overlay)
+            self._round_overlay = None
+
+    def _sync_current_scene(self, dt=0):
+        state = self._engine['indexa'] if self._engine is not None else self._engine_state
+        if state is not None:
+            self.sync_scene_state(state)
 
     def set_legacy_catalog(self, names, lengths, genres, sounds):
         self._legacy_names = dict(names)
@@ -328,6 +406,10 @@ class JTMediaController:
             ),
             "",
         ]
+        if self.phases is not None:
+            lines.append("PHASE={} ROUND={} car={} car2={} generation={}".format(
+                self.phases.name, self.phases.round_number,
+                self._engine['car'], self._engine['car2'], self._scene_generation))
         catalog_states = set(self._legacy_names)
         for scene in SCENES.values():
             catalog_states.update(scene["states"])
@@ -547,12 +629,20 @@ class JTMediaController:
 
     def sync_scene_state(self, indexa):
         """Follow the state *after* the historical engine has transitioned."""
+        if self._engine is not None:
+            indexa = self._engine['indexa']
+            self.phases.sync()
+            self.phases.apply_ui()
         if not self._intro_done:
             return
         self._engine_state = indexa
         if indexa == 0 and self._scene_key != "wait":
             self._wait_resume_fraction = 0.0
         key = self._key_for_state(indexa)
+        if key is not None and key == self._scene_completed_key:
+            return
+        if key != self._scene_completed_key:
+            self._scene_completed_key = None
 
         if self._scene_player is not None and self._scene_key is not None:
             current_scene = SCENES[self._scene_key]
@@ -614,6 +704,8 @@ class JTMediaController:
 
         if not path or CoreVideo is None:
             self._scene_failed_key = key
+            if self.phases is not None:
+                self.phases.video_complete(indexa, failed=True)
             print(
                 "[JT-SCENE][ERROR] key={} file={} unavailable; historical frames kept".format(
                     key, scene["file"]
@@ -672,6 +764,8 @@ class JTMediaController:
             player.play()
         except Exception as exc:
             self._scene_failed_key = key
+            if self.phases is not None:
+                self.phases.video_complete(indexa, failed=True)
             print(
                 "[JT-SCENE][ERROR] key={} {!r}; historical frames kept".format(
                     key, exc
@@ -780,13 +874,17 @@ class JTMediaController:
         key = self._scene_key
         scene = SCENES.get(key, {})
         print(
-            "[JT-SCENE] eos key={} generation={} play_to_end={} state-machine=unchanged".format(
-                key, generation, scene.get("play_to_end", False)
+            "[JT-SCENE] eos key={} generation={} play_to_end={} file={} position={} duration={} engine={} state-machine=unchanged".format(
+                key, generation, scene.get("play_to_end", False), scene.get("file"),
+                getattr(player, "position", None), getattr(player, "duration", None),
+                self._engine['indexa'] if self._engine is not None else self._engine_state
             ),
             flush=True,
         )
         if scene.get("play_to_end", False):
-            engine_state = self._engine_state
+            self._scene_completed_key = key
+            if self.phases is not None:
+                self.phases.video_complete(self._scene_state)
             finishing_state = (
                 self._scene_state
                 if key in FINISH_SCENE_KEYS
@@ -803,10 +901,7 @@ class JTMediaController:
             self._stop_scene("eos-complete", preserve_failure=False)
             if finishing_state in (10, 11):
                 return
-            if engine_state is not None:
-                Clock.schedule_once(
-                    lambda dt, state=engine_state: self.sync_scene_state(state), 0
-                )
+            Clock.schedule_once(self._sync_current_scene, 0)
 
     def _scene_frame_timeout(self, generation):
         if generation != self._scene_generation:
@@ -815,6 +910,8 @@ class JTMediaController:
         if not self._scene_has_frame:
             key = self._scene_key
             self._scene_failed_key = key
+            if self.phases is not None:
+                self.phases.video_complete(self._scene_state, failed=True)
             print(
                 "[JT-SCENE][ERROR] key={} no frame after 4s; historical frames restored".format(
                     key
@@ -918,13 +1015,15 @@ class JTMediaController:
                 )
         self._scene_audio_native = False
 
-        # Restore geometry before historical JPEG rendering resumes.
-        if self._scene_rect_pos is not None:
-            self.root.deux.pos = self._scene_rect_pos
-        if self._scene_rect_size is not None:
-            self.root.deux.size = self._scene_rect_size
-        self._scene_rect_pos = None
-        self._scene_rect_size = None
+        # Retain the last frame in aspect-fill while the logical action catches
+        # up to a short MP4. The next state/shutdown restores the base geometry.
+        if reason != "eos-complete":
+            if self._scene_rect_pos is not None:
+                self.root.deux.pos = self._scene_rect_pos
+            if self._scene_rect_size is not None:
+                self.root.deux.size = self._scene_rect_size
+            self._scene_rect_pos = None
+            self._scene_rect_size = None
 
         self._scene_key = key if preserve_failure else None
         self._scene_state = state if preserve_failure else None
@@ -938,6 +1037,8 @@ class JTMediaController:
         )
 
     def on_pause(self):
+        if self.phases is not None:
+            self.phases.set_paused(True)
         player = self._intro_player or self._scene_player
         self._paused_player = None
         if player is not None and getattr(player, "state", "") == "playing":
@@ -949,6 +1050,8 @@ class JTMediaController:
                 print("[JT-MEDIA][WARN] pause={!r}".format(exc), flush=True)
 
     def on_resume(self):
+        if self.phases is not None:
+            self.phases.set_paused(False)
         player = self._paused_player
         self._paused_player = None
         if player is not None:
@@ -959,6 +1062,9 @@ class JTMediaController:
                 print("[JT-MEDIA][WARN] resume={!r}".format(exc), flush=True)
 
     def shutdown(self):
+        if self.phases is not None:
+            self.phases.shutdown()
+        self.cancel_round_presentation()
         if self._admin_popup is not None:
             try:
                 self._admin_popup.dismiss()

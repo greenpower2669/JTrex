@@ -603,3 +603,18 @@ Le run #48 était vert mais son test ne vérifiait que des tokens. Inspection du
 ## 2026-10-02 — JT-FINISH-EOS-002 — cause de coupure confirmée sur téléphone
 
 Symptôme Fab 1.0.8 : finishing T-Rex / Steg non joué jusqu'au bout. Cause prouvée dans le main généré : bloc historique `if indexa==10 or indexa==11` puis `if indexa>9 and anim1==longanim1[indexa]-3: indexa=0; anim1=0`. Le state 11 legacy est particulièrement plus court que le MP4 (104×~0,06 s ≈ 6,24 s contre 8,336009 s FFprobe). Le simple `play_to_end` du contrôleur vidéo ne suffit donc pas si l'UI historique quitte et reconfigure la scène derrière lui. Correctif 1.0.9 : geler l'animation historique 10/11 après première frame vidéo, puis libérer une seule fois au vrai EOS MP4. La CI #50 vérifie l'ordre du garde avant la sortie legacy et l'ordre `pending EOS` avant `_stop_scene`. Validation téléphone encore requise.
+
+## 2026-10-02 — JT-PHASES-001 — audit et régressions reproduites
+
+Base e60561d3a2ecaf3441b005cd2e5805ecfc030854, main historique explicite/hash vérifié; audit du code réel.
+
+1. Le masque pouvoir omet rails/orbes/cibles/HUD; affpv réécrit les tailles toutes les0,5s après affbt. Un masque seulement dans affbt ne garantit pas l'exclusivité.
+2. carupdate est programmé indépendamment du début réel de round; les gardes pouvoir/protection2s ne créent pas de pré-phase. Des écrivains UI reprennent quand indexa revient à1 avant EOS.
+3. Un EOS de pouvoir court détruit le lecteur alors que indexa reste21..26; la synchronisation suivante peut recréer le même MP4. Reproduit par test, corrigé par scène terminée jusqu'au changement logique. Cela ne prouve PAS la cause du doublon T-Rex de Fab.
+4. Le lancement IA depuis carupdate passe encore par le else car2=10 après indexa=22. Reproduction : car75/car2=3, énergie40,5 → soin ST2/coût40; ancien chemin car2=10, correctif conserve75/3 et énergie0,5.
+
+Correction : phases, masque exhaustif après callbacks, chrono détenu par ROUND_ACTIVE, attente effet historique/EOS, synchronisation sur état vivant. Gardes finishing et génération players conservées.
+
+Pendant développement : test supplémentaire a détecté un verrou EOS initial qui empêchait d'arrêter VV au timeout→menu; corrigé et testé. Dernière frame d'un MP4 court reste aspect-fill. 16 tests verts, main/runtimes compilables, assertions CI code/helpers existantes vertes. Kivy/vidéo simulés : aucun résultat acoustique ou visuel Android revendiqué.
+
+Validation téléphone encore attendue. Ne pas annoncer le doublon vocal résolu. Les erreurs médias restent journalisées; les messages legacy génériques ne signifient pas que les banques prunées sont restaurées.
