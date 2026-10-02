@@ -296,7 +296,7 @@ jobs:
           assert "if getattr(self, '_jt_power_video_hold', False) and indexa in (10,11):" in main
           assert "jt_hide_power_cinematic_ui(self)" in main
           assert "jt_hide_finishing_hud(self)" in main
-          assert main.count("if getattr(self, '_jt_finishing_video_hold', False):") == 1
+          assert main.count("if getattr(self, '_jt_finishing_video_hold', False):") == 2
           assert main.count("if _jt_finish_pending==indexa:") == 1
           assert "[JT-FINISH] video-complete state={} -> menu" in main
           power_finish_bridge = main.index("if getattr(self, '_jt_power_video_hold', False) and indexa in (10,11):")
