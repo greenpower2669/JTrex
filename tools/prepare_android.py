@@ -11,8 +11,8 @@ import zipfile
 from pathlib import Path, PurePosixPath
 
 
-VERSION = "1.0.9"
-NUMERIC_VERSION = "109"
+VERSION = "1.0.10"
+NUMERIC_VERSION = "110"
 ARCHIVE_SIZE = 327992765
 ARCHIVE_SHA256 = (
     "f73ca1fd5e96ca6e11df5987bda8b2e59"
@@ -24,6 +24,26 @@ MAIN_SHA256 = (
 )
 EXTENSIONS = {"py", "kv", "png", "jpg", "jpeg", "gif", "wav", "mp4"}
 EXCLUDED_DIRS = {".kivy", ".buildozer", "__pycache__", "bin"}
+LEGACY_IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif"}
+MP4_ONLY_LEGACY_DIRS = frozenset({
+    "dinos1",
+    "chargetr",
+    "chargest",
+    "horseg2ko",
+    "egtrwin",
+    "eg2ko",
+    "stwin",
+    "trwin",
+    "finishst",
+    "finishtr",
+    "stsf",
+    "stls",
+    "stta",
+    "trfs",
+    "trph",
+    "trma",
+})
+MP4_ONLY_STATES = (1,2,3,4,5,6,7,8,9,10,11,21,22,23,24,25,26)
 MEDIA_ASSETS = {
     "assets/icon/JtrexIcon.png": 2283569,
     "assets/intro/JTrexintro1.mp4": 3278089,
@@ -120,6 +140,8 @@ def adapt_main(source):
         + "POWER_COSTS={1:60,2:40,3:60,4:60,5:60,6:80}"
         + newline
         + "POWER_READY_STATE={1:False,2:False,3:False,4:False,5:False,6:False}"
+        + newline
+        + "JT_MP4_ONLY_STATES=frozenset((1,2,3,4,5,6,7,8,9,10,11,21,22,23,24,25,26))"
         + newline
         + "def jt_power_available(slot):"
         + newline
@@ -240,6 +262,39 @@ _JT_ORB_TOUCH_PROTECT_UNTIL = 0.0
 
 def jt_orb_protected():
     return indexa==1 and Clock.get_time() < _JT_ORB_TOUCH_PROTECT_UNTIL
+
+def _jt_zero_widgets(root, names):
+    for name in names:
+        widget = getattr(root, name, None)
+        if widget is not None:
+            try:
+                widget.size = (0,0)
+            except Exception:
+                pass
+
+def jt_hide_power_cinematic_ui(root):
+    _jt_zero_widgets(
+        root,
+        (
+            'b1','b2','b3','b4','b5','b6',
+            'b1s','b2s','b3s','b4s','b5s','b6s',
+            'gr','gg','gb','gj','dr','dg','db','dj',
+            'pavé','vh','vb','jh','jb','cadre','calque',
+            'vshg','vshd','vscg','vscd',
+            'lsg','lsd','lag','lad','lbg','lbd','lcg','lcd','ldg','ldd',
+            'start','insertcoin','abcg','abcd',
+        ),
+    )
+    for name in ('label','labelf','label2','label2f'):
+        widget = getattr(root, name, None)
+        if widget is not None:
+            try:
+                widget.text = ''
+            except Exception:
+                pass
+
+def jt_hide_finishing_hud(root):
+    _jt_zero_widgets(root, ('nrjg','nrjd','nrjgf','nrjdf','pvg','pvd'))
 
 def colpts():
     global _JT_EXCHANGE_ID
@@ -453,7 +508,7 @@ def _jt_log_new_stops(self, observer):
     unit = src_indent[len(if_indent):] or "\t"
     original_source = lines[source_index].lstrip(" \t")
     lines[source_index:source_index + 1] = [
-        src_indent + "if not getattr(self, '_jt_scene_video_active', False):" + newline,
+        src_indent + "if not getattr(self, '_jt_scene_video_active', False) and indexa not in JT_MP4_ONLY_STATES:" + newline,
         src_indent + unit + original_source,
     ]
 
@@ -550,6 +605,15 @@ def _jt_log_new_stops(self, observer):
         body_indent + "self.b4s.size=(mdo,mdo) if jt_power_available(4) else (0,0)" + newline,
         body_indent + "self.b5s.size=(mdo,mdo) if jt_power_available(5) else (0,0)" + newline,
         body_indent + "self.b6s.size=(mdo,mdo) if jt_power_available(6) else (0,0)" + newline,
+        body_indent + "if getattr(self, '_jt_power_video_hold', False):" + newline,
+        body_indent + "\tjt_hide_power_cinematic_ui(self)" + newline,
+        body_indent + "\tself._jt_power_controls_were_hidden=True" + newline,
+        body_indent + "\treturn" + newline,
+        body_indent + "if getattr(self, '_jt_power_controls_were_hidden', False):" + newline,
+        body_indent + "\tself._jt_power_controls_were_hidden=False" + newline,
+        body_indent + "\tindexa0=-999" + newline,
+        body_indent + "if getattr(self, '_jt_finishing_video_hold', False):" + newline,
+        body_indent + "\tjt_hide_finishing_hud(self)" + newline,
     ]
     lines[end:end] = aura_block
 
@@ -624,6 +688,8 @@ def _jt_log_new_stops(self, observer):
     ]
     lines[anim_global_at:anim_global_at] = [
         anim_body_indent + "global _JT_ORB_TOUCH_PROTECT_UNTIL" + newline,
+        anim_body_indent + "if getattr(self, '_jt_power_video_hold', False) and indexa in (10,11):" + newline,
+        anim_body_indent + "\treturn" + newline,
         anim_body_indent + "if indexa in (10,11):" + newline,
         anim_body_indent + "\t_jt_finish_pending=getattr(self, '_jt_finishing_complete_pending', None)" + newline,
         anim_body_indent + "\tif _jt_finish_pending==indexa:" + newline,
@@ -653,6 +719,22 @@ def _jt_log_new_stops(self, observer):
         prefix + "if _jt_charge_state in (2,3,4):" + newline,
         prefix + "\t_JT_ORB_TOUCH_PROTECT_UNTIL=Clock.get_time()+2.0" + newline,
         prefix + "\tprint('[JT-ORB] charge-entry freeze+protection 2.0s from_state={}'.format(_jt_charge_state),flush=True)" + newline,
+    ]
+
+    start, end = method_bounds(lines, "carupdate")
+    car_global_lines = [
+        index
+        for index in range(start + 1, min(end, start + 20))
+        if lines[index].lstrip().startswith("global ")
+    ]
+    require(car_global_lines, "Globals de carupdate introuvables.")
+    car_hold_at = max(car_global_lines) + 1
+    car_body_indent = lines[car_global_lines[-1]][
+        : len(lines[car_global_lines[-1]]) - len(lines[car_global_lines[-1]].lstrip(" \t"))
+    ]
+    lines[car_hold_at:car_hold_at] = [
+        car_body_indent + "if getattr(self, '_jt_power_video_hold', False):" + newline,
+        car_body_indent + "\treturn" + newline,
     ]
 
     start, end = method_bounds(lines, "carupdate")
@@ -711,7 +793,11 @@ def _jt_log_new_stops(self, observer):
         lines[index:index] = [line]
     start, end = method_bounds(lines, "colvv")
     body_indent = lines[start + 1][: len(lines[start + 1]) - len(lines[start + 1].lstrip(" \t"))]
-    lines[start + 2:start + 2] = [body_indent + "_jt_log_new_stops(self, 'colvv-pre-update')" + newline]
+    lines[start + 2:start + 2] = [
+        body_indent + "if getattr(self, '_jt_power_video_hold', False):" + newline,
+        body_indent + "\treturn" + newline,
+        body_indent + "_jt_log_new_stops(self, 'colvv-pre-update')" + newline,
+    ]
     start, end = method_bounds(lines, "colvv")
     lines[end:end] = [
         body_indent + "_jt_log_new_stops(self, 'colvv-post-update')" + newline,
@@ -806,6 +892,9 @@ def prepare(archive, destination, spec, media_root, runtime):
         stage = Path(temporary) / "app"
         stage.mkdir()
         extracted = set()
+        pruned_legacy_image_files = 0
+        pruned_legacy_image_bytes = 0
+        pruned_legacy_image_dirs = set()
 
         with zipfile.ZipFile(archive) as bundle:
             require(
@@ -842,6 +931,16 @@ def prepare(archive, destination, spec, media_root, runtime):
                     relative.suffix.lower() == ".py"
                     and relative != PurePosixPath("main.py")
                 ):
+                    continue
+
+                if (
+                    relative.parts
+                    and relative.parts[0] in MP4_ONLY_LEGACY_DIRS
+                    and relative.suffix.lower() in LEGACY_IMAGE_EXTENSIONS
+                ):
+                    pruned_legacy_image_files += 1
+                    pruned_legacy_image_bytes += entry.file_size
+                    pruned_legacy_image_dirs.add(relative.parts[0])
                     continue
 
                 name = relative.as_posix()
@@ -919,20 +1018,39 @@ def prepare(archive, destination, spec, media_root, runtime):
                 f"Ressource requise absente : {resource}",
             )
 
-        missing_frame = "horseg2ko/chargetrwin_83.jpeg"
+        require(
+            pruned_legacy_image_dirs == set(MP4_ONLY_LEGACY_DIRS),
+            "Nettoyage MP4 incomplet: dossiers trouvés={} attendus={}".format(
+                sorted(pruned_legacy_image_dirs), sorted(MP4_ONLY_LEGACY_DIRS)
+            ),
+        )
+        remaining_legacy_images = []
+        for legacy_dir in MP4_ONLY_LEGACY_DIRS:
+            folder = stage / legacy_dir
+            if folder.is_dir():
+                remaining_legacy_images.extend(
+                    path.relative_to(stage).as_posix()
+                    for path in folder.rglob("*")
+                    if path.is_file() and path.suffix.lower() in LEGACY_IMAGE_EXTENSIONS
+                )
+        require(
+            not remaining_legacy_images,
+            "Images legacy MP4 encore présentes: {}".format(remaining_legacy_images[:10]),
+        )
+        print(
+            "[JT-PREP] pruned legacy MP4 frames files={} bytes={} dirs={}".format(
+                pruned_legacy_image_files,
+                pruned_legacy_image_bytes,
+                sorted(pruned_legacy_image_dirs),
+            ),
+            flush=True,
+        )
         known_missing = []
-        if not (stage / missing_frame).is_file():
-            known_missing.append(missing_frame)
-            print(
-                "[JT-PREP][KNOWN-MISSING] "
-                f"{missing_frame}; aucun remplacement effectué.",
-                flush=True,
-            )
 
         shutil.copyfile(spec, stage / "buildozer.spec")
 
         report = {
-            "mission": "JT-CINEMATIC-FINISHING-001",
+            "mission": "JT-MP4-CLEANUP-003",
             "version": VERSION,
             "numeric_version": NUMERIC_VERSION,
             "package": "com.junedady.junetrex",
@@ -943,13 +1061,17 @@ def prepare(archive, destination, spec, media_root, runtime):
             "runtime_sha256": digest(stage / "jtrex_media_runtime.py"),
             "buildozer_spec_sha256": digest(stage / "buildozer.spec"),
             "extracted_historical_files": len(extracted),
+            "pruned_legacy_image_files": pruned_legacy_image_files,
+            "pruned_legacy_image_bytes": pruned_legacy_image_bytes,
+            "pruned_legacy_image_dirs": sorted(pruned_legacy_image_dirs),
+            "mp4_only_states": list(MP4_ONLY_STATES),
             "icon_source": "assets/icon/JtrexIcon.png",
             "media_assets": asset_report,
             "known_missing_resources": known_missing,
             "changes": [
                 "a.png -> A.png: 4 références",
                 "boutbleu0.png -> boutBleu0.png: 4 références",
-                "version 1.0.9 / versionCode 109",
+                "version 1.0.10 / versionCode 110",
                 "Python cible 3.12.14 pour compatibilité ffpyplayer",
                 "titre June T-Rex",
                 "menu music deferred until intro end",
@@ -958,7 +1080,11 @@ def prepare(archive, destination, spec, media_root, runtime):
                 "power states 21/22/23/24/25/26 mapped to STSF/STLS/STTA/TRFS/TRPH/TRMA videos",
                 "finishing states 10/11 mapped to Steg-finishes-Trex / Trex-finishes-Steg videos",
                 "power and finishing videos are play-to-end cinematics; gameplay touch is locked while they cover the board",
-                "finishing states 10/11 freeze historical animation after first real MP4 frame and return to menu only after real MP4 EOS",
+                "power videos hide gameplay buttons and pause orb movement/countdowns until real MP4 EOS while historical power effect timing remains authoritative",
+                "if a power causes state 10/11, finishing progression waits for the power MP4 EOS before the finishing video starts",
+                "finishing states 10/11 freeze historical animation after first real MP4 frame, hide energy/health HUD and return to menu only after real MP4 EOS",
+                "wait state 1 remembers its MP4 playback fraction across charge/power interruptions and resumes there; the MP4 itself loops from its end to its beginning",
+                "legacy image sequences for all MP4-mapped states are pruned from the packaged app; gauge controls remain separate and interactive",
                 "combat videos aspect-fill with native MP4 audio after first usable frame; intros remain aspect-fit with audio",
                 "one scene player per state family with generation-safe callbacks",
                 "legacy scene soundtrack remains fallback until first usable video frame and on media failure",
