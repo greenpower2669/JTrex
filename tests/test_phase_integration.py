@@ -1,8 +1,29 @@
 import unittest
+from types import SimpleNamespace
 from runtime_harness import Clock, Harness, Video
 
 
 class PhaseIntegration(unittest.TestCase):
+    def test_direct_canvas_geometry_is_hidden_and_restored(self):
+        h = Harness(); h.start_round()
+        # coul() creates local Ellipses directly in canvas.before, not root attrs.
+        circle = SimpleNamespace(pos=(10,10), size=(180,180))
+        h.root.canvas.before.children.append(circle)
+        h.state(21); h.frame(); h.callbacks()
+        self.assertEqual(circle.size, (0,0))
+        h.ns['indexa'] = 1
+        h.eos(); h.media._sync_current_scene()
+        self.assertEqual(circle.size, (180,180))
+
+    def test_touch_release_during_cinematic_cleans_its_canvas_group(self):
+        h = Harness(); h.start_round(); h.touch('gr')
+        removed = []
+        h.root.canvas.remove_group = removed.append
+        h.state(21); h.frame()
+        h.root.on_touch_up(h.last_touch)
+        self.assertIsNone(h.last_touch.grab_current)
+        self.assertIn(h.last_touch.ud['group'], removed)
+
     def test_timeout_stops_wait_video_and_returns_to_menu(self):
         h = Harness(); h.start_round(); h.frame()
         player = h.media._scene_player

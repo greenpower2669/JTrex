@@ -25,6 +25,7 @@ class JTPhaseController:
         self._timer_event = None
         self._masked = False
         self._saved_sizes = {}
+        self._masked_graphics = {}
         self._rectangles = {
             name: obj for name, obj in vars(self.root).items()
             if isinstance(obj, rectangle_type) and name != "deux"
@@ -141,6 +142,10 @@ class JTPhaseController:
         self._reset_timer()
 
     def allows(self, callback):
+        if callback == "on_touch_up":
+            # Historical release only resets tracking/button sprites and removes
+            # the touch canvas group. Keep that cleanup even under a cinematic.
+            return True
         if self.paused:
             return False
         if callback == "carupdate":
@@ -160,9 +165,19 @@ class JTPhaseController:
         if self.name not in self.BLOCKED:
             return
         if not self._masked:
-            self._saved_sizes = {name: tuple(obj.size) for name, obj in self._rectangles.items()}
+            self._masked_graphics = dict(self._rectangles)
+            seen = {id(obj) for obj in self._masked_graphics.values()}
+            seen.add(id(self.root.deux))
+            # coul()/scr() draw local Ellipses directly in canvas groups, without
+            # attaching attributes to root. Include these existing geometries.
+            for layer in (self.root.canvas.before, self.root.canvas, self.root.canvas.after):
+                for obj in layer.children:
+                    if id(obj) not in seen and hasattr(obj, "size") and hasattr(obj, "pos"):
+                        self._masked_graphics["canvas-{}".format(id(obj))] = obj
+                        seen.add(id(obj))
+            self._saved_sizes = {name: tuple(obj.size) for name, obj in self._masked_graphics.items()}
             self._masked = True
-        for obj in self._rectangles.values():
+        for obj in self._masked_graphics.values():
             obj.size = (0, 0)
         for obj in self._labels.values():
             obj.opacity = 0
@@ -177,10 +192,11 @@ class JTPhaseController:
 
     def _restore_ui(self):
         for name, size in self._saved_sizes.items():
-            self._rectangles[name].size = size
+            self._masked_graphics[name].size = size
         for name, opacity in self._saved_opacity.items():
             self._labels[name].opacity = opacity
         self._masked = False
+        self._masked_graphics = {}
 
     def shutdown(self):
         self.paused = True
@@ -207,11 +223,6 @@ def install_phase_hooks(game_class, engine):
                     return method(root, *args, **kwargs)
                 phase.sync()
                 if not phase.allows(callback):
-                    if callback == "on_touch_up":
-                        engine["choixidh"] = engine["choixidb"] = 0
-                        touch = args[0]
-                        if getattr(touch, "grab_current", None) is root:
-                            touch.ungrab(root)
                     phase.apply_ui()
                     return True if callback in phase.TOUCHES else None
                 try:

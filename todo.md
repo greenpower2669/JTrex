@@ -632,3 +632,10 @@ Les sections antérieures conservent l'historique.
 - [ ] Fab : VV reprise proche de sa position, boucle naturelle; pause/reprise pendant START et pouvoir.
 - [ ] Fab : rendu/ratios, audio MP4, admin20taps.
 - [ ] Doublon vocal : capture et traces JT-PHASE/JT-SCENE (fichier/génération/EOS/position/durée/AUDIO_LEGACY/AUDIO_NATIVE), attribuer seulement après preuve.
+
+### JT-PHASES-001 — complément canvas et nettoyage tactile
+
+- [x] Masquer/restaurer aussi les géométries canvas directes, test reproduit avant correction.
+- [x] Conserver le nettoyage historique de on_touch_up pendant cinématique; test dédié vert.
+- [x] 18 tests déterministes verts.
+- [ ] Suivre le build du commit complémentaire; ne pas livrer le premier candidat df03316/run54 comme résultat final.

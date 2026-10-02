@@ -555,3 +555,7 @@ Préserver score cubique, seuil strict20000, lettres, dégâts/soins/gains, aura
 Le doublon « Tyrannosaurus Win » doit être attribué après corrélation fichier/génération/état/position/audio et capture téléphone, jamais supposé legacy.
 
 Livrer candidat après1.0.11, tests du main généré, CI renforcée sans refonte native, APK debug et commit/run/SHA256. Pas de merge main, pas de release. Synchroniser les cinq mémoires; distinguer simulation, build Android et validation téléphone.
+
+### JT-PHASES-001 — complément canvas et nettoyage tactile
+
+Complément de réalisation : l’exclusivité couvre également les formes dessinées directement dans le canvas, et les relâchements tactiles doivent pouvoir nettoyer leurs groupes sans action de jeu. La version1.0.12 n’ayant pas été livrée à Fab, garder version112 pour le candidat final qui remplace df03316/run54. Pas de nouveau composant ni changement de gameplay.

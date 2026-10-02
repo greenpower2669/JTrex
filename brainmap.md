@@ -805,3 +805,7 @@ Chronologie : menu0 → charge4 (taps→2/3) → moteur1/protection2s → PRE_RO
 Traces bornées : JT-PHASE (anim/car/car2/key/génération), JT-ROUND, entrée MP4 fichier/génération, EOS fichier/position/durée/état réel, AUDIO_LEGACY start source exacte, AUDIO_NATIVE enabled, AUDIO_STOP. Admin : phase/round/car/car2/génération. Nécessaires pour attribuer le doublon vocal sans présupposé.
 
 CI : unittest avec JT_GENERATED_MAIN=app/main.py; harness simule uniquement IO Kivy/vidéo. Nouveau module et tests inclus dans triggers, phase-tests.log dans diagnostics. Chaîne native inchangée.
+
+### JT-PHASES-001 — complément canvas et nettoyage tactile
+
+apply_ui construit à chaque entrée masquée un inventaire des attributs Rectangle et des instructions avec pos/size déjà présentes dans les trois couches du canvas, en excluant deux et en dédoublonnant les objets. Les références temporaires sont relâchées après restauration. allows(on_touch_up) laisse le callback historique nettoyer grab/group/label et les sources au repos; apply_ui réimpose ensuite le masque. Aucun recodage de ce nettoyage tactile hérité.

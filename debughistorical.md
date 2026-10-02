@@ -618,3 +618,7 @@ Correction : phases, masque exhaustif après callbacks, chrono détenu par ROUND
 Pendant développement : test supplémentaire a détecté un verrou EOS initial qui empêchait d'arrêter VV au timeout→menu; corrigé et testé. Dernière frame d'un MP4 court reste aspect-fill. 16 tests verts, main/runtimes compilables, assertions CI code/helpers existantes vertes. Kivy/vidéo simulés : aucun résultat acoustique ou visuel Android revendiqué.
 
 Validation téléphone encore attendue. Ne pas annoncer le doublon vocal résolu. Les erreurs médias restent journalisées; les messages legacy génériques ne signifient pas que les banques prunées sont restaurées.
+
+### JT-PHASES-001 — complément canvas et nettoyage tactile
+
+Pendant le build du premier candidat df03316 (run54), dernière vérification des instructions canvas : coul/scr créent des Ellipse locales non référencées comme attributs root. Une telle géométrie persistante échappait au premier inventaire; test reproduit puis corrigé. Le blocage de on_touch_up pouvait aussi laisser son groupe canvas : conserver ce nettoyage historique, sans autoriser on_touch_down/move. Deux nouveaux tests échouaient avant, passent après; total18. Le candidat du run54 est donc remplacé pour la livraison finale, sans nouvelle version publique ni changement natif.

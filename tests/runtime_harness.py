@@ -14,6 +14,7 @@ sys.path.insert(0, str(ROOT / "tools"))
 
 
 class Canvas:
+    def __init__(self): self.children = []
     before = property(lambda self: self)
     after = property(lambda self: self)
     def __enter__(self): return self
@@ -40,7 +41,8 @@ class Widget:
     def bind(self, **kwargs): pass
     def unbind(self, **kwargs): pass
     def add_widget(self, child): self.children.append(child)
-    def remove_widget(self, child): self.children.remove(child)
+    def remove_widget(self, child):
+        if child in self.children: self.children.remove(child)
     def to_window(self, x, y, **kwargs): return x, y
     def get_parent_window(self): return self
 
@@ -183,4 +185,5 @@ class Harness:
         t = SimpleNamespace(x=x, y=y, pos=(x,y), uid='test', id='1', ud={}, profile=[])
         t.grab = lambda widget: setattr(t, 'grab_current', widget)
         t.ungrab = lambda widget: setattr(t, 'grab_current', None)
+        self.last_touch = t
         return self.root.on_touch_down(t)
