@@ -293,13 +293,13 @@ jobs:
           assert main.count("if not getattr(self, '_jt_scene_video_active', False):") >= 1
           assert "if not getattr(self, '_jt_scene_video_active', False) and indexa not in JT_MP4_ONLY_STATES:" in main
           assert main.count("if getattr(self, '_jt_power_video_hold', False):") >= 3
-          assert "if getattr(self, '_jt_power_video_hold', False) and indexa in (10,11):" in main
+          assert "if getattr(self, '_jt_power_video_hold', False) and indexa in (1,10,11):" in main
           assert "jt_hide_power_cinematic_ui(self)" in main
           assert "jt_hide_finishing_hud(self)" in main
           assert main.count("if getattr(self, '_jt_finishing_video_hold', False):") == 2
           assert main.count("if _jt_finish_pending==indexa:") == 1
           assert "[JT-FINISH] video-complete state={} -> menu" in main
-          power_finish_bridge = main.index("if getattr(self, '_jt_power_video_hold', False) and indexa in (10,11):")
+          power_finish_bridge = main.index("if getattr(self, '_jt_power_video_hold', False) and indexa in (1,10,11):")
           finish_gate = main.index("if indexa in (10,11):")
           legacy_finish_exit = main.index("if indexa==10 or indexa==11:")
           assert power_finish_bridge < finish_gate < legacy_finish_exit
@@ -328,12 +328,36 @@ jobs:
           assert preparation["pruned_legacy_image_bytes"] > 0
           assert preparation["mp4_only_states"] == [1,2,3,4,5,6,7,8,9,10,11,21,22,23,24,25,26]
           image_exts = {".png",".jpg",".jpeg",".gif"}
-          for directory in expected_pruned_dirs:
+          sequence_prefixes = {
+              "dinos1":"dinos_",
+              "chargetr":"chargetrwin_",
+              "chargest":"chargetrwin_",
+              "horseg2ko":"chargetrwin_",
+              "egtrwin":"egtrwin_",
+              "eg2ko":"eg2ko_",
+              "stwin":"stwin_",
+              "trwin":"trwin_",
+              "finishst":"finishst_",
+              "finishtr":"finishtr_",
+              "stsf":"stsf_",
+              "stls":"stls_",
+              "stta":"stta_",
+              "trfs":"trfs_",
+              "trph":"trph_",
+              "trma":"trma_",
+          }
+          assert preparation["preserved_legacy_nonframe_images"] >= 0
+          assert preparation["preserved_legacy_nonframe_bytes"] >= 0
+          for directory, prefix in sequence_prefixes.items():
               folder = Path("app") / directory
               if folder.is_dir():
                   leftovers = [
                       path for path in folder.rglob("*")
-                      if path.is_file() and path.suffix.lower() in image_exts
+                      if (
+                          path.is_file()
+                          and path.suffix.lower() in image_exts
+                          and path.name.startswith(prefix)
+                      )
                   ]
                   assert not leftovers, (directory, leftovers[:3])
 
@@ -500,9 +524,9 @@ jobs:
             exit 1
           fi
           mkdir -p artifacts
-          cp "${apks[0]}" artifacts/JuneT-Rex-1.0.10-debug.apk
+          cp "${apks[0]}" artifacts/JuneT-Rex-1.0.11-debug.apk
           cd artifacts
-          sha256sum JuneT-Rex-1.0.10-debug.apk > SHA256SUMS.txt
+          sha256sum JuneT-Rex-1.0.11-debug.apk > SHA256SUMS.txt
 
       - name: Upload diagnostic files
         if: always()
@@ -525,9 +549,9 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: JuneT-Rex-1.0.10-debug
+          name: JuneT-Rex-1.0.11-debug
           path: |
-            artifacts/JuneT-Rex-1.0.10-debug.apk
+            artifacts/JuneT-Rex-1.0.11-debug.apk
             artifacts/SHA256SUMS.txt
           if-no-files-found: error
           compression-level: 0
