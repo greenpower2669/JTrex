@@ -11,8 +11,8 @@ import zipfile
 from pathlib import Path, PurePosixPath
 
 
-VERSION = "1.0.10"
-NUMERIC_VERSION = "110"
+VERSION = "1.0.11"
+NUMERIC_VERSION = "111"
 ARCHIVE_SIZE = 327992765
 ARCHIVE_SHA256 = (
     "f73ca1fd5e96ca6e11df5987bda8b2e59"
@@ -25,24 +25,25 @@ MAIN_SHA256 = (
 EXTENSIONS = {"py", "kv", "png", "jpg", "jpeg", "gif", "wav", "mp4"}
 EXCLUDED_DIRS = {".kivy", ".buildozer", "__pycache__", "bin"}
 LEGACY_IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif"}
-MP4_ONLY_LEGACY_DIRS = frozenset({
-    "dinos1",
-    "chargetr",
-    "chargest",
-    "horseg2ko",
-    "egtrwin",
-    "eg2ko",
-    "stwin",
-    "trwin",
-    "finishst",
-    "finishtr",
-    "stsf",
-    "stls",
-    "stta",
-    "trfs",
-    "trph",
-    "trma",
-})
+MP4_ONLY_LEGACY_SEQUENCES = {
+    "dinos1": "dinos_",
+    "chargetr": "chargetrwin_",
+    "chargest": "chargetrwin_",
+    "horseg2ko": "chargetrwin_",
+    "egtrwin": "egtrwin_",
+    "eg2ko": "eg2ko_",
+    "stwin": "stwin_",
+    "trwin": "trwin_",
+    "finishst": "finishst_",
+    "finishtr": "finishtr_",
+    "stsf": "stsf_",
+    "stls": "stls_",
+    "stta": "stta_",
+    "trfs": "trfs_",
+    "trph": "trph_",
+    "trma": "trma_",
+}
+MP4_ONLY_LEGACY_DIRS = frozenset(MP4_ONLY_LEGACY_SEQUENCES)
 MP4_ONLY_STATES = (1,2,3,4,5,6,7,8,9,10,11,21,22,23,24,25,26)
 MEDIA_ASSETS = {
     "assets/icon/JtrexIcon.png": 2283569,
@@ -688,7 +689,7 @@ def _jt_log_new_stops(self, observer):
     ]
     lines[anim_global_at:anim_global_at] = [
         anim_body_indent + "global _JT_ORB_TOUCH_PROTECT_UNTIL" + newline,
-        anim_body_indent + "if getattr(self, '_jt_power_video_hold', False) and indexa in (10,11):" + newline,
+        anim_body_indent + "if getattr(self, '_jt_power_video_hold', False) and indexa in (1,10,11):" + newline,
         anim_body_indent + "\treturn" + newline,
         anim_body_indent + "if indexa in (10,11):" + newline,
         anim_body_indent + "\t_jt_finish_pending=getattr(self, '_jt_finishing_complete_pending', None)" + newline,
@@ -895,6 +896,8 @@ def prepare(archive, destination, spec, media_root, runtime):
         pruned_legacy_image_files = 0
         pruned_legacy_image_bytes = 0
         pruned_legacy_image_dirs = set()
+        preserved_legacy_nonframe_images = 0
+        preserved_legacy_nonframe_bytes = 0
 
         with zipfile.ZipFile(archive) as bundle:
             require(
@@ -935,13 +938,18 @@ def prepare(archive, destination, spec, media_root, runtime):
 
                 if (
                     relative.parts
-                    and relative.parts[0] in MP4_ONLY_LEGACY_DIRS
+                    and relative.parts[0] in MP4_ONLY_LEGACY_SEQUENCES
                     and relative.suffix.lower() in LEGACY_IMAGE_EXTENSIONS
                 ):
-                    pruned_legacy_image_files += 1
-                    pruned_legacy_image_bytes += entry.file_size
-                    pruned_legacy_image_dirs.add(relative.parts[0])
-                    continue
+                    legacy_dir = relative.parts[0]
+                    legacy_prefix = MP4_ONLY_LEGACY_SEQUENCES[legacy_dir]
+                    if relative.name.startswith(legacy_prefix):
+                        pruned_legacy_image_files += 1
+                        pruned_legacy_image_bytes += entry.file_size
+                        pruned_legacy_image_dirs.add(legacy_dir)
+                        continue
+                    preserved_legacy_nonframe_images += 1
+                    preserved_legacy_nonframe_bytes += entry.file_size
 
                 name = relative.as_posix()
                 require(
@@ -1024,24 +1032,35 @@ def prepare(archive, destination, spec, media_root, runtime):
                 sorted(pruned_legacy_image_dirs), sorted(MP4_ONLY_LEGACY_DIRS)
             ),
         )
-        remaining_legacy_images = []
-        for legacy_dir in MP4_ONLY_LEGACY_DIRS:
+        remaining_legacy_frames = []
+        for legacy_dir, legacy_prefix in MP4_ONLY_LEGACY_SEQUENCES.items():
             folder = stage / legacy_dir
             if folder.is_dir():
-                remaining_legacy_images.extend(
+                remaining_legacy_frames.extend(
                     path.relative_to(stage).as_posix()
                     for path in folder.rglob("*")
-                    if path.is_file() and path.suffix.lower() in LEGACY_IMAGE_EXTENSIONS
+                    if (
+                        path.is_file()
+                        and path.suffix.lower() in LEGACY_IMAGE_EXTENSIONS
+                        and path.name.startswith(legacy_prefix)
+                    )
                 )
         require(
-            not remaining_legacy_images,
-            "Images legacy MP4 encore présentes: {}".format(remaining_legacy_images[:10]),
+            not remaining_legacy_frames,
+            "Frames legacy MP4 encore présentes: {}".format(remaining_legacy_frames[:10]),
         )
         print(
             "[JT-PREP] pruned legacy MP4 frames files={} bytes={} dirs={}".format(
                 pruned_legacy_image_files,
                 pruned_legacy_image_bytes,
                 sorted(pruned_legacy_image_dirs),
+            ),
+            flush=True,
+        )
+        print(
+            "[JT-PREP] preserved non-frame images in MP4 dirs files={} bytes={}".format(
+                preserved_legacy_nonframe_images,
+                preserved_legacy_nonframe_bytes,
             ),
             flush=True,
         )
@@ -1064,6 +1083,8 @@ def prepare(archive, destination, spec, media_root, runtime):
             "pruned_legacy_image_files": pruned_legacy_image_files,
             "pruned_legacy_image_bytes": pruned_legacy_image_bytes,
             "pruned_legacy_image_dirs": sorted(pruned_legacy_image_dirs),
+            "preserved_legacy_nonframe_images": preserved_legacy_nonframe_images,
+            "preserved_legacy_nonframe_bytes": preserved_legacy_nonframe_bytes,
             "mp4_only_states": list(MP4_ONLY_STATES),
             "icon_source": "assets/icon/JtrexIcon.png",
             "media_assets": asset_report,
@@ -1071,7 +1092,7 @@ def prepare(archive, destination, spec, media_root, runtime):
             "changes": [
                 "a.png -> A.png: 4 références",
                 "boutbleu0.png -> boutBleu0.png: 4 références",
-                "version 1.0.10 / versionCode 110",
+                "version 1.0.11 / versionCode 111",
                 "Python cible 3.12.14 pour compatibilité ffpyplayer",
                 "titre June T-Rex",
                 "menu music deferred until intro end",
@@ -1080,11 +1101,11 @@ def prepare(archive, destination, spec, media_root, runtime):
                 "power states 21/22/23/24/25/26 mapped to STSF/STLS/STTA/TRFS/TRPH/TRMA videos",
                 "finishing states 10/11 mapped to Steg-finishes-Trex / Trex-finishes-Steg videos",
                 "power and finishing videos are play-to-end cinematics; gameplay touch is locked while they cover the board",
-                "power videos hide gameplay buttons and pause orb movement/countdowns until real MP4 EOS while historical power effect timing remains authoritative",
+                "power videos hide gameplay buttons and pause orb movement/countdowns until real MP4 EOS while historical power effect timing remains authoritative; once the power effect returns to state 1, historical restart animation also waits for EOS",
                 "if a power causes state 10/11, finishing progression waits for the power MP4 EOS before the finishing video starts",
                 "finishing states 10/11 freeze historical animation after first real MP4 frame, hide energy/health HUD and return to menu only after real MP4 EOS",
                 "wait state 1 remembers its MP4 playback fraction across charge/power interruptions and resumes there; the MP4 itself loops from its end to its beginning",
-                "legacy image sequences for all MP4-mapped states are pruned from the packaged app; gauge controls remain separate and interactive",
+                "legacy image sequences for all MP4-mapped states are pruned by exact animation prefix; unrelated images/icons in the same directories are preserved; gauge controls remain separate and interactive",
                 "combat videos aspect-fill with native MP4 audio after first usable frame; intros remain aspect-fit with audio",
                 "one scene player per state family with generation-safe callbacks",
                 "legacy scene soundtrack remains fallback until first usable video frame and on media failure",
