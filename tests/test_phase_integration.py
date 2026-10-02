@@ -101,6 +101,8 @@ class PhaseIntegration(unittest.TestCase):
                 h.eos(); h.root.mc1(.03)
                 self.assertEqual(h.ns['indexa'], 0)
                 self.assertEqual(h.media.phases.name, 'MENU')
+                self.assertEqual(h.root.label.text, '')
+                self.assertEqual(h.root.label2.text, '')
 
     def test_short_power_eos_does_not_apply_damage_and_logic_still_completes(self):
         h = Harness(); h.start_round()

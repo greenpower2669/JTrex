@@ -559,3 +559,7 @@ Livrer candidat après1.0.11, tests du main généré, CI renforcée sans refont
 ### JT-PHASES-001 — complément canvas et nettoyage tactile
 
 Complément de réalisation : l’exclusivité couvre également les formes dessinées directement dans le canvas, et les relâchements tactiles doivent pouvoir nettoyer leurs groupes sans action de jeu. La version1.0.12 n’ayant pas été livrée à Fab, garder version112 pour le candidat final qui remplace df03316/run54. Pas de nouveau composant ni changement de gameplay.
+
+### JT-PHASES-001 — textes des chronos au changement de phase
+
+Le retour MENU inclut explicitement la disparition des textes de chrono. Les contrôles complets finishing→menu doivent vérifier la présentation finale, au-delà du seul indexa. Ce complément ne change aucune durée ni règle numérique.

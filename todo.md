@@ -639,3 +639,9 @@ Les sections antérieures conservent l'historique.
 - [x] Conserver le nettoyage historique de on_touch_up pendant cinématique; test dédié vert.
 - [x] 18 tests déterministes verts.
 - [ ] Suivre le build du commit complémentaire; ne pas livrer le premier candidat df03316/run54 comme résultat final.
+
+### JT-PHASES-001 — textes des chronos au changement de phase
+
+- [x] Vérifier puis corriger le petit chrono résiduel au menu après finishing; valeurs numériques conservées.
+- [x] 18 tests verts avec assertion des deux textes vides dans les deux finishing.
+- [ ] Livrer le build incluant ce nettoyage final; runs54/55 remplacés avant validation téléphone.

@@ -809,3 +809,7 @@ CI : unittest avec JT_GENERATED_MAIN=app/main.py; harness simule uniquement IO K
 ### JT-PHASES-001 — complément canvas et nettoyage tactile
 
 apply_ui construit à chaque entrée masquée un inventaire des attributs Rectangle et des instructions avec pos/size déjà présentes dans les trois couches du canvas, en excluant deux et en dédoublonnant les objets. Les références temporaires sont relâchées après restauration. allows(on_touch_up) laisse le callback historique nettoyer grab/group/label et les sources au repos; apply_ui réimpose ensuite le masque. Aucun recodage de ce nettoyage tactile hérité.
+
+### JT-PHASES-001 — textes des chronos au changement de phase
+
+_set_phase actualise label/labelf/label2/label2f après affbt/affpv. Le callback carupdate étant volontairement absent au menu, le nettoyage de ces textes ne peut plus dépendre de son ancien else. Le test complet des deux finishing vérifie désormais les deux labels vides au retour menu.

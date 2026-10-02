@@ -1148,3 +1148,7 @@ Jauges2/3/4 et5/6/7 : interactions inchangées, un lecteur par famille. Verdicts
 ### JT-PHASES-001 — complément canvas et nettoyage tactile
 
 Le masque inclut aussi les formes locales créées directement dans canvas.before/canvas/canvas.after (coul/scr), puis restaure leur géométrie. on_touch_up conserve uniquement son travail historique de nettoyage, même sous cinématique; il ne déclenche aucun pouvoir ni arrêt d’orbe. 18 tests déterministes verts après ajout de ces deux cas.
+
+### JT-PHASES-001 — textes des chronos au changement de phase
+
+Le texte des deux chronos appartient aussi à la présentation : car/car2 affichés dès PRE_ROUND/ROUND_ACTIVE, petit chrono effacé hors round, aucun chrono au menu ou en cinématique. Les valeurs numériques restent suspendues, puis affichées immédiatement à la reprise.

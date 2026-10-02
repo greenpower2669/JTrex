@@ -124,6 +124,15 @@ class JTPhaseController:
             originals = self.engine["_JT_PHASE_ORIGINALS"]
             originals["affbt"](self.root, 0)
             originals["affpv"](self.root, 0)
+            # carupdate no longer runs in menu/gauges/cinematics, so it cannot
+            # clear stale countdown labels there. Presentation owns their text.
+            for label in ("label", "labelf", "label2", "label2f"):
+                small = "2" in label
+                visible = (
+                    name in ("PRE_ROUND", "ROUND_ACTIVE") if small
+                    else name not in ("INTRO", "MENU", "POWER", "FINISH")
+                )
+                self._labels[label].text = str(self.engine["car2" if small else "car"]) if visible else ""
         print("[JT-PHASE] {} -> {} round={} indexa={} car={} car2={}".format(
             previous, name, self.round_number, self.engine["indexa"],
             self.engine["car"], self.engine["car2"]), flush=True)

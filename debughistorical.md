@@ -622,3 +622,7 @@ Validation téléphone encore attendue. Ne pas annoncer le doublon vocal résolu
 ### JT-PHASES-001 — complément canvas et nettoyage tactile
 
 Pendant le build du premier candidat df03316 (run54), dernière vérification des instructions canvas : coul/scr créent des Ellipse locales non référencées comme attributs root. Une telle géométrie persistante échappait au premier inventaire; test reproduit puis corrigé. Le blocage de on_touch_up pouvait aussi laisser son groupe canvas : conserver ce nettoyage historique, sans autoriser on_touch_down/move. Deux nouveaux tests échouaient avant, passent après; total18. Le candidat du run54 est donc remplacé pour la livraison finale, sans nouvelle version publique ni changement natif.
+
+### JT-PHASES-001 — textes des chronos au changement de phase
+
+Dernier contrôle de sortie : sous le candidat589ddbe/run55, le petit texte10 pouvait rester visible au menu après finishing car carupdate, désormais suspendu, ne le vidait plus. Échec reproduit dans les deux branches du test pouvoir fatal→finishing→menu; correction de présentation seule, valeurs numériques inchangées. Les18 tests repassent. Le candidat livré doit inclure ce nettoyage; runs54/55 intermédiaires.
