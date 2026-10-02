@@ -7,8 +7,8 @@ source.dir = .
 source.include_exts = py,kv,png,jpg,jpeg,gif,wav,mp4
 source.exclude_dirs = .kivy,bin,.buildozer,__pycache__
 
-version = 1.0.8
-android.numeric_version = 108
+version = 1.0.9
+android.numeric_version = 109
 icon.filename = %(source.dir)s/assets/icon/JtrexIcon.png
 
 requirements = python3==3.12.14,hostpython3==3.12.14,kivy,ffpyplayer
