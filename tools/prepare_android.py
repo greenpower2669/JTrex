@@ -11,8 +11,8 @@ import zipfile
 from pathlib import Path, PurePosixPath
 
 
-VERSION = "1.0.8"
-NUMERIC_VERSION = "108"
+VERSION = "1.0.9"
+NUMERIC_VERSION = "109"
 ARCHIVE_SIZE = 327992765
 ARCHIVE_SHA256 = (
     "f73ca1fd5e96ca6e11df5987bda8b2e59"
@@ -624,6 +624,20 @@ def _jt_log_new_stops(self, observer):
     ]
     lines[anim_global_at:anim_global_at] = [
         anim_body_indent + "global _JT_ORB_TOUCH_PROTECT_UNTIL" + newline,
+        anim_body_indent + "if indexa in (10,11):" + newline,
+        anim_body_indent + "\t_jt_finish_pending=getattr(self, '_jt_finishing_complete_pending', None)" + newline,
+        anim_body_indent + "\tif _jt_finish_pending==indexa:" + newline,
+        anim_body_indent + "\t\tself._jt_finishing_complete_pending=None" + newline,
+        anim_body_indent + "\t\tstopg,stopd=False,False" + newline,
+        anim_body_indent + "\t\t_finished_state=indexa" + newline,
+        anim_body_indent + "\t\tanim1,indexa=0,0" + newline,
+        anim_body_indent + "\t\tfor ii in range(1,7):" + newline,
+        anim_body_indent + "\t\t\tcolstop[ii]=False" + newline,
+        anim_body_indent + "\t\tprint('[JT-FINISH] video-complete state={} -> menu'.format(_finished_state),flush=True)" + newline,
+        anim_body_indent + "\t\tjt_sync_scene_now()" + newline,
+        anim_body_indent + "\t\treturn" + newline,
+        anim_body_indent + "\tif getattr(self, '_jt_finishing_video_hold', False):" + newline,
+        anim_body_indent + "\t\treturn" + newline,
     ]
     start, end = method_bounds(lines, "anim_1")
     transition_matches = [
@@ -935,7 +949,7 @@ def prepare(archive, destination, spec, media_root, runtime):
             "changes": [
                 "a.png -> A.png: 4 références",
                 "boutbleu0.png -> boutBleu0.png: 4 références",
-                "version 1.0.8 / versionCode 108",
+                "version 1.0.9 / versionCode 109",
                 "Python cible 3.12.14 pour compatibilité ffpyplayer",
                 "titre June T-Rex",
                 "menu music deferred until intro end",
@@ -944,6 +958,7 @@ def prepare(archive, destination, spec, media_root, runtime):
                 "power states 21/22/23/24/25/26 mapped to STSF/STLS/STTA/TRFS/TRPH/TRMA videos",
                 "finishing states 10/11 mapped to Steg-finishes-Trex / Trex-finishes-Steg videos",
                 "power and finishing videos are play-to-end cinematics; gameplay touch is locked while they cover the board",
+                "finishing states 10/11 freeze historical animation after first real MP4 frame and return to menu only after real MP4 EOS",
                 "combat videos aspect-fill with native MP4 audio after first usable frame; intros remain aspect-fit with audio",
                 "one scene player per state family with generation-safe callbacks",
                 "legacy scene soundtrack remains fallback until first usable video frame and on media failure",
