@@ -44,6 +44,22 @@ jobs:
           path.write_text(text, encoding='utf-8')
           PY
           python3 /tmp/apply_jt_ko_patch.py
+          python3 - <<'PY'
+          import importlib.util
+          from pathlib import Path
+          spec = importlib.util.spec_from_file_location('prep', 'tools/prepare_android.py')
+          prep = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(prep)
+          path = Path('buildozer.spec')
+          text = path.read_text(encoding='utf-8')
+          import re
+          text, c1 = re.subn(r'(?m)^version\s*=\s*[^\n]+$', f'version = {prep.VERSION}', text, count=1)
+          text, c2 = re.subn(r'(?m)^android\.numeric_version\s*=\s*[^\n]+$', f'android.numeric_version = {prep.NUMERIC_VERSION}', text, count=1)
+          if (c1, c2) != (1, 1):
+              raise SystemExit(f'buildozer version rewrite failed: {(c1, c2)}')
+          path.write_text(text, encoding='utf-8')
+          print(f'[JT-KO] buildozer aligned to {prep.VERSION}/{prep.NUMERIC_VERSION}')
+          PY
 
       - name: Prepare generated historical engine
         shell: bash
