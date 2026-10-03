@@ -49,6 +49,29 @@ jobs:
           import re
           from pathlib import Path
 
+          # Real generated engine uses selected as a dict keyed 1..6.
+          # Keep compatibility with the list-shaped harness/older variants too.
+          phase_path = Path('tools/jtrex_phase_runtime.py')
+          phase = phase_path.read_text(encoding='utf-8')
+          old_reset = '''        selected = self.engine.get("selected")
+        if isinstance(selected, list):
+            for slot in range(1, min(7, len(selected))):
+                selected[slot] = False
+'''
+          new_reset = '''        selected = self.engine.get("selected")
+        if isinstance(selected, dict):
+            for slot in range(1, 7):
+                selected[slot] = False
+        elif isinstance(selected, list):
+            for slot in range(1, min(7, len(selected))):
+                selected[slot] = False
+'''
+          count = phase.count(old_reset)
+          if count != 1:
+              raise SystemExit(f'power reset source rewrite expected once, found {count}')
+          phase_path.write_text(phase.replace(old_reset, new_reset), encoding='utf-8')
+          print('[JT-KO] selected reset supports dict and list')
+
           spec = importlib.util.spec_from_file_location('prep', 'tools/prepare_android.py')
           prep = importlib.util.module_from_spec(spec)
           spec.loader.exec_module(prep)
@@ -71,22 +94,6 @@ jobs:
               raise SystemExit(f'selected reset test rewrite expected once, found {count}')
           test_path.write_text(test_text.replace(old, new), encoding='utf-8')
           print('[JT-KO] selected reset assertion aligned with generated dict')
-          PY
-
-      - name: Inspect patched round reset
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-          lines = Path('tools/jtrex_phase_runtime.py').read_text(encoding='utf-8').splitlines()
-          for needle in ('def _reset_round_state', 'def _reset_round', 'selected'):
-              hits = [i for i, line in enumerate(lines) if needle in line]
-              print(f'=== {needle} hits={hits} ===')
-              for i in hits[:8]:
-                  for n in range(max(0, i-5), min(len(lines), i+35)):
-                      print(f'{n+1:04d}: {lines[n]}')
-                  print('---')
           PY
 
       - name: Prepare generated historical engine
