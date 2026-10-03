@@ -12,93 +12,38 @@ permissions:
 
 jobs:
   sync:
-    if: "${{ github.event.head_commit.message == 'chore: fix JT memory sync helper guard' }}"
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
           ref: port/android-first-apk
           fetch-depth: 0
-
-      - name: Append JT-GAUGES-VERDICT-001 to living memories
+      - name: Append living memories
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
-
-          sections = {
-            'brain.md': r'''
-
-## 2026-10-03 — JT-GAUGES-VERDICT-001 — restitution des verdicts après jauges
-
-Cause et comportement canonique confirmés sur la branche `port/android-first-apk` : les confrontations rouge/bleu (2/3/4) et jaune (5/6/7) décident déjà leur vainqueur et appliquent leurs conséquences dans le moteur historique, puis leur séquence se termine en `indexa=1`. Le contrôleur de présentation 1.0.12 interprétait immédiatement ce `1` comme attente / PRE_ROUND ; le petit verdict visuel ST/TR était donc escamoté.
-
-Il ne faut pas faire entrer réellement le moteur dans 8/9 pour réparer ce défaut : les états historiques 8/9 portent leurs propres impacts issus du score des orbes et leur réutilisation logique après une jauge risquerait d'appliquer une conséquence une seconde fois. Le correctif conserve donc le moteur comme seule autorité et utilise 8/9 uniquement comme identifiants de présentation du média de verdict après une jauge décisive.
-
-Mapping de présentation : état décisif 3 (rouge/bleu ST) -> média verdict ST 8 ; état 2 (rouge/bleu TR) -> média verdict TR 9 ; état 5 (jaune ST) -> média verdict ST 8 ; état 6 (jaune TR) -> média verdict TR 9. Les états neutres 4 et 7 ne créent pas de faux verdict. Le chemin historique jaune ST peut passer 5 -> 3 -> 1 après son impact ; la restitution se fonde sur le dernier état décisif observé sans recalculer le gagnant.
-
-Pendant `GAUGE_VERDICT`, l'état logique réel peut déjà être `indexa=1`, mais orbes, timers et gameplay restent gelés. Le lecteur montre `Stegtrexresultstegwin.mp4` ou `Stegtrexresulttrexwin.mp4` selon la décision déjà prise. L'EOS réel libère ensuite la présentation vers le PRE_ROUND ordinaire. L'EOS n'applique aucun dégât, aucun soin, aucun débit/crédit d'énergie et ne recalcule aucun gagnant.
-
-TDD : run #57 sur le commit `ad62d52a5d91461cff4b54f5050a2fb2489888ca` a échoué exactement sur les quatre cas ST/TR rouge-bleu et ST/TR jaune parce que la phase observée restait PRE_ROUND. Correctif minimal : `02269f17ce0c9d00ac1aff1f08838d17a9175c6d`. Run Android #58 `37120140189` : 19 tests déterministes verts et APK Android produit. Cette preuve valide code/CI, pas encore le rendu et le son sur téléphone ; Fab doit valider les quatre cas réels.
-''',
-            'brainmap.md': r'''
-
-## 2026-10-03 — JT-GAUGES-VERDICT-001 — cartographie technique
-
-`JTPhaseController` conserve désormais un verrou de présentation `GAUGE_VERDICT`, distinct des états moteur. `GAUGE_WINNERS = {2: 9, 3: 8, 5: 8, 6: 9}` ne change jamais `engine["indexa"]` : la valeur 8/9 est un identifiant de scène vidéo seulement. `GAUGE_VERDICT` appartient aux phases gelées pour empêcher `carupdate`, `colvv` et les entrées gameplay pendant le résultat, sans appliquer le masque cinématique global utilisé par POWER/FINISH.
-
-Flux rouge/bleu : 4 -> décision tactile -> 3(ST) ou 2(TR) -> moteur historique applique son impact -> fin logique vers 1 -> contrôleur met en file présentation 8(ST) ou 9(TR) -> EOS -> PRE_ROUND -> ROUND_ACTIVE. Flux jaune : 7 -> décision tactile -> 5(ST) ou 6(TR). Le chemin ST historique particulier peut faire 5 -> 3 -> 1 ; le dernier état décisif produit toujours le verdict ST de présentation. Le chemin TR fait 6 -> 1 puis verdict TR de présentation.
-
-Le contrôleur média est enveloppé de façon ciblée : quand le moteur est déjà en 1 et qu'un verdict de jauge est en attente, `sync_scene_state` demande la scène 8/9 sans écrire 8/9 dans le moteur. L'EOS est protégé par identité du player et génération ; il marque le verdict terminé, arrête cette scène, puis la synchronisation normale reprend sur le vrai état moteur 1. Le menu 0 purge tout verdict en attente. Le chemin d'échec média reste borné et libère la logique sans restaurer une conséquence historique supplémentaire.
-
-Aucune formule de score, seuil, dégâts, soin, énergie, probabilité IA ou coût de pouvoir n'est modifiée. Test de régression `test_decisive_gauges_present_verdict_before_orbs` couvre les quatre directions et vérifie : bon média, moteur déjà en 1, phase gelée, dégâts inchangés pendant la présentation, puis PRE_ROUND seulement après EOS.
-''',
-            'debughistorical.md': r'''
-
-## 2026-10-03 — JT-GAUGES-VERDICT-001 — verdict escamoté après jauges
-
-Observation Fab : après les séquences de jauges, la petite confrontation donnant explicitement « T-Rex win » ou « Steg win » n'était plus restituée et le déroulement repartait trop tôt vers la phase suivante.
-
-Cause prouvée par lecture croisée du moteur historique, du main Android généré et du contrôleur 1.0.12 : les états jauge décisifs 2/3/5/6 calculent déjà le résultat et leurs conséquences, puis terminent en `indexa=1`. Le contrôleur voyait alors uniquement le nouvel état 1 et ouvrait PRE_ROUND. Les médias de verdict 8/9 étaient bien catalogués, mais aucun raccord de présentation ne les demandait depuis la sortie d'une jauge.
-
-Contre-correctif explicitement rejeté : forcer réellement `indexa=8/9`. Ces états sont des résultats historiques de la comparaison des orbes et possèdent leurs propres impacts ; les réutiliser comme état moteur après la jauge aurait pu doubler les conséquences de combat.
-
-Preuve TDD : commit test `ad62d52a5d91461cff4b54f5050a2fb2489888ca`, run #57 `37119715733`. Les quatre sous-cas attendus échouent avec `PRE_ROUND != GAUGE_VERDICT`, tandis que le reste de la suite demeure vert. Correctif `02269f17ce0c9d00ac1aff1f08838d17a9175c6d` : verdict uniquement dans la couche de présentation, moteur inchangé. Run #58 `37120140189` entièrement vert avec 19 tests et build Android réussi.
-
-Reste à valider sur téléphone : visibilité/son réel des verdicts ST/TR après rouge-bleu et après jaune, absence d'orbes intercalés, reprise PRE_ROUND/ROUND correcte et absence de conséquence doublée. Le harness CI simule Kivy/décodeur ; il ne constitue pas une preuve de rendu matériel Android.
-''',
-            'todo.md': r'''
-
-## 2026-10-03 — JT-GAUGES-VERDICT-001
-
-- [x] Vérifier la base réelle avant intervention : `abc0701b21d4c7d37b5a2f11351483c725738802` au début de mission.
-- [x] Distinguer les deux moteurs de jauge : rouge/bleu 2/3/4 et jaune 5/6/7.
-- [x] Prouver la cause : sortie décisive vers `indexa=1` puis PRE_ROUND, sans demande du média verdict 8/9.
-- [x] Écrire le test avant correction : commit `ad62d52a5d91461cff4b54f5050a2fb2489888ca`, run #57 rouge sur les quatre verdicts attendus.
-- [x] Appliquer un correctif de présentation uniquement, sans faire exécuter les impacts historiques 8/9 : commit `02269f17ce0c9d00ac1aff1f08838d17a9175c6d`.
-- [x] Vérifier ST/TR pour rouge-bleu et ST/TR pour jaune ; gel des timers/orbes, bon média, aucun dégât supplémentaire pendant le verdict, reprise PRE_ROUND à EOS.
-- [x] Run Android #58 `37120140189` vert : 19 tests + build Android + upload APK.
-- [x] Candidat produit : 📦 `JuneT-Rex-1.0.12-debug.apk`, versionCode 112, SHA-256 `fcab869588ee611947c2f262f8e0b76f4af86282342f857a04140ea34018697a`.
-- [ ] Fab téléphone : valider rouge/bleu ST puis TR, jaune ST puis TR, le jaune uniquement dans son contexte de départage, aucun passage par les orbes pour décider le verdict, aucun double impact, chronos gelés jusqu'au bon raccord.
-- [ ] Ne pas merger `main` et ne pas publier de release avant validation explicite de Fab.
-''',
+          import base64
+          payloads = {
+              'brain.md': 'IyMgMjAyNi0xMC0wMyDigJQgSlQtR0FVR0VTLVZFUkRJQ1QtMDAxIOKAlCByZXN0aXR1dGlvbiBkZXMgdmVyZGljdHMgYXByw6hzIGphdWdlcwoKQ2F1c2UgZXQgY29tcG9ydGVtZW50IGNhbm9uaXF1ZSBjb25maXJtw6lzIHN1ciBsYSBicmFuY2hlIGBwb3J0L2FuZHJvaWQtZmlyc3QtYXBrYCA6IGxlcyBjb25mcm9udGF0aW9ucyByb3VnZS9ibGV1ICgyLzMvNCkgZXQgamF1bmUgKDUvNi83KSBkw6ljaWRlbnQgZMOpasOgIGxldXIgdmFpbnF1ZXVyIGV0IGFwcGxpcXVlbnQgbGV1cnMgY29uc8OpcXVlbmNlcyBkYW5zIGxlIG1vdGV1ciBoaXN0b3JpcXVlLCBwdWlzIGxldXIgc8OpcXVlbmNlIHNlIHRlcm1pbmUgZW4gYGluZGV4YT0xYC4gTGUgY29udHLDtGxldXIgZGUgcHLDqXNlbnRhdGlvbiAxLjAuMTIgaW50ZXJwcsOpdGFpdCBpbW3DqWRpYXRlbWVudCBjZSBgMWAgY29tbWUgYXR0ZW50ZSAvIFBSRV9ST1VORCA7IGxlIHBldGl0IHZlcmRpY3QgdmlzdWVsIFNUL1RSIMOpdGFpdCBkb25jIGVzY2Ftb3TDqS4KCklsIG5lIGZhdXQgcGFzIGZhaXJlIGVudHJlciByw6llbGxlbWVudCBsZSBtb3RldXIgZGFucyA4LzkgcG91ciByw6lwYXJlciBjZSBkw6lmYXV0IDogbGVzIMOpdGF0cyBoaXN0b3JpcXVlcyA4LzkgcG9ydGVudCBsZXVycyBwcm9wcmVzIGltcGFjdHMgaXNzdXMgZHUgc2NvcmUgZGVzIG9yYmVzIGV0IGxldXIgcsOpdXRpbGlzYXRpb24gbG9naXF1ZSBhcHLDqHMgdW5lIGphdWdlIHJpc3F1ZXJhaXQgZCdhcHBsaXF1ZXIgdW5lIGNvbnPDqXF1ZW5jZSB1bmUgc2Vjb25kZSBmb2lzLiBMZSBjb3JyZWN0aWYgY29uc2VydmUgZG9uYyBsZSBtb3RldXIgY29tbWUgc2V1bGUgYXV0b3JpdMOpIGV0IHV0aWxpc2UgOC85IHVuaXF1ZW1lbnQgY29tbWUgaWRlbnRpZmlhbnRzIGRlIHByw6lzZW50YXRpb24gZHUgbcOpZGlhIGRlIHZlcmRpY3QgYXByw6hzIHVuZSBqYXVnZSBkw6ljaXNpdmUuCgpNYXBwaW5nIGRlIHByw6lzZW50YXRpb24gOiDDqXRhdCBkw6ljaXNpZiAzIChyb3VnZS9ibGV1IFNUKSAtPiBtw6lkaWEgdmVyZGljdCBTVCA4IDsgw6l0YXQgMiAocm91Z2UvYmxldSBUUikgLT4gbcOpZGlhIHZlcmRpY3QgVFIgOSA7IMOpdGF0IDUgKGphdW5lIFNUKSAtPiBtw6lkaWEgdmVyZGljdCBTVCA4IDsgw6l0YXQgNiAoamF1bmUgVFIpIC0+IG3DqWRpYSB2ZXJkaWN0IFRSIDkuIExlcyDDqXRhdHMgbmV1dHJlcyA0IGV0IDcgbmUgY3LDqWVudCBwYXMgZGUgZmF1eCB2ZXJkaWN0LiBMZSBjaGVtaW4gaGlzdG9yaXF1ZSBqYXVuZSBTVCBwZXV0IHBhc3NlciA1IC0+IDMgLT4gMSBhcHLDqHMgc29uIGltcGFjdCA7IGxhIHJlc3RpdHV0aW9uIHNlIGZvbmRlIHN1ciBsZSBkZXJuaWVyIMOpdGF0IGTDqWNpc2lmIG9ic2VydsOpIHNhbnMgcmVjYWxjdWxlciBsZSBnYWduYW50LgoKUGVuZGFudCBgR0FVR0VfVkVSRElDVGAsIGwnw6l0YXQgbG9naXF1ZSByw6llbCBwZXV0IGTDqWrDoCDDqnRyZSBgaW5kZXhhPTFgLCBtYWlzIG9yYmVzLCB0aW1lcnMgZXQgZ2FtZXBsYXkgcmVzdGVudCBnZWzDqXMuIExlIGxlY3RldXIgbW9udHJlIGBTdGVndHJleHJlc3VsdHN0ZWd3aW4ubXA0YCBvdSBgU3RlZ3RyZXhyZXN1bHR0cmV4d2luLm1wNGAgc2Vsb24gbGEgZMOpY2lzaW9uIGTDqWrDoCBwcmlzZS4gTCdFT1MgcsOpZWwgbGliw6hyZSBlbnN1aXRlIGxhIHByw6lzZW50YXRpb24gdmVycyBsZSBQUkVfUk9VTkQgb3JkaW5haXJlLiBMJ0VPUyBuJ2FwcGxpcXVlIGF1Y3VuIGTDqWfDonQsIGF1Y3VuIHNvaW4sIGF1Y3VuIGTDqWJpdC9jcsOpZGl0IGQnw6luZXJnaWUgZXQgbmUgcmVjYWxjdWxlIGF1Y3VuIGdhZ25hbnQuCgpUREQgOiBydW4gIzU3IHN1ciBsZSBjb21taXQgYGFkNjJkNTJhNWQ5MTQ2MWNmZjRiNTRmNTA1MGEyZmIyNDg5ODg4Y2FgIGEgw6ljaG91w6kgZXhhY3RlbWVudCBzdXIgbGVzIHF1YXRyZSBjYXMgU1QvVFIgcm91Z2UtYmxldSBldCBTVC9UUiBqYXVuZSBwYXJjZSBxdWUgbGEgcGhhc2Ugb2JzZXJ2w6llIHJlc3RhaXQgUFJFX1JPVU5ELiBDb3JyZWN0aWYgbWluaW1hbCA6IGAwMjI2OWYxN2NlMGM5ZDAwYWMxYWZmMWYwODgzOGQxN2E5MTc1YzZkYC4gUnVuIEFuZHJvaWQgIzU4IGAzNzEyMDE0MDE4OWAgOiAxOSB0ZXN0cyBkw6l0ZXJtaW5pc3RlcyB2ZXJ0cyBldCBBUEsgQW5kcm9pZCBwcm9kdWl0LiBDZXR0ZSBwcmV1dmUgdmFsaWRlIGNvZGUvQ0ksIHBhcyBlbmNvcmUgbGUgcmVuZHUgZXQgbGUgc29uIHN1ciB0w6lsw6lwaG9uZSA7IEZhYiBkb2l0IHZhbGlkZXIgbGVzIHF1YXRyZSBjYXMgcsOpZWxzLgo=',
+              'brainmap.md': 'IyMgMjAyNi0xMC0wMyDigJQgSlQtR0FVR0VTLVZFUkRJQ1QtMDAxIOKAlCBjYXJ0b2dyYXBoaWUgdGVjaG5pcXVlCgpgSlRQaGFzZUNvbnRyb2xsZXJgIGNvbnNlcnZlIGTDqXNvcm1haXMgdW4gdmVycm91IGRlIHByw6lzZW50YXRpb24gYEdBVUdFX1ZFUkRJQ1RgLCBkaXN0aW5jdCBkZXMgw6l0YXRzIG1vdGV1ci4gYEdBVUdFX1dJTk5FUlMgPSB7MjogOSwgMzogOCwgNTogOCwgNjogOX1gIG5lIGNoYW5nZSBqYW1haXMgYGVuZ2luZVsiaW5kZXhhIl1gIDogbGEgdmFsZXVyIDgvOSBlc3QgdW4gaWRlbnRpZmlhbnQgZGUgc2PDqG5lIHZpZMOpbyBzZXVsZW1lbnQuIGBHQVVHRV9WRVJESUNUYCBhcHBhcnRpZW50IGF1eCBwaGFzZXMgZ2Vsw6llcyBwb3VyIGVtcMOqY2hlciBgY2FydXBkYXRlYCwgYGNvbHZ2YCBldCBsZXMgZW50csOpZXMgZ2FtZXBsYXkgcGVuZGFudCBsZSByw6lzdWx0YXQsIHNhbnMgYXBwbGlxdWVyIGxlIG1hc3F1ZSBjaW7DqW1hdGlxdWUgZ2xvYmFsIHV0aWxpc8OpIHBhciBQT1dFUi9GSU5JU0guCgpGbHV4IHJvdWdlL2JsZXUgOiA0IC0+IGTDqWNpc2lvbiB0YWN0aWxlIC0+IDMoU1QpIG91IDIoVFIpIC0+IG1vdGV1ciBoaXN0b3JpcXVlIGFwcGxpcXVlIHNvbiBpbXBhY3QgLT4gZmluIGxvZ2lxdWUgdmVycyAxIC0+IGNvbnRyw7RsZXVyIG1ldCBlbiBmaWxlIHByw6lzZW50YXRpb24gOChTVCkgb3UgOShUUikgLT4gRU9TIC0+IFBSRV9ST1VORCAtPiBST1VORF9BQ1RJVkUuIEZsdXggamF1bmUgOiA3IC0+IGTDqWNpc2lvbiB0YWN0aWxlIC0+IDUoU1QpIG91IDYoVFIpLiBMZSBjaGVtaW4gU1QgaGlzdG9yaXF1ZSBwYXJ0aWN1bGllciBwZXV0IGZhaXJlIDUgLT4gMyAtPiAxIDsgbGUgZGVybmllciDDqXRhdCBkw6ljaXNpZiBwcm9kdWl0IHRvdWpvdXJzIGxlIHZlcmRpY3QgU1QgZGUgcHLDqXNlbnRhdGlvbi4gTGUgY2hlbWluIFRSIGZhaXQgNiAtPiAxIHB1aXMgdmVyZGljdCBUUiBkZSBwcsOpc2VudGF0aW9uLgoKTGUgY29udHLDtGxldXIgbcOpZGlhIGVzdCBlbnZlbG9wcMOpIGRlIGZhw6dvbiBjaWJsw6llIDogcXVhbmQgbGUgbW90ZXVyIGVzdCBkw6lqw6AgZW4gMSBldCBxdSd1biB2ZXJkaWN0IGRlIGphdWdlIGVzdCBlbiBhdHRlbnRlLCBgc3luY19zY2VuZV9zdGF0ZWAgZGVtYW5kZSBsYSBzY8OobmUgOC85IHNhbnMgw6ljcmlyZSA4LzkgZGFucyBsZSBtb3RldXIuIEwnRU9TIGVzdCBwcm90w6lnw6kgcGFyIGlkZW50aXTDqSBkdSBwbGF5ZXIgZXQgZ8OpbsOpcmF0aW9uIDsgaWwgbWFycXVlIGxlIHZlcmRpY3QgdGVybWluw6ksIGFycsOqdGUgY2V0dGUgc2PDqG5lLCBwdWlzIGxhIHN5bmNocm9uaXNhdGlvbiBub3JtYWxlIHJlcHJlbmQgc3VyIGxlIHZyYWkgw6l0YXQgbW90ZXVyIDEuIExlIG1lbnUgMCBwdXJnZSB0b3V0IHZlcmRpY3QgZW4gYXR0ZW50ZS4gTGUgY2hlbWluIGQnw6ljaGVjIG3DqWRpYSByZXN0ZSBib3Juw6kgZXQgbGliw6hyZSBsYSBsb2dpcXVlIHNhbnMgcmVzdGF1cmVyIHVuZSBjb25zw6lxdWVuY2UgaGlzdG9yaXF1ZSBzdXBwbMOpbWVudGFpcmUuCgpBdWN1bmUgZm9ybXVsZSBkZSBzY29yZSwgc2V1aWwsIGTDqWfDonRzLCBzb2luLCDDqW5lcmdpZSwgcHJvYmFiaWxpdMOpIElBIG91IGNvw7t0IGRlIHBvdXZvaXIgbidlc3QgbW9kaWZpw6llLiBUZXN0IGRlIHLDqWdyZXNzaW9uIGB0ZXN0X2RlY2lzaXZlX2dhdWdlc19wcmVzZW50X3ZlcmRpY3RfYmVmb3JlX29yYnNgIGNvdXZyZSBsZXMgcXVhdHJlIGRpcmVjdGlvbnMgZXQgdsOpcmlmaWUgOiBib24gbcOpZGlhLCBtb3RldXIgZMOpasOgIGVuIDEsIHBoYXNlIGdlbMOpZSwgZMOpZ8OidHMgaW5jaGFuZ8OpcyBwZW5kYW50IGxhIHByw6lzZW50YXRpb24sIHB1aXMgUFJFX1JPVU5EIHNldWxlbWVudCBhcHLDqHMgRU9TLgo=',
+              'debughistorical.md': 'IyMgMjAyNi0xMC0wMyDigJQgSlQtR0FVR0VTLVZFUkRJQ1QtMDAxIOKAlCB2ZXJkaWN0IGVzY2Ftb3TDqSBhcHLDqHMgamF1Z2VzCgpPYnNlcnZhdGlvbiBGYWIgOiBhcHLDqHMgbGVzIHPDqXF1ZW5jZXMgZGUgamF1Z2VzLCBsYSBwZXRpdGUgY29uZnJvbnRhdGlvbiBkb25uYW50IGV4cGxpY2l0ZW1lbnQgwqsgVC1SZXggd2luIMK7IG91IMKrIFN0ZWcgd2luIMK7IG4nw6l0YWl0IHBsdXMgcmVzdGl0dcOpZSBldCBsZSBkw6lyb3VsZW1lbnQgcmVwYXJ0YWl0IHRyb3AgdMO0dCB2ZXJzIGxhIHBoYXNlIHN1aXZhbnRlLgoKQ2F1c2UgcHJvdXbDqWUgcGFyIGxlY3R1cmUgY3JvaXPDqWUgZHUgbW90ZXVyIGhpc3RvcmlxdWUsIGR1IG1haW4gQW5kcm9pZCBnw6luw6lyw6kgZXQgZHUgY29udHLDtGxldXIgMS4wLjEyIDogbGVzIMOpdGF0cyBqYXVnZSBkw6ljaXNpZnMgMi8zLzUvNiBjYWxjdWxlbnQgZMOpasOgIGxlIHLDqXN1bHRhdCBldCBsZXVycyBjb25zw6lxdWVuY2VzLCBwdWlzIHRlcm1pbmVudCBlbiBgaW5kZXhhPTFgLiBMZSBjb250csO0bGV1ciB2b3lhaXQgYWxvcnMgdW5pcXVlbWVudCBsZSBub3V2ZWwgw6l0YXQgMSBldCBvdXZyYWl0IFBSRV9ST1VORC4gTGVzIG3DqWRpYXMgZGUgdmVyZGljdCA4Lzkgw6l0YWllbnQgYmllbiBjYXRhbG9ndcOpcywgbWFpcyBhdWN1biByYWNjb3JkIGRlIHByw6lzZW50YXRpb24gbmUgbGVzIGRlbWFuZGFpdCBkZXB1aXMgbGEgc29ydGllIGQndW5lIGphdWdlLgoKQ29udHJlLWNvcnJlY3RpZiBleHBsaWNpdGVtZW50IHJlamV0w6kgOiBmb3JjZXIgcsOpZWxsZW1lbnQgYGluZGV4YT04LzlgLiBDZXMgw6l0YXRzIHNvbnQgZGVzIHLDqXN1bHRhdHMgaGlzdG9yaXF1ZXMgZGUgbGEgY29tcGFyYWlzb24gZGVzIG9yYmVzIGV0IHBvc3PDqGRlbnQgbGV1cnMgcHJvcHJlcyBpbXBhY3RzIDsgbGVzIHLDqXV0aWxpc2VyIGNvbW1lIMOpdGF0IG1vdGV1ciBhcHLDqHMgbGEgamF1Z2UgYXVyYWl0IHB1IGRvdWJsZXIgbGVzIGNvbnPDqXF1ZW5jZXMgZGUgY29tYmF0LgoKUHJldXZlIFRERCA6IGNvbW1pdCB0ZXN0IGBhZDYyZDUyYTVkOTE0NjFjZmY0YjU0ZjUwNTBhMmZiMjQ4OTg4OGNhYCwgcnVuICM1NyBgMzcxMTk3MTU3MzNgLiBMZXMgcXVhdHJlIHNvdXMtY2FzIGF0dGVuZHVzIMOpY2hvdWVudCBhdmVjIGBQUkVfUk9VTkQgIT0gR0FVR0VfVkVSRElDVGAsIHRhbmRpcyBxdWUgbGUgcmVzdGUgZGUgbGEgc3VpdGUgZGVtZXVyZSB2ZXJ0LiBDb3JyZWN0aWYgYDAyMjY5ZjE3Y2UwYzlkMDBhYzFhZmYxZjA4ODM4ZDE3YTkxNzVjNmRgIDogdmVyZGljdCB1bmlxdWVtZW50IGRhbnMgbGEgY291Y2hlIGRlIHByw6lzZW50YXRpb24sIG1vdGV1ciBpbmNoYW5nw6kuIFJ1biAjNTggYDM3MTIwMTQwMTg5YCBlbnRpw6hyZW1lbnQgdmVydCBhdmVjIDE5IHRlc3RzIGV0IGJ1aWxkIEFuZHJvaWQgcsOpdXNzaS4KClJlc3RlIMOgIHZhbGlkZXIgc3VyIHTDqWzDqXBob25lIDogdmlzaWJpbGl0w6kvc29uIHLDqWVsIGRlcyB2ZXJkaWN0cyBTVC9UUiBhcHLDqHMgcm91Z2UtYmxldSBldCBhcHLDqHMgamF1bmUsIGFic2VuY2UgZCdvcmJlcyBpbnRlcmNhbMOpcywgcmVwcmlzZSBQUkVfUk9VTkQvUk9VTkQgY29ycmVjdGUgZXQgYWJzZW5jZSBkZSBjb25zw6lxdWVuY2UgZG91YmzDqWUuIExlIGhhcm5lc3MgQ0kgc2ltdWxlIEtpdnkvZMOpY29kZXVyIDsgaWwgbmUgY29uc3RpdHVlIHBhcyB1bmUgcHJldXZlIGRlIHJlbmR1IG1hdMOpcmllbCBBbmRyb2lkLgo=',
+              'todo.md': 'IyMgMjAyNi0xMC0wMyDigJQgSlQtR0FVR0VTLVZFUkRJQ1QtMDAxCgotIFt4XSBWw6lyaWZpZXIgbGEgYmFzZSByw6llbGxlIGF2YW50IGludGVydmVudGlvbiA6IGBhYmMwNzAxYjIxZDRjN2QzN2I1YTJmMTEzNTE0ODNjNzI1NzM4ODAyYCBhdSBkw6lidXQgZGUgbWlzc2lvbi4KLSBbeF0gRGlzdGluZ3VlciBsZXMgZGV1eCBtb3RldXJzIGRlIGphdWdlIDogcm91Z2UvYmxldSAyLzMvNCBldCBqYXVuZSA1LzYvNy4KLSBbeF0gUHJvdXZlciBsYSBjYXVzZSA6IHNvcnRpZSBkw6ljaXNpdmUgdmVycyBgaW5kZXhhPTFgIHB1aXMgUFJFX1JPVU5ELCBzYW5zIGRlbWFuZGUgZHUgbcOpZGlhIHZlcmRpY3QgOC85LgotIFt4XSDDiWNyaXJlIGxlIHRlc3QgYXZhbnQgY29ycmVjdGlvbiA6IGNvbW1pdCBgYWQ2MmQ1MmE1ZDkxNDYxY2ZmNGI1NGY1MDUwYTJmYjI0ODk4ODhjYWAsIHJ1biAjNTcgcm91Z2Ugc3VyIGxlcyBxdWF0cmUgdmVyZGljdHMgYXR0ZW5kdXMuCi0gW3hdIEFwcGxpcXVlciB1biBjb3JyZWN0aWYgZGUgcHLDqXNlbnRhdGlvbiB1bmlxdWVtZW50LCBzYW5zIGZhaXJlIGV4w6ljdXRlciBsZXMgaW1wYWN0cyBoaXN0b3JpcXVlcyA4LzkgOiBjb21taXQgYDAyMjY5ZjE3Y2UwYzlkMDBhYzFhZmYxZjA4ODM4ZDE3YTkxNzVjNmRgLgotIFt4XSBWw6lyaWZpZXIgU1QvVFIgcG91ciByb3VnZS1ibGV1IGV0IFNUL1RSIHBvdXIgamF1bmUgOyBnZWwgZGVzIHRpbWVycy9vcmJlcywgYm9uIG3DqWRpYSwgYXVjdW4gZMOpZ8OidCBzdXBwbMOpbWVudGFpcmUgcGVuZGFudCBsZSB2ZXJkaWN0LCByZXByaXNlIFBSRV9ST1VORCDDoCBFT1MuCi0gW3hdIFJ1biBBbmRyb2lkICM1OCBgMzcxMjAxNDAxODlgIHZlcnQgOiAxOSB0ZXN0cyArIGJ1aWxkIEFuZHJvaWQgKyB1cGxvYWQgQVBLLgotIFt4XSBDYW5kaWRhdCBwcm9kdWl0IDog8J+TpiBgSnVuZVQtUmV4LTEuMC4xMi1kZWJ1Zy5hcGtgLCB2ZXJzaW9uQ29kZSAxMTIsIFNIQS0yNTYgYGZjYWI4Njk1ODhlZTYxMTk0N2MyZjI2MmY4ZTBiNzZmNGFmODYyODIzNDJmODU3YTA0MTQwZWEzNDAxODY5N2FgLgotIFsgXSBGYWIgdMOpbMOpcGhvbmUgOiB2YWxpZGVyIHJvdWdlL2JsZXUgU1QgcHVpcyBUUiwgamF1bmUgU1QgcHVpcyBUUiwgbGUgamF1bmUgdW5pcXVlbWVudCBkYW5zIHNvbiBjb250ZXh0ZSBkZSBkw6lwYXJ0YWdlLCBhdWN1biBwYXNzYWdlIHBhciBsZXMgb3JiZXMgcG91ciBkw6ljaWRlciBsZSB2ZXJkaWN0LCBhdWN1biBkb3VibGUgaW1wYWN0LCBjaHJvbm9zIGdlbMOpcyBqdXNxdSdhdSBib24gcmFjY29yZC4KLSBbIF0gTmUgcGFzIG1lcmdlciBgbWFpbmAgZXQgbmUgcGFzIHB1YmxpZXIgZGUgcmVsZWFzZSBhdmFudCB2YWxpZGF0aW9uIGV4cGxpY2l0ZSBkZSBGYWIuCg==',
           }
-
           marker = 'JT-GAUGES-VERDICT-001'
           changed = []
-          for filename, section in sections.items():
+          for filename, encoded in payloads.items():
               path = Path(filename)
               text = path.read_text(encoding='utf-8')
               if marker in text:
                   print(f'[JT-MEMORY] skip {filename}: marker already present')
                   continue
-              path.write_text(text.rstrip() + section + '\n', encoding='utf-8')
+              section = base64.b64decode(encoded).decode('utf-8')
+              path.write_text(text.rstrip() + '\n\n' + section, encoding='utf-8')
               changed.append(filename)
               print(f'[JT-MEMORY] appended {filename}')
-
           Path('/tmp/jt-memory-changed.txt').write_text('\n'.join(changed), encoding='utf-8')
           PY
-
       - name: Commit living-memory synchronization
         shell: bash
         run: |
