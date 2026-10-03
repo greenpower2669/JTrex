@@ -637,3 +637,15 @@ Artefact APK GitHub :11243159151. APK extrait et vérifié le03/10 :148268312oct
 `9e936e028cda2a363c0e76b9f1105e6e46d5b2841c82e81ddc2ef2619ec3639e`.
 
 Les runs54/55 sont des candidats intermédiaires remplacés avant livraison. Aucune release et aucun merge main. Code/tests/compilation APK validés; rendu, son et comportement téléphone encore à vérifier par Fab, notamment ROUND/START, gel complet pendant pouvoirs, deux finishing après pouvoir fatal, jauges interactives, continuité VV et doublon vocal T-Rex. Ne pas déclarer ce dernier résolu sans capture/logs téléphone.
+
+## 2026-10-03 — JT-GAUGES-VERDICT-001 — verdict escamoté après jauges
+
+Observation Fab : après les séquences de jauges, la petite confrontation donnant explicitement « T-Rex win » ou « Steg win » n'était plus restituée et le déroulement repartait trop tôt vers la phase suivante.
+
+Cause prouvée par lecture croisée du moteur historique, du main Android généré et du contrôleur 1.0.12 : les états jauge décisifs 2/3/5/6 calculent déjà le résultat et leurs conséquences, puis terminent en `indexa=1`. Le contrôleur voyait alors uniquement le nouvel état 1 et ouvrait PRE_ROUND. Les médias de verdict 8/9 étaient bien catalogués, mais aucun raccord de présentation ne les demandait depuis la sortie d'une jauge.
+
+Contre-correctif explicitement rejeté : forcer réellement `indexa=8/9`. Ces états sont des résultats historiques de la comparaison des orbes et possèdent leurs propres impacts ; les réutiliser comme état moteur après la jauge aurait pu doubler les conséquences de combat.
+
+Preuve TDD : commit test `ad62d52a5d91461cff4b54f5050a2fb2489888ca`, run #57 `37119715733`. Les quatre sous-cas attendus échouent avec `PRE_ROUND != GAUGE_VERDICT`, tandis que le reste de la suite demeure vert. Correctif `02269f17ce0c9d00ac1aff1f08838d17a9175c6d` : verdict uniquement dans la couche de présentation, moteur inchangé. Run #58 `37120140189` entièrement vert avec 19 tests et build Android réussi.
+
+Reste à valider sur téléphone : visibilité/son réel des verdicts ST/TR après rouge-bleu et après jaune, absence d'orbes intercalés, reprise PRE_ROUND/ROUND correcte et absence de conséquence doublée. Le harness CI simule Kivy/décodeur ; il ne constitue pas une preuve de rendu matériel Android.

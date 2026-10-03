@@ -1163,3 +1163,15 @@ Artefact APK GitHub :11243159151. APK extrait et vérifié le03/10 :148268312oct
 `9e936e028cda2a363c0e76b9f1105e6e46d5b2841c82e81ddc2ef2619ec3639e`.
 
 Les runs54/55 sont des candidats intermédiaires remplacés avant livraison. Aucune release et aucun merge main. Code/tests/compilation APK validés; rendu, son et comportement téléphone encore à vérifier par Fab, notamment ROUND/START, gel complet pendant pouvoirs, deux finishing après pouvoir fatal, jauges interactives, continuité VV et doublon vocal T-Rex. Ne pas déclarer ce dernier résolu sans capture/logs téléphone.
+
+## 2026-10-03 — JT-GAUGES-VERDICT-001 — restitution des verdicts après jauges
+
+Cause et comportement canonique confirmés sur la branche `port/android-first-apk` : les confrontations rouge/bleu (2/3/4) et jaune (5/6/7) décident déjà leur vainqueur et appliquent leurs conséquences dans le moteur historique, puis leur séquence se termine en `indexa=1`. Le contrôleur de présentation 1.0.12 interprétait immédiatement ce `1` comme attente / PRE_ROUND ; le petit verdict visuel ST/TR était donc escamoté.
+
+Il ne faut pas faire entrer réellement le moteur dans 8/9 pour réparer ce défaut : les états historiques 8/9 portent leurs propres impacts issus du score des orbes et leur réutilisation logique après une jauge risquerait d'appliquer une conséquence une seconde fois. Le correctif conserve donc le moteur comme seule autorité et utilise 8/9 uniquement comme identifiants de présentation du média de verdict après une jauge décisive.
+
+Mapping de présentation : état décisif 3 (rouge/bleu ST) -> média verdict ST 8 ; état 2 (rouge/bleu TR) -> média verdict TR 9 ; état 5 (jaune ST) -> média verdict ST 8 ; état 6 (jaune TR) -> média verdict TR 9. Les états neutres 4 et 7 ne créent pas de faux verdict. Le chemin historique jaune ST peut passer 5 -> 3 -> 1 après son impact ; la restitution se fonde sur le dernier état décisif observé sans recalculer le gagnant.
+
+Pendant `GAUGE_VERDICT`, l'état logique réel peut déjà être `indexa=1`, mais orbes, timers et gameplay restent gelés. Le lecteur montre `Stegtrexresultstegwin.mp4` ou `Stegtrexresulttrexwin.mp4` selon la décision déjà prise. L'EOS réel libère ensuite la présentation vers le PRE_ROUND ordinaire. L'EOS n'applique aucun dégât, aucun soin, aucun débit/crédit d'énergie et ne recalcule aucun gagnant.
+
+TDD : run #57 sur le commit `ad62d52a5d91461cff4b54f5050a2fb2489888ca` a échoué exactement sur les quatre cas ST/TR rouge-bleu et ST/TR jaune parce que la phase observée restait PRE_ROUND. Correctif minimal : `02269f17ce0c9d00ac1aff1f08838d17a9175c6d`. Run Android #58 `37120140189` : 19 tests déterministes verts et APK Android produit. Cette preuve valide code/CI, pas encore le rendu et le son sur téléphone ; Fab doit valider les quatre cas réels.

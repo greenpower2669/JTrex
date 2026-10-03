@@ -656,3 +656,16 @@ Artefact APK GitHub :11243159151. APK extrait et vérifié le03/10 :148268312oct
 `9e936e028cda2a363c0e76b9f1105e6e46d5b2841c82e81ddc2ef2619ec3639e`.
 
 Les runs54/55 sont des candidats intermédiaires remplacés avant livraison. Aucune release et aucun merge main. Code/tests/compilation APK validés; rendu, son et comportement téléphone encore à vérifier par Fab, notamment ROUND/START, gel complet pendant pouvoirs, deux finishing après pouvoir fatal, jauges interactives, continuité VV et doublon vocal T-Rex. Ne pas déclarer ce dernier résolu sans capture/logs téléphone.
+
+## 2026-10-03 — JT-GAUGES-VERDICT-001
+
+- [x] Vérifier la base réelle avant intervention : `abc0701b21d4c7d37b5a2f11351483c725738802` au début de mission.
+- [x] Distinguer les deux moteurs de jauge : rouge/bleu 2/3/4 et jaune 5/6/7.
+- [x] Prouver la cause : sortie décisive vers `indexa=1` puis PRE_ROUND, sans demande du média verdict 8/9.
+- [x] Écrire le test avant correction : commit `ad62d52a5d91461cff4b54f5050a2fb2489888ca`, run #57 rouge sur les quatre verdicts attendus.
+- [x] Appliquer un correctif de présentation uniquement, sans faire exécuter les impacts historiques 8/9 : commit `02269f17ce0c9d00ac1aff1f08838d17a9175c6d`.
+- [x] Vérifier ST/TR pour rouge-bleu et ST/TR pour jaune ; gel des timers/orbes, bon média, aucun dégât supplémentaire pendant le verdict, reprise PRE_ROUND à EOS.
+- [x] Run Android #58 `37120140189` vert : 19 tests + build Android + upload APK.
+- [x] Candidat produit : 📦 `JuneT-Rex-1.0.12-debug.apk`, versionCode 112, SHA-256 `fcab869588ee611947c2f262f8e0b76f4af86282342f857a04140ea34018697a`.
+- [ ] Fab téléphone : valider rouge/bleu ST puis TR, jaune ST puis TR, le jaune uniquement dans son contexte de départage, aucun passage par les orbes pour décider le verdict, aucun double impact, chronos gelés jusqu'au bon raccord.
+- [ ] Ne pas merger `main` et ne pas publier de release avant validation explicite de Fab.

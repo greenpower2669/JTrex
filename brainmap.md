@@ -824,3 +824,13 @@ Artefact APK GitHub :11243159151. APK extrait et vérifié le03/10 :148268312oct
 `9e936e028cda2a363c0e76b9f1105e6e46d5b2841c82e81ddc2ef2619ec3639e`.
 
 Les runs54/55 sont des candidats intermédiaires remplacés avant livraison. Aucune release et aucun merge main. Code/tests/compilation APK validés; rendu, son et comportement téléphone encore à vérifier par Fab, notamment ROUND/START, gel complet pendant pouvoirs, deux finishing après pouvoir fatal, jauges interactives, continuité VV et doublon vocal T-Rex. Ne pas déclarer ce dernier résolu sans capture/logs téléphone.
+
+## 2026-10-03 — JT-GAUGES-VERDICT-001 — cartographie technique
+
+`JTPhaseController` conserve désormais un verrou de présentation `GAUGE_VERDICT`, distinct des états moteur. `GAUGE_WINNERS = {2: 9, 3: 8, 5: 8, 6: 9}` ne change jamais `engine["indexa"]` : la valeur 8/9 est un identifiant de scène vidéo seulement. `GAUGE_VERDICT` appartient aux phases gelées pour empêcher `carupdate`, `colvv` et les entrées gameplay pendant le résultat, sans appliquer le masque cinématique global utilisé par POWER/FINISH.
+
+Flux rouge/bleu : 4 -> décision tactile -> 3(ST) ou 2(TR) -> moteur historique applique son impact -> fin logique vers 1 -> contrôleur met en file présentation 8(ST) ou 9(TR) -> EOS -> PRE_ROUND -> ROUND_ACTIVE. Flux jaune : 7 -> décision tactile -> 5(ST) ou 6(TR). Le chemin ST historique particulier peut faire 5 -> 3 -> 1 ; le dernier état décisif produit toujours le verdict ST de présentation. Le chemin TR fait 6 -> 1 puis verdict TR de présentation.
+
+Le contrôleur média est enveloppé de façon ciblée : quand le moteur est déjà en 1 et qu'un verdict de jauge est en attente, `sync_scene_state` demande la scène 8/9 sans écrire 8/9 dans le moteur. L'EOS est protégé par identité du player et génération ; il marque le verdict terminé, arrête cette scène, puis la synchronisation normale reprend sur le vrai état moteur 1. Le menu 0 purge tout verdict en attente. Le chemin d'échec média reste borné et libère la logique sans restaurer une conséquence historique supplémentaire.
+
+Aucune formule de score, seuil, dégâts, soin, énergie, probabilité IA ou coût de pouvoir n'est modifiée. Test de régression `test_decisive_gauges_present_verdict_before_orbs` couvre les quatre directions et vérifie : bon média, moteur déjà en 1, phase gelée, dégâts inchangés pendant la présentation, puis PRE_ROUND seulement après EOS.
