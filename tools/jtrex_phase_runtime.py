@@ -1,23 +1,26 @@
-"""Presentation phases around the unchanged historical engine.
+"""Presentation phases around the historical June T-Rex engine.
 
-The engine alone computes outcomes/impacts. Media completion only releases a
-presentation gate. The hooks wrap actual engine callbacks, including UI writers.
+The legacy engine remains authoritative for taps, score, damage, energy and its
+animation-frame impacts. This controller only owns presentation gates, the
+model-game round structure and the two-win match score.
 """
 from functools import wraps
 
 
 class JTPhaseController:
-    BLOCKED = frozenset(("INTRO", "PRE_ROUND", "POWER", "FINISH"))
-    FROZEN = BLOCKED | frozenset(("GAUGE_VERDICT",))
+    ZERO_WIN_STATE = -7
+    BLOCKED = frozenset(("INTRO", "ROUND_INTRO", "FIGHT_INTRO", "POWER", "FINISH"))
+    FROZEN = BLOCKED | frozenset(("GAUGE_VERDICT", "ORB_FREEZE"))
     TOUCHES = frozenset(("on_touch_down", "on_touch_move", "on_touch_up"))
     MINIMAL_HUD = frozenset(("cadre", "calque", "pvg", "pvd"))
-    GAUGE_WINNERS = {2: 9, 3: 8, 5: 8, 6: 9}
+    GAUGE_PRESENTATION = {2: 9, 3: 8, 4: ZERO_WIN_STATE, 5: 8, 6: 9, 7: ZERO_WIN_STATE}
 
     def __init__(self, media, engine, clock, rectangle_type, label_type):
         self.media, self.root, self.engine, self.clock = media, media.root, engine, clock
         self.name = "INTRO"
         self.state = None
         self.round_number = 0
+        self.round_wins = {"st": 0, "tr": 0}
         self.round_token = 0
         self.last_exchange = engine["_JT_EXCHANGE_ID"]
         self.cinematic_state = None
@@ -26,8 +29,13 @@ class JTPhaseController:
         self.gauge_verdict_state = None
         self.gauge_verdict_done = False
         self.gauge_verdict_failed = False
+        self.post_verdict_action = None
+        self.yellow_active = False
+        self.yellow_outcome = None
         self.paused = False
         self._timer_event = None
+        self._orb_freeze_event = None
+        self._orb_freeze_generation = 0
         self._masked = False
         self._saved_sizes = {}
         self._masked_graphics = {}
@@ -40,20 +48,70 @@ class JTPhaseController:
             if isinstance(obj, label_type)
         }
         self._saved_opacity = {name: obj.opacity for name, obj in self._labels.items()}
+        self._install_zero_win_scene()
         self._install_gauge_media_hooks()
+        self._install_round_markers()
 
     @property
     def round_active(self):
         return self.name == "ROUND_ACTIVE" and not self.paused
 
-    def _install_gauge_media_hooks(self):
-        """Use states 8/9 as media only after a decisive gauge result.
+    def _install_zero_win_scene(self):
+        scenes = self.media._key_for_state.__globals__["SCENES"]
+        scenes["zero-win"] = {
+            "states": frozenset((self.ZERO_WIN_STATE,)),
+            "file": "assets/combat/Zerowinstegtrexsurleschargedejaugejauneetbleuetrouge.mp4",
+            "loop": False,
+        }
 
-        The historical engine has already applied the gauge consequence before it
-        returns to state 1. Re-entering engine state 8/9 here would apply their
-        unrelated historical orb-score impacts a second time. The media therefore
-        receives a presentation state while the engine remains frozen in state 1.
-        """
+    def _install_round_markers(self):
+        """Two symmetric match-win lamps per camp, second one farther outward."""
+        self.media._round_score_values = (0, 0)
+        self._round_marker_colors = []
+        self._round_marker_shapes = []
+        try:
+            color_type = type(self.media._status_dot_color)
+            ellipse_type = type(self.media._status_dot_shape)
+            with self.root.canvas.after:
+                for _ in range(4):
+                    color = color_type(.18, .18, .18, .72)
+                    shape = ellipse_type(pos=(0, 0), size=(0, 0))
+                    self._round_marker_colors.append(color)
+                    self._round_marker_shapes.append(shape)
+            self.root.bind(size=self._layout_round_markers, pos=self._layout_round_markers)
+            self._layout_round_markers()
+        except Exception as exc:
+            print("[JT-ROUND-SCORE][WARN] marker-init={!r}".format(exc), flush=True)
+        self._paint_round_markers()
+
+    def _layout_round_markers(self, *args):
+        if len(self._round_marker_shapes) != 4:
+            return
+        w, h = float(self.engine["xmax"]), float(self.engine["ymax"])
+        diameter = max(10.0, min(w, h) * .026)
+        y = h * .865
+        centers = (
+            (w * .325, y), (w * .292, y),
+            (w * .675, y), (w * .708, y),
+        )
+        for shape, (cx, cy) in zip(self._round_marker_shapes, centers):
+            shape.size = (diameter, diameter)
+            shape.pos = (cx - diameter / 2.0, cy - diameter / 2.0)
+
+    def _paint_round_markers(self):
+        st, tr = self.round_wins["st"], self.round_wins["tr"]
+        self.media._round_score_values = (st, tr)
+        visible = self.name not in ("INTRO", "MENU", "POWER", "FINISH")
+        for i, color in enumerate(self._round_marker_colors):
+            lit = (i < 2 and i < st) or (i >= 2 and (i - 2) < tr)
+            try:
+                color.rgba = ((.08, .95, .18, 1.0) if lit else (.18, .18, .18, .72)) if visible else (0, 0, 0, 0)
+            except Exception:
+                pass
+        print("[JT-ROUND-SCORE] ST={} TR={} round={}".format(st, tr, self.round_number), flush=True)
+
+    def _install_gauge_media_hooks(self):
+        """Present gauge verdict media without re-entering historical states 8/9."""
         media = self.media
         if getattr(media, "_jt_gauge_verdict_hooks", False):
             return
@@ -64,7 +122,6 @@ class JTPhaseController:
         media._jt_original_scene_eos = original_scene_eos
 
         def sync_scene_state(indexa):
-            actual_state = self.engine["indexa"]
             self.sync()
             self.apply_ui()
             presentation_state = (
@@ -73,49 +130,36 @@ class JTPhaseController:
                 else None
             )
             if presentation_state is None:
-                return original_sync_scene_state(actual_state)
+                return original_sync_scene_state(self.engine["indexa"])
             if not media._intro_done:
                 return
-
-            media._engine_state = actual_state
+            media._engine_state = self.engine["indexa"]
             key = media._key_for_state(presentation_state)
             if key is None:
                 self.video_complete(presentation_state, failed=True)
                 return
             if key != media._scene_key:
-                media._stop_scene(
-                    "gauge-verdict={}".format(presentation_state),
-                    preserve_failure=False,
-                )
+                media._stop_scene("gauge-verdict={}".format(presentation_state), preserve_failure=False)
             media._scene_state = presentation_state
             if (
                 media._scene_player is None
-                and not (
-                    key == media._scene_failed_key
-                    and media._scene_key == key
-                )
+                and not (key == media._scene_failed_key and media._scene_key == key)
             ):
                 media._start_scene(key, presentation_state)
 
         def scene_eos(player, generation):
             if (
                 self.name == "GAUGE_VERDICT"
-                and self.gauge_verdict_state in (8, 9)
+                and self.gauge_verdict_state in (8, 9, self.ZERO_WIN_STATE)
                 and media._scene_state == self.gauge_verdict_state
-                and media._scene_key in ("st-win", "tr-win")
+                and media._scene_key in ("st-win", "tr-win", "zero-win")
             ):
-                if (
-                    player is not media._scene_player
-                    or generation != media._scene_generation
-                ):
+                if player is not media._scene_player or generation != media._scene_generation:
                     return
                 media._scene_eos_reached = True
                 print(
                     "[JT-GAUGE-VERDICT] eos presentation={} engine={} key={} generation={}".format(
-                        self.gauge_verdict_state,
-                        self.engine["indexa"],
-                        media._scene_key,
-                        generation,
+                        self.gauge_verdict_state, self.engine["indexa"], media._scene_key, generation
                     ),
                     flush=True,
                 )
@@ -127,92 +171,245 @@ class JTPhaseController:
         media.sync_scene_state = sync_scene_state
         media._on_scene_eos = scene_eos
 
+    def _begin_round(self):
+        self.round_number += 1
+        self.round_token += 1
+        self.yellow_active = False
+        self.yellow_outcome = None
+        self.engine["tapg"] = 0
+        self.engine["tapd"] = 0
+        self.engine["anim1"] = 0
+        self.engine["anim1vv"] = 1
+        self.engine["indexa"] = 4
+        self.state = 4
+        self._set_phase("ROUND_INTRO")
+        self.media.present_round(self.round_number, self.round_token)
+        print("[JT-ROUND] begin round={} score={}".format(self.round_number, self.round_wins), flush=True)
+
+    def _begin_fight(self):
+        self.yellow_active = True
+        self.yellow_outcome = None
+        self.round_token += 1
+        self._set_phase("FIGHT_INTRO")
+        self.media.present_round(self.round_number, self.round_token)
+        overlay = self.media._round_overlay
+        if overlay is not None:
+            overlay.stage = "FIGHT"
+            overlay.elapsed = 0.0
+            overlay.title.text = overlay.shadow.text = "FIGHT!"
+            try:
+                overlay.title.color = (1, .9, .05, 1)
+            except Exception:
+                pass
+        print("[JT-FIGHT] yellow confrontation round={} token={}".format(self.round_number, self.round_token), flush=True)
+
+    def _record_round_win(self, camp, source):
+        self.round_wins[camp] += 1
+        self._paint_round_markers()
+        print("[JT-ROUND] winner={} source={} score={}".format(camp, source, self.round_wins), flush=True)
+        return self.round_wins[camp] >= 2
+
+    def _queue_gauge_verdict(self, outcome, family):
+        self.gauge_verdict_state = self.GAUGE_PRESENTATION[outcome]
+        self.gauge_verdict_done = self.gauge_verdict_failed = False
+        if family == "yellow" and outcome in (5, 6):
+            camp = "st" if outcome == 5 else "tr"
+            final = self._record_round_win(camp, "yellow")
+            self.post_verdict_action = ("finish", camp) if final else ("next_round", camp)
+        else:
+            self.post_verdict_action = ("orbs", None)
+        print(
+            "[JT-GAUGE-VERDICT] queue family={} outcome={} presentation={} action={}".format(
+                family, outcome, self.gauge_verdict_state, self.post_verdict_action
+            ),
+            flush=True,
+        )
+        self._set_phase("GAUGE_VERDICT")
+
+    def _release_gauge_verdict(self):
+        state = self.gauge_verdict_state
+        action = self.post_verdict_action
+        print(
+            "[JT-GAUGE-VERDICT] release presentation={} failed={} action={}".format(
+                state, self.gauge_verdict_failed, action
+            ),
+            flush=True,
+        )
+        self.gauge_verdict_state = None
+        self.gauge_verdict_done = self.gauge_verdict_failed = False
+        self.post_verdict_action = None
+        self.yellow_active = False
+        self.yellow_outcome = None
+        if action and action[0] == "finish":
+            self.engine["anim1"] = 0
+            self.engine["indexa"] = 10 if action[1] == "st" else 11
+            self.state = self.engine["indexa"]
+            self.cinematic_state = self.state
+            self.media_done = self.media_failed = False
+            self._set_phase("FINISH")
+            return
+        if action and action[0] == "next_round":
+            self._begin_round()
+            return
+        self._enter_orb_freeze()
+
+    def _enter_orb_freeze(self):
+        self.engine["indexa"] = 1
+        self.state = 1
+        self.engine["car2"] = 10
+        self.engine["_JT_ORB_TOUCH_PROTECT_UNTIL"] = self.clock.get_time() + 2.0
+        self._orb_freeze_generation += 1
+        generation = self._orb_freeze_generation
+        if self._orb_freeze_event is not None:
+            self._orb_freeze_event.cancel()
+        self._set_phase("ORB_FREEZE")
+        self._orb_freeze_event = self.clock.schedule_once(
+            lambda dt: self._finish_orb_freeze(generation), 2.0
+        )
+        print("[JT-ORB] presentation freeze 2.0s round={}".format(self.round_number), flush=True)
+
+    def _finish_orb_freeze(self, generation):
+        if generation != self._orb_freeze_generation:
+            return
+        self._orb_freeze_event = None
+        if self.name != "ORB_FREEZE" or self.engine["indexa"] != 1 or self.paused:
+            return
+        self.engine["_JT_ORB_TOUCH_PROTECT_UNTIL"] = self.clock.get_time()
+        self._set_phase("ROUND_ACTIVE")
+        self.apply_ui()
+
+    def _resolve_orb_round(self, previous_state):
+        camp = "st" if previous_state == 8 else "tr"
+        final = self._record_round_win(camp, "orbs")
+        if final:
+            self.engine["anim1"] = 0
+            self.engine["indexa"] = 10 if camp == "st" else 11
+            self.state = self.engine["indexa"]
+            self.cinematic_state = self.state
+            self.media_done = self.media_failed = False
+            self._set_phase("FINISH")
+        else:
+            self._begin_round()
+
     def sync(self):
         state = self.engine["indexa"]
         previous_state = self.state
         if state != self.state:
-            print("[JT-PHASE] engine {} -> {} anim={} car={} car2={} media={} generation={}".format(
-                self.state, state, self.engine["anim1"], self.engine["car"],
-                self.engine["car2"], self.media._scene_key, self.media._scene_generation), flush=True)
+            print(
+                "[JT-PHASE] engine {} -> {} anim={} car={} car2={} media={} generation={}".format(
+                    self.state, state, self.engine["anim1"], self.engine["car"], self.engine["car2"],
+                    self.media._scene_key, self.media._scene_generation
+                ),
+                flush=True,
+            )
             self.state = state
+
         if not self.media._intro_done:
             self._set_phase("INTRO")
             return
+
         if self.cinematic_state is not None:
-            # A completed short video must not replay while its logical action
-            # is still running. A long video retains the pending engine outcome.
             if not self.media_done or state == self.cinematic_state:
                 self._set_phase("POWER" if self.cinematic_state >= 21 else "FINISH")
                 return
             self.cinematic_state = None
+
         if state in (10, 11, 21, 22, 23, 24, 25, 26):
-            self.cinematic_state = state
-            self.media_done = self.media_failed = False
+            if self.cinematic_state != state:
+                self.cinematic_state = state
+                self.media_done = self.media_failed = False
             self._set_phase("POWER" if state >= 21 else "FINISH")
-        elif state == 0:
+            return
+
+        if state == 0:
             self.gauge_verdict_state = None
             self.gauge_verdict_done = self.gauge_verdict_failed = False
+            self.post_verdict_action = None
+            self.yellow_active = False
+            self.yellow_outcome = None
             self.round_number = 0
+            self.round_wins = {"st": 0, "tr": 0}
+            self.media._round_score_values = (0, 0)
             self.last_exchange = self.engine["_JT_EXCHANGE_ID"]
             self.round_token += self.name != "MENU"
             self.media.cancel_round_presentation()
+            self._cancel_orb_freeze()
             self._set_phase("MENU")
-        elif state == 1:
+            self._paint_round_markers()
+            return
+
+        if state == 4 and self.round_number == 0:
+            self._begin_round()
+            return
+
+        if state in (5, 6):
+            self.yellow_outcome = state
+
+        if state == 1:
             if self.gauge_verdict_state is not None:
                 if not self.gauge_verdict_done:
                     self._set_phase("GAUGE_VERDICT")
                     return
-                print(
-                    "[JT-GAUGE-VERDICT] release presentation={} failed={} engine=1".format(
-                        self.gauge_verdict_state, self.gauge_verdict_failed
-                    ),
-                    flush=True,
-                )
-                self.gauge_verdict_state = None
-                self.gauge_verdict_done = self.gauge_verdict_failed = False
-            elif previous_state in self.GAUGE_WINNERS:
-                self.gauge_verdict_state = self.GAUGE_WINNERS[previous_state]
-                self.gauge_verdict_done = self.gauge_verdict_failed = False
-                print(
-                    "[JT-GAUGE-VERDICT] queue from_state={} presentation={} engine=1".format(
-                        previous_state, self.gauge_verdict_state
-                    ),
-                    flush=True,
-                )
-                self._set_phase("GAUGE_VERDICT")
+                self._release_gauge_verdict()
                 return
 
-            exchange = self.engine["_JT_EXCHANGE_ID"]
-            if self.round_number == 0 or exchange != self.last_exchange:
-                self.last_exchange = exchange
-                self.round_number += 1
-                self.round_token += 1
-                # This is the historical new-exchange countdown reset. It is
-                # explicit now because suspended callbacks cannot perform it.
-                self.engine["car2"] = 10
-                self._set_phase("PRE_ROUND")
-                self.media.present_round(self.round_number, self.round_token)
-            elif self.name != "PRE_ROUND":
+            if previous_state in (8, 9):
+                self._resolve_orb_round(previous_state)
+                return
+
+            if self.yellow_outcome in (5, 6):
+                outcome = self.yellow_outcome
+                self._queue_gauge_verdict(outcome, "yellow")
+                return
+            if self.yellow_active and previous_state == 7:
+                self._queue_gauge_verdict(7, "yellow")
+                return
+            if previous_state in (2, 3, 4):
+                self._queue_gauge_verdict(previous_state, "red-blue")
+                return
+
+            if self.name != "ORB_FREEZE":
                 self._set_phase("ROUND_ACTIVE")
-        elif state in (2, 3, 4):
+            return
+
+        if state in (2, 3, 4):
+            if self.name == "ROUND_INTRO":
+                return
             self._set_phase("CHARGE_INTERACTIVE")
-        elif state in (5, 6, 7):
+            return
+
+        if state == 7 and not self.yellow_active:
+            self._begin_fight()
+            return
+
+        if state in (5, 6, 7):
+            if self.name == "FIGHT_INTRO":
+                return
             self._set_phase("YELLOW_INTERACTIVE")
-        else:
+            return
+
+        if state in (8, 9):
             self._set_phase("VERDICT")
+            return
+
+        self._set_phase("VERDICT")
 
     def finish_start(self, token):
-        if token != self.round_token or self.name != "PRE_ROUND" or self.paused:
+        if token != self.round_token or self.paused:
             return
-        if self.engine["indexa"] != 1:
+        if self.name == "ROUND_INTRO":
+            if self.engine["indexa"] not in (2, 3, 4):
+                return
+            self.media.cancel_round_presentation()
+            self._set_phase("CHARGE_INTERACTIVE")
+            self.apply_ui()
             return
-        # The historical 2 s charge protection overlaps ROUND/START, rather
-        # than starting a second invisible delay after START has disappeared.
-        if self.engine["jt_orb_protected"]():
-            return
-        self._set_phase("ROUND_ACTIVE")
-        self.media.cancel_round_presentation()
-        self.apply_ui()
+        if self.name == "FIGHT_INTRO":
+            if self.engine["indexa"] not in (5, 6, 7):
+                return
+            self.media.cancel_round_presentation()
+            self._set_phase("YELLOW_INTERACTIVE")
+            self.apply_ui()
 
     def video_complete(self, state, failed=False):
         if state == self.gauge_verdict_state:
@@ -229,38 +426,43 @@ class JTPhaseController:
         if state == self.cinematic_state:
             self.media_done = True
             self.media_failed = failed
-            print("[JT-PHASE] media-complete state={} failed={} pending-engine={}".format(
-                state, failed, self.engine["indexa"]), flush=True)
+            print(
+                "[JT-PHASE] media-complete state={} failed={} pending-engine={}".format(
+                    state, failed, self.engine["indexa"]
+                ),
+                flush=True,
+            )
 
     def _set_phase(self, name):
         if self.name == name:
             return
         previous = self.name
         self.name = name
-        if previous == "PRE_ROUND" and name != "PRE_ROUND":
+        if previous in ("ROUND_INTRO", "FIGHT_INTRO") and name != previous:
             self.media.cancel_round_presentation()
         self._reset_timer()
         if self._masked:
             self._restore_ui()
         if name != "INTRO":
-            # affbt normally redraws only when indexa changes. A presentation
-            # phase can finish without changing indexa, so redraw it once.
             self.engine["indexa0"] = -999
             originals = self.engine["_JT_PHASE_ORIGINALS"]
             originals["affbt"](self.root, 0)
             originals["affpv"](self.root, 0)
-            # carupdate no longer runs in menu/gauges/cinematics, so it cannot
-            # clear stale countdown labels there. Presentation owns their text.
             for label in ("label", "labelf", "label2", "label2f"):
                 small = "2" in label
                 visible = (
-                    name in ("PRE_ROUND", "ROUND_ACTIVE") if small
-                    else name not in ("INTRO", "MENU", "POWER", "FINISH")
+                    name in ("ROUND_INTRO", "FIGHT_INTRO", "ORB_FREEZE", "ROUND_ACTIVE")
+                    if small else name not in ("INTRO", "MENU", "POWER", "FINISH")
                 )
                 self._labels[label].text = str(self.engine["car2" if small else "car"]) if visible else ""
-        print("[JT-PHASE] {} -> {} round={} indexa={} car={} car2={}".format(
-            previous, name, self.round_number, self.engine["indexa"],
-            self.engine["car"], self.engine["car2"]), flush=True)
+        print(
+            "[JT-PHASE] {} -> {} round={} score={}-{} indexa={} car={} car2={}".format(
+                previous, name, self.round_number, self.round_wins["st"], self.round_wins["tr"],
+                self.engine["indexa"], self.engine["car"], self.engine["car2"]
+            ),
+            flush=True,
+        )
+        self._paint_round_markers()
         self.apply_ui()
 
     def _reset_timer(self):
@@ -268,8 +470,13 @@ class JTPhaseController:
             self._timer_event.cancel()
             self._timer_event = None
         if self.round_active:
-            # The first decrement is a full second AFTER actual START end.
             self._timer_event = self.clock.schedule_interval(self.root.carupdate, 1.0)
+
+    def _cancel_orb_freeze(self):
+        self._orb_freeze_generation += 1
+        if self._orb_freeze_event is not None:
+            self._orb_freeze_event.cancel()
+            self._orb_freeze_event = None
 
     def set_paused(self, paused):
         self.paused = paused
@@ -277,16 +484,12 @@ class JTPhaseController:
 
     def allows(self, callback):
         if callback == "on_touch_up":
-            # Historical release only resets tracking/button sprites and removes
-            # the touch canvas group. Keep that cleanup even under a cinematic.
             return True
         if self.paused:
             return False
         if callback == "carupdate":
             return self.round_active and not self.engine["jt_orb_protected"]()
         if callback == "affpv":
-            # Preserve historical negative-damage clamping (notably healing).
-            # apply_ui below always wins over this callback's HUD size writes.
             return True
         if callback in ("anim_1", "mc1", "savemc1"):
             if self.name == "POWER":
@@ -302,8 +505,6 @@ class JTPhaseController:
             self._masked_graphics = dict(self._rectangles)
             seen = {id(obj) for obj in self._masked_graphics.values()}
             seen.add(id(self.root.deux))
-            # coul()/scr() draw local Ellipses directly in canvas groups, without
-            # attaching attributes to root. Include these existing geometries.
             for layer in (self.root.canvas.before, self.root.canvas, self.root.canvas.after):
                 for obj in layer.children:
                     if id(obj) not in seen and hasattr(obj, "size") and hasattr(obj, "pos"):
@@ -315,10 +516,10 @@ class JTPhaseController:
             obj.size = (0, 0)
         for obj in self._labels.values():
             obj.opacity = 0
-        if self.name == "PRE_ROUND":
+        if self.name in ("ROUND_INTRO", "FIGHT_INTRO"):
             w, h = self.engine["xmax"], self.engine["ymax"]
             for name in self.MINIMAL_HUD:
-                self._rectangles[name].size = (w, h/8) if name in ("cadre", "calque") else (w/3.7, h/21)
+                self._rectangles[name].size = (w, h / 8) if name in ("cadre", "calque") else (w / 3.7, h / 21)
             for name in ("label", "labelf", "label2", "label2f"):
                 obj = self._labels[name]
                 obj.text = str(self.engine["car2" if "2" in name else "car"])
@@ -335,6 +536,7 @@ class JTPhaseController:
     def shutdown(self):
         self.paused = True
         self.round_token += 1
+        self._cancel_orb_freeze()
         self._reset_timer()
 
 
