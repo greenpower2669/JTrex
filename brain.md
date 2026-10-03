@@ -1196,3 +1196,14 @@ Cette décision remplace toute interprétation précédente où une victoire de 
 - Maintenir protections tactiles, gel des chronos et absence de double impact pendant annonces et vidéos de résultat.
 - Le commit `6cfe746bf3d62f65d69d6212d44fd9fdcb0a4276` est une **tentative d'implémentation antérieure à cette précision KO** et son workflow #62 est en échec : ne pas le considérer comme validation de la règle canonique actuelle.
 - Pour Astra : lecture directe du dépôt public par Internet sans API GitHub est explicitement autorisée pour l'audit. Astra raisonne et construit l'ordre de mission ; Sol modifie Git, teste, build et synchronise les mémoires.
+
+
+### JT-ROUNDS-KO-CANON-001 — implémentation Sol
+- Autorité : un round contient plusieurs fights et se gagne uniquement au KO réel ; 8/9, jauges et pouvoirs ne scorent jamais seuls.
+- Ouverture : ROUND N -> rouge/bleu -> verdict ST/TR/ZeroWin -> FIGHT! jaune -> orbes. Jaune reste déclenché après les orbes et reçoit son propre FIGHT! sans double annonce.
+- KO intermédiaire : point interne unique, un cercle visible du camp, reset dégâts/références + usages des six pouvoirs (énergie conservée), puis ROUND suivant. 1-1 ouvre ROUND 3.
+- Match : 2-0 ou 2-1 seulement -> finishing complet -> accueil. Un pouvoir fatal finit son MP4 avant résolution du KO.
+- Affichage : exactement deux cercles visibles au total, un par camp ; la 2e victoire est interne.
+- ZeroWin : `assets/combat/Zerowinstegtrexsurleschargedejaugejauneetbleuetrouge.mp4`, égalité historique 1 000 000 brut / 750 000 effectifs chacun.
+- Média Phoenix canonique : `assets/powers/trph-phoenix-attack.mp4`; l'ancien marqueur `trph-phoenix-attacka sipprimer.mp4` est à supprimer dans le lot.
+- Candidat Android : 1.0.13 / versionCode 113. Aucun merge main, aucune Release.

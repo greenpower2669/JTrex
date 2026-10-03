@@ -668,3 +668,14 @@ Règle confirmée par Fab après vérification du jeu modèle :
 Preuve moteur déjà observée : l'égalité de charge applique 1 000 000 brut aux deux puis la réduction ordinaire laisse 750 000 dégâts effectifs chacun. Le test doit valider le comportement effectif sans imposer 1 000 000 final.
 
 Historique de travail : RED run #60 avait exposé l'absence de `ROUND_INTRO`, `FIGHT_INTRO`, `round_wins` et ZeroWin ; le commit d'implémentation `6cfe746bf3d62f65d69d6212d44fd9fdcb0a4276` a ensuite été construit sur une interprétation encore incorrecte où un résultat d'orbes pouvait scorer le round. Son run #62 est en échec. Il est donc **non canonique et non validé téléphone** pour la règle KO actuelle.
+
+
+### JT-ROUNDS-KO-CANON-001 — implémentation Sol
+- Autorité : un round contient plusieurs fights et se gagne uniquement au KO réel ; 8/9, jauges et pouvoirs ne scorent jamais seuls.
+- Ouverture : ROUND N -> rouge/bleu -> verdict ST/TR/ZeroWin -> FIGHT! jaune -> orbes. Jaune reste déclenché après les orbes et reçoit son propre FIGHT! sans double annonce.
+- KO intermédiaire : point interne unique, un cercle visible du camp, reset dégâts/références + usages des six pouvoirs (énergie conservée), puis ROUND suivant. 1-1 ouvre ROUND 3.
+- Match : 2-0 ou 2-1 seulement -> finishing complet -> accueil. Un pouvoir fatal finit son MP4 avant résolution du KO.
+- Affichage : exactement deux cercles visibles au total, un par camp ; la 2e victoire est interne.
+- ZeroWin : `assets/combat/Zerowinstegtrexsurleschargedejaugejauneetbleuetrouge.mp4`, égalité historique 1 000 000 brut / 750 000 effectifs chacun.
+- Média Phoenix canonique : `assets/powers/trph-phoenix-attack.mp4`; l'ancien marqueur `trph-phoenix-attacka sipprimer.mp4` est à supprimer dans le lot.
+- Candidat Android : 1.0.13 / versionCode 113. Aucun merge main, aucune Release.

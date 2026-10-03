@@ -574,3 +574,21 @@ Artefact APK GitHub :11243159151. APK extrait et vérifié le03/10 :148268312oct
 `9e936e028cda2a363c0e76b9f1105e6e46d5b2841c82e81ddc2ef2619ec3639e`.
 
 Les runs54/55 sont des candidats intermédiaires remplacés avant livraison. Aucune release et aucun merge main. Code/tests/compilation APK validés; rendu, son et comportement téléphone encore à vérifier par Fab, notamment ROUND/START, gel complet pendant pouvoirs, deux finishing après pouvoir fatal, jauges interactives, continuité VV et doublon vocal T-Rex. Ne pas déclarer ce dernier résolu sans capture/logs téléphone.
+
+
+## AVENANT CANONIQUE — JT-ROUNDS-KO-CANON-001
+
+Cet avenant remplace toute règle antérieure assimilant une victoire de jauge ou d'orbes à une victoire de round.
+
+- Un match se gagne à deux rounds.
+- Un round contient plusieurs fights et se termine uniquement au KO réel (`vie <= 0`).
+- Une victoire rouge/bleu, orbes, jaune ou pouvoir applique seulement ses conséquences historiques ; elle n'accorde un round que si elle cause le KO.
+- Chaque vrai round commence par `ROUND N`, puis charge rouge/bleu interactive, verdict ST/TR/ZeroWin, puis `FIGHT!` jaune avant les orbes.
+- L'égalité rouge/bleu inflige les dégâts historiques aux deux, joue `assets/combat/Zerowinstegtrexsurleschargedejaugejauneetbleuetrouge.mp4`, puis continue vers les orbes ; aucun jaune immédiat.
+- La jauge jaune reste appelée par la logique historique après les orbes et reçoit elle aussi un `FIGHT!` avant ses commandes ; une égalité jaune joue ZeroWin et reste dans le même round sauf KO.
+- Premier KO : un seul cercle visible du vainqueur s'allume, vies/dégâts et usages de pouvoirs sont réinitialisés, puis `ROUND 2`.
+- À 1-1 : `ROUND 3`. À 2-0 ou 2-1 : finishing intégral du vainqueur puis accueil. Aucun finishing définitif au premier KO.
+- Exactement deux cercles visibles au total : un par camp. La deuxième victoire reste comptée en interne.
+- Un pouvoir fatal termine d'abord sa vidéo ; ensuite seulement nouveau round ou finishing final. L'EOS n'applique aucun impact.
+- Coûts, énergie fractionnaire, seuil strict `énergie > coût`, score cubique, IA et dégâts historiques restent inchangés.
+- Double KO et expiration du temps conservent le comportement historique tant qu'une règle dédiée n'est pas explicitement validée par Fab.

@@ -57,7 +57,7 @@ class PhaseIntegration(unittest.TestCase):
     def test_gauge_families_keep_real_buttons_and_tap_decisions(self):
         for state, button, winner in ((4, 'gr', 3), (7, 'gj', 5)):
             with self.subTest(state=state):
-                h = Harness(); h.state(state); h.frame()
+                h = Harness(); h.state(state); h.finish_start(); h.frame()
                 h.ns['anim1'] = 1
                 h.callbacks()
                 self.assertNotEqual(getattr(h.root, button).size, (0, 0))
@@ -75,7 +75,7 @@ class PhaseIntegration(unittest.TestCase):
         )
         for state, button, decided_state, scene_key, filename in cases:
             with self.subTest(state=state, button=button):
-                h = Harness(); h.state(state); h.frame()
+                h = Harness(); h.state(state); h.finish_start(); h.frame()
                 h.ns['anim1'] = 1
                 h.callbacks()
                 for _ in range(3):
@@ -101,7 +101,7 @@ class PhaseIntegration(unittest.TestCase):
 
                 h.frame(); h.eos(); h.media._sync_current_scene()
                 self.assertEqual(h.ns['indexa'], 1)
-                self.assertEqual(h.media.phases.name, 'PRE_ROUND')
+                self.assertEqual(h.media.phases.name, 'FIGHT_INTRO')
                 self.assertEqual((h.ns['degg'], h.ns['degd']), damage_after_gauge)
 
     def test_power_deals_one_historical_impact_then_waits_for_eos(self):
@@ -120,27 +120,20 @@ class PhaseIntegration(unittest.TestCase):
         self.assertIsNone(h.media._round_overlay)
         self.assertEqual(h.ns['degd'], 93750000)
 
-    def test_lethal_power_queues_both_finishing_directions_until_true_eos(self):
-        for power, finish, damage in ((21, 10, 'degd'), (26, 11, 'degg')):
+    def test_lethal_power_waits_for_eos_and_first_ko_does_not_finish_match(self):
+        for power, damage, winner in ((21, 'degd', 'st'), (26, 'degg', 'tr')):
             with self.subTest(power=power):
-                h = Harness(); h.start_round()
-                h.ns.update(anim1=0, anim1vv=1)
+                h = Harness(); h.start_round(); h.ns.update(anim1=0, anim1vv=1)
                 h.ns[damage] = h.ns[damage+'0'] = 450000000
-                h.state(power); h.frame()
-                power_player = h.media._scene_player
+                h.state(power); h.frame(); power_player = h.media._scene_player
                 for _ in range(300): h.root.mc1(.03)
-                self.assertEqual(h.ns['indexa'], finish)
-                self.assertIs(h.media._scene_player, power_player)
                 self.assertEqual(h.media.phases.name, 'POWER')
-                h.eos(); h.media._sync_current_scene(); h.frame()
-                self.assertEqual(h.media.phases.name, 'FINISH')
-                for _ in range(300): h.root.mc1(.03)
-                self.assertEqual(h.ns['indexa'], finish)
-                h.eos(); h.root.mc1(.03)
-                self.assertEqual(h.ns['indexa'], 0)
-                self.assertEqual(h.media.phases.name, 'MENU')
-                self.assertEqual(h.root.label.text, '')
-                self.assertEqual(h.root.label2.text, '')
+                self.assertIs(h.media._scene_player, power_player)
+                self.assertEqual(h.media.phases.round_wins[winner], 1)
+                h.eos(); h.media._sync_current_scene()
+                self.assertEqual(h.media.phases.name, 'ROUND_INTRO')
+                self.assertEqual(h.media.phases.round_number, 2)
+                self.assertEqual(h.ns['indexa'], 4)
 
     def test_short_power_eos_does_not_apply_damage_and_logic_still_completes(self):
         h = Harness(); h.start_round()
@@ -156,19 +149,19 @@ class PhaseIntegration(unittest.TestCase):
         self.assertEqual(h.media.phases.name, 'ROUND_ACTIVE')
         self.assertEqual(sum('sanctuary' in p.filename for p in Video.instances), 1)
 
-    def test_round_number_follows_scored_exchanges_and_resets_at_menu(self):
-        h = Harness(); h.start_round()
-        h.ns['colstop'] = {i: True for i in range(1,7)}
-        h.root.colvv(.04)
-        self.assertEqual(h.ns['indexa'], 7)
-        h.ns.update(anim1=152, anim1vv=1)
-        h.root.mc1(.03)
-        self.assertEqual(h.ns['indexa'], 1)
+    def test_round_number_follows_kos_only_and_resets_at_menu(self):
+        h = Harness(); h.start_round(); h.state(8)
+        for _ in range(300):
+            h.root.mc1(.03)
+            if h.ns['indexa'] != 8:
+                break
+        self.assertEqual(h.media.phases.round_number, 1)
+        self.assertEqual(h.media.phases.round_wins, {'st': 0, 'tr': 0})
+        h.ns['degd'] = h.ns['pvd']
+        h.state(10)
         self.assertEqual(h.media.phases.round_number, 2)
-        self.assertEqual(h.media.phases.name, 'PRE_ROUND')
-        token = h.media.phases.round_token
+        self.assertEqual(h.media.phases.round_wins, {'st': 1, 'tr': 0})
         h.state(0)
-        h.media.phases.finish_start(token)
         self.assertEqual(h.media.phases.name, 'MENU')
         self.assertEqual(h.media.phases.round_number, 0)
 
@@ -194,13 +187,13 @@ class PhaseIntegration(unittest.TestCase):
         self.assertEqual(h.media.phases.name, 'ROUND_ACTIVE')
         self.assertIsNone(h.media._round_overlay)
 
-    def test_pause_cannot_complete_start_or_consume_time(self):
-        h = Harness(); h.state(4); h.state(1)
+    def test_pause_cannot_complete_round_announcement_or_consume_time(self):
+        h = Harness(); h.state(4)
         h.media.on_pause(); h.finish_start(); h.callbacks()
-        self.assertEqual(h.media.phases.name, 'PRE_ROUND')
+        self.assertEqual(h.media.phases.name, 'ROUND_INTRO')
         self.assertEqual((h.ns['car'],h.ns['car2']), (100,10))
         h.media.on_resume(); h.finish_start()
-        self.assertEqual(h.media.phases.name, 'ROUND_ACTIVE')
+        self.assertEqual(h.media.phases.name, 'CHARGE_INTERACTIVE')
 
     def test_power_load_failure_does_not_deadlock_or_retry_each_tick(self):
         h = Harness(); h.start_round()
@@ -234,17 +227,13 @@ class PhaseIntegration(unittest.TestCase):
         for name in ("nrjg", "nrjd", "pvg", "pvd", "cadretr"):
             self.assertEqual(getattr(h.root, name).size, (0, 0), name)
 
-    def test_preround_freezes_both_timers_and_orbs_until_start_completion(self):
-        h = Harness()
-        h.state(4); h.state(1)
-        h.ns.update(car=100, car2=10)
-        before = h.ns["haut"].copy()
-        h.callbacks()
+    def test_round_intro_freezes_both_timers_until_start_completion(self):
+        h = Harness(); h.state(4); h.ns.update(car=100, car2=10)
+        before = h.ns["haut"].copy(); h.callbacks()
         self.assertEqual((h.ns["car"], h.ns["car2"]), (100, 10))
         self.assertEqual(h.ns["haut"], before)
         self.assertEqual(h.root.label.text, "100")
         self.assertEqual(h.root.label2.text, "10")
-
 
 if __name__ == "__main__":
     unittest.main()

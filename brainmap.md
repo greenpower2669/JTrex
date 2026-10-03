@@ -854,3 +854,14 @@ Aucune formule de score, seuil, dégâts, soin, énergie, probabilité IA ou co�
 Contraintes : 2 cercles visibles au total (1 ST, 1 TR), score de rounds interne ; rouge/bleu égalité = ZeroWin + dégâts aux deux puis orbes, jamais jaune direct ; impact partagé observé = 750 000 effectifs chacun après réduction historique ; gels/touches/chronos protégés pendant présentations.
 
 ATTENTION : `6cfe746...` a été produit avant cette clarification KO et le run #62 échoue ; il ne doit pas servir de contrat fonctionnel.
+
+
+### JT-ROUNDS-KO-CANON-001 — implémentation Sol
+- Autorité : un round contient plusieurs fights et se gagne uniquement au KO réel ; 8/9, jauges et pouvoirs ne scorent jamais seuls.
+- Ouverture : ROUND N -> rouge/bleu -> verdict ST/TR/ZeroWin -> FIGHT! jaune -> orbes. Jaune reste déclenché après les orbes et reçoit son propre FIGHT! sans double annonce.
+- KO intermédiaire : point interne unique, un cercle visible du camp, reset dégâts/références + usages des six pouvoirs (énergie conservée), puis ROUND suivant. 1-1 ouvre ROUND 3.
+- Match : 2-0 ou 2-1 seulement -> finishing complet -> accueil. Un pouvoir fatal finit son MP4 avant résolution du KO.
+- Affichage : exactement deux cercles visibles au total, un par camp ; la 2e victoire est interne.
+- ZeroWin : `assets/combat/Zerowinstegtrexsurleschargedejaugejauneetbleuetrouge.mp4`, égalité historique 1 000 000 brut / 750 000 effectifs chacun.
+- Média Phoenix canonique : `assets/powers/trph-phoenix-attack.mp4`; l'ancien marqueur `trph-phoenix-attacka sipprimer.mp4` est à supprimer dans le lot.
+- Candidat Android : 1.0.13 / versionCode 113. Aucun merge main, aucune Release.

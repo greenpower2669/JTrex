@@ -687,3 +687,14 @@ Les runs54/55 sont des candidats intermédiaires remplacés avant livraison. Auc
 - [ ] Affichage : un seul cercle par camp (2 visibles total), score de rounds interne séparé.
 - [ ] Vérifier zéro double impact, zéro impact perdu, gels et protections tactiles sur toutes les transitions.
 - [ ] Après implémentation Sol : tests verts + build Android + validation téléphone Fab avant toute release/merge main.
+
+
+### JT-ROUNDS-KO-CANON-001 — implémentation Sol
+- Autorité : un round contient plusieurs fights et se gagne uniquement au KO réel ; 8/9, jauges et pouvoirs ne scorent jamais seuls.
+- Ouverture : ROUND N -> rouge/bleu -> verdict ST/TR/ZeroWin -> FIGHT! jaune -> orbes. Jaune reste déclenché après les orbes et reçoit son propre FIGHT! sans double annonce.
+- KO intermédiaire : point interne unique, un cercle visible du camp, reset dégâts/références + usages des six pouvoirs (énergie conservée), puis ROUND suivant. 1-1 ouvre ROUND 3.
+- Match : 2-0 ou 2-1 seulement -> finishing complet -> accueil. Un pouvoir fatal finit son MP4 avant résolution du KO.
+- Affichage : exactement deux cercles visibles au total, un par camp ; la 2e victoire est interne.
+- ZeroWin : `assets/combat/Zerowinstegtrexsurleschargedejaugejauneetbleuetrouge.mp4`, égalité historique 1 000 000 brut / 750 000 effectifs chacun.
+- Média Phoenix canonique : `assets/powers/trph-phoenix-attack.mp4`; l'ancien marqueur `trph-phoenix-attacka sipprimer.mp4` est à supprimer dans le lot.
+- Candidat Android : 1.0.13 / versionCode 113. Aucun merge main, aucune Release.

@@ -11,8 +11,8 @@ import zipfile
 from pathlib import Path, PurePosixPath
 
 
-VERSION = "1.0.12"
-NUMERIC_VERSION = "112"
+VERSION = "1.0.13"
+NUMERIC_VERSION = "113"
 ARCHIVE_SIZE = 327992765
 ARCHIVE_SHA256 = (
     "f73ca1fd5e96ca6e11df5987bda8b2e59"
@@ -63,6 +63,7 @@ MEDIA_ASSETS = {
     "assets/combat/StegVsTrexvaetviensremolacebisorigune.mp4": 2472718,
     "assets/combat/Stegtrexresultstegwin.mp4": 1521350,
     "assets/combat/Stegtrexresulttrexwin.mp4": 760242,
+    "assets/combat/Zerowinstegtrexsurleschargedejaugejauneetbleuetrouge.mp4": 1147683,
 }
 
 

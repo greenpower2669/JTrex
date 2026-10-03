@@ -32,6 +32,11 @@ class JTPhaseController:
         self.post_verdict_action = None
         self.yellow_active = False
         self.yellow_outcome = None
+        self.fight_target = None
+        self.pending_round_winner = None
+        self.pending_round_action = None
+        self.match_finishing_authorized = False
+        self.double_ko_pending = False
         self.paused = False
         self._timer_event = None
         self._orb_freeze_event = None
@@ -65,7 +70,7 @@ class JTPhaseController:
         }
 
     def _install_round_markers(self):
-        """Two symmetric match-win lamps per camp, second one farther outward."""
+        """Exactly one visible match-round lamp per camp; second win stays internal."""
         self.media._round_score_values = (0, 0)
         self._round_marker_colors = []
         self._round_marker_shapes = []
@@ -73,11 +78,13 @@ class JTPhaseController:
             color_type = type(self.media._status_dot_color)
             ellipse_type = type(self.media._status_dot_shape)
             with self.root.canvas.after:
-                for _ in range(4):
+                for _ in range(2):
                     color = color_type(.18, .18, .18, .72)
                     shape = ellipse_type(pos=(0, 0), size=(0, 0))
                     self._round_marker_colors.append(color)
                     self._round_marker_shapes.append(shape)
+            self.media._round_marker_colors = self._round_marker_colors
+            self.media._round_marker_shapes = self._round_marker_shapes
             self.root.bind(size=self._layout_round_markers, pos=self._layout_round_markers)
             self._layout_round_markers()
         except Exception as exc:
@@ -85,15 +92,12 @@ class JTPhaseController:
         self._paint_round_markers()
 
     def _layout_round_markers(self, *args):
-        if len(self._round_marker_shapes) != 4:
+        if len(self._round_marker_shapes) != 2:
             return
         w, h = float(self.engine["xmax"]), float(self.engine["ymax"])
         diameter = max(10.0, min(w, h) * .026)
         y = h * .865
-        centers = (
-            (w * .325, y), (w * .292, y),
-            (w * .675, y), (w * .708, y),
-        )
+        centers = ((w * .325, y), (w * .675, y))
         for shape, (cx, cy) in zip(self._round_marker_shapes, centers):
             shape.size = (diameter, diameter)
             shape.pos = (cx - diameter / 2.0, cy - diameter / 2.0)
@@ -103,7 +107,7 @@ class JTPhaseController:
         self.media._round_score_values = (st, tr)
         visible = self.name not in ("INTRO", "MENU", "POWER", "FINISH")
         for i, color in enumerate(self._round_marker_colors):
-            lit = (i < 2 and i < st) or (i >= 2 and (i - 2) < tr)
+            lit = (i == 0 and st > 0) or (i == 1 and tr > 0)
             try:
                 color.rgba = ((.08, .95, .18, 1.0) if lit else (.18, .18, .18, .72)) if visible else (0, 0, 0, 0)
             except Exception:
@@ -174,8 +178,11 @@ class JTPhaseController:
     def _begin_round(self):
         self.round_number += 1
         self.round_token += 1
+        self.fight_target = None
         self.yellow_active = False
         self.yellow_outcome = None
+        self.double_ko_pending = False
+        self.match_finishing_authorized = False
         self.engine["tapg"] = 0
         self.engine["tapd"] = 0
         self.engine["anim1"] = 0
@@ -186,9 +193,13 @@ class JTPhaseController:
         self.media.present_round(self.round_number, self.round_token)
         print("[JT-ROUND] begin round={} score={}".format(self.round_number, self.round_wins), flush=True)
 
-    def _begin_fight(self):
-        self.yellow_active = True
-        self.yellow_outcome = None
+    def _begin_fight(self, target):
+        if target not in ("orbs", "yellow"):
+            raise ValueError("unknown FIGHT target: {}".format(target))
+        self.fight_target = target
+        self.yellow_active = target == "yellow"
+        if target == "yellow":
+            self.yellow_outcome = None
         self.round_token += 1
         self._set_phase("FIGHT_INTRO")
         self.media.present_round(self.round_number, self.round_token)
@@ -201,7 +212,7 @@ class JTPhaseController:
                 overlay.title.color = (1, .9, .05, 1)
             except Exception:
                 pass
-        print("[JT-FIGHT] yellow confrontation round={} token={}".format(self.round_number, self.round_token), flush=True)
+        print("[JT-FIGHT] target={} round={} token={}".format(target, self.round_number, self.round_token), flush=True)
 
     def _record_round_win(self, camp, source):
         self.round_wins[camp] += 1
@@ -209,15 +220,113 @@ class JTPhaseController:
         print("[JT-ROUND] winner={} source={} score={}".format(camp, source, self.round_wins), flush=True)
         return self.round_wins[camp] >= 2
 
+    def _reset_between_rounds(self):
+        """Restore round-local state without passing through the menu or changing energy rules."""
+        for name in ("degg", "degd", "degg0", "degd0", "deggt", "degdt"):
+            if name in self.engine:
+                self.engine[name] = 0
+        for name in ("tapg", "tapd"):
+            if name in self.engine:
+                self.engine[name] = 0
+        for name in ("stopg", "stopd"):
+            if name in self.engine:
+                self.engine[name] = False
+        selected = self.engine.get("selected")
+        if isinstance(selected, dict):
+            for slot in range(1, 7):
+                selected[slot] = False
+        elif isinstance(selected, list):
+            for slot in range(1, min(7, len(selected))):
+                selected[slot] = False
+        colstop = self.engine.get("colstop")
+        if isinstance(colstop, dict):
+            for slot in range(1, 7):
+                colstop[slot] = False
+        refresh = self.engine.get("jt_refresh_power_flags")
+        if callable(refresh):
+            refresh()
+        if "car" in self.engine:
+            self.engine["car"] = 100
+        if "car2" in self.engine:
+            self.engine["car2"] = 10
+        if "_JT_ORB_TOUCH_PROTECT_UNTIL" in self.engine:
+            self.engine["_JT_ORB_TOUCH_PROTECT_UNTIL"] = self.clock.get_time()
+        self.yellow_active = False
+        self.yellow_outcome = None
+        self.fight_target = None
+        self._cancel_orb_freeze()
+        print("[JT-ROUND] reset lives/damage/power-usage; energy preserved", flush=True)
+
+    def _register_ko(self, camp, source):
+        if self.pending_round_action is not None or self.round_number <= 0:
+            return False
+        final = self._record_round_win(camp, source)
+        self.pending_round_winner = camp
+        self.pending_round_action = ("finish" if final else "next_round", camp)
+        print(
+            "[JT-KO] camp={} source={} action={} score={}".format(
+                camp, source, self.pending_round_action[0], self.round_wins
+            ),
+            flush=True,
+        )
+        return True
+
+    def _observe_ko(self, state):
+        if (
+            self.round_number <= 0
+            or self.pending_round_action is not None
+            or self.match_finishing_authorized
+            or state == 0
+        ):
+            return
+        required = ("pvg", "pvd", "degg", "degd")
+        if not all(name in self.engine for name in required):
+            return
+        compg = self.engine["pvg"] - self.engine["degg"]
+        compd = self.engine["pvd"] - self.engine["degd"]
+        if compg < 1 and compd < 1:
+            if not self.double_ko_pending:
+                print(
+                    "[JT-KO] double-KO observed; preserving historical unresolved policy",
+                    flush=True,
+                )
+            self.double_ko_pending = True
+            return
+        if compg < 1:
+            self._register_ko("tr", "life-zero")
+        elif compd < 1:
+            self._register_ko("st", "life-zero")
+
+    def _apply_pending_round_action(self):
+        action = self.pending_round_action
+        if action is None:
+            return False
+        kind, camp = action
+        self.pending_round_action = None
+        self.pending_round_winner = None
+        if kind == "next_round":
+            self._reset_between_rounds()
+            self._begin_round()
+            return True
+        if kind == "finish":
+            self.match_finishing_authorized = True
+            self.engine["anim1"] = 0
+            self.engine["anim1vv"] = 1
+            self.engine["indexa"] = 10 if camp == "st" else 11
+            self.state = self.engine["indexa"]
+            self.cinematic_state = self.state
+            self.media_done = self.media_failed = False
+            self._set_phase("FINISH")
+            print("[JT-MATCH] winner={} -> final finishing".format(camp), flush=True)
+            return True
+        raise RuntimeError("unknown pending round action: {!r}".format(action))
+
     def _queue_gauge_verdict(self, outcome, family):
         self.gauge_verdict_state = self.GAUGE_PRESENTATION[outcome]
         self.gauge_verdict_done = self.gauge_verdict_failed = False
-        if family == "yellow" and outcome in (5, 6):
-            camp = "st" if outcome == 5 else "tr"
-            final = self._record_round_win(camp, "yellow")
-            self.post_verdict_action = ("finish", camp) if final else ("next_round", camp)
-        else:
-            self.post_verdict_action = ("orbs", None)
+        # Gauge verdicts never award a round by themselves. After their media,
+        # either a previously observed KO is resolved or a new FIGHT opens orbs.
+        self.post_verdict_action = ("fight_orbs", None)
         print(
             "[JT-GAUGE-VERDICT] queue family={} outcome={} presentation={} action={}".format(
                 family, outcome, self.gauge_verdict_state, self.post_verdict_action
@@ -240,18 +349,10 @@ class JTPhaseController:
         self.post_verdict_action = None
         self.yellow_active = False
         self.yellow_outcome = None
-        if action and action[0] == "finish":
-            self.engine["anim1"] = 0
-            self.engine["indexa"] = 10 if action[1] == "st" else 11
-            self.state = self.engine["indexa"]
-            self.cinematic_state = self.state
-            self.media_done = self.media_failed = False
-            self._set_phase("FINISH")
+        if self.pending_round_action is not None:
+            self._apply_pending_round_action()
             return
-        if action and action[0] == "next_round":
-            self._begin_round()
-            return
-        self._enter_orb_freeze()
+        self._begin_fight("orbs")
 
     def _enter_orb_freeze(self):
         self.engine["indexa"] = 1
@@ -279,17 +380,11 @@ class JTPhaseController:
         self.apply_ui()
 
     def _resolve_orb_round(self, previous_state):
-        camp = "st" if previous_state == 8 else "tr"
-        final = self._record_round_win(camp, "orbs")
-        if final:
-            self.engine["anim1"] = 0
-            self.engine["indexa"] = 10 if camp == "st" else 11
-            self.state = self.engine["indexa"]
-            self.cinematic_state = self.state
-            self.media_done = self.media_failed = False
-            self._set_phase("FINISH")
-        else:
-            self._begin_round()
+        # 8/9 are fight verdicts, not round wins. Only a real KO can score.
+        if self.pending_round_action is not None:
+            self._apply_pending_round_action()
+            return
+        self._begin_fight("orbs")
 
     def sync(self):
         state = self.engine["indexa"]
@@ -308,25 +403,17 @@ class JTPhaseController:
             self._set_phase("INTRO")
             return
 
-        if self.cinematic_state is not None:
-            if not self.media_done or state == self.cinematic_state:
-                self._set_phase("POWER" if self.cinematic_state >= 21 else "FINISH")
-                return
-            self.cinematic_state = None
-
-        if state in (10, 11, 21, 22, 23, 24, 25, 26):
-            if self.cinematic_state != state:
-                self.cinematic_state = state
-                self.media_done = self.media_failed = False
-            self._set_phase("POWER" if state >= 21 else "FINISH")
-            return
-
         if state == 0:
             self.gauge_verdict_state = None
             self.gauge_verdict_done = self.gauge_verdict_failed = False
             self.post_verdict_action = None
             self.yellow_active = False
             self.yellow_outcome = None
+            self.fight_target = None
+            self.pending_round_winner = None
+            self.pending_round_action = None
+            self.match_finishing_authorized = False
+            self.double_ko_pending = False
             self.round_number = 0
             self.round_wins = {"st": 0, "tr": 0}
             self.media._round_score_values = (0, 0)
@@ -336,6 +423,57 @@ class JTPhaseController:
             self._cancel_orb_freeze()
             self._set_phase("MENU")
             self._paint_round_markers()
+            return
+
+        self._observe_ko(state)
+
+        # A power may become lethal before its MP4 reaches EOS. Keep the power
+        # cinematic authoritative, then resolve the KO exactly once at EOS.
+        if self.cinematic_state is not None:
+            if self.cinematic_state >= 21:
+                if not self.media_done:
+                    self._set_phase("POWER")
+                    return
+                if self.pending_round_action is not None:
+                    self.cinematic_state = None
+                    self._apply_pending_round_action()
+                    return
+                if state == self.cinematic_state:
+                    self._set_phase("POWER")
+                    return
+                self.cinematic_state = None
+            else:
+                if not self.media_done or state == self.cinematic_state:
+                    self._set_phase("FINISH")
+                    return
+                self.cinematic_state = None
+
+        # Historical mc1 turns a KO directly into 10/11 and clears damage. If
+        # that finishing was not authorized by a two-round match win, reinterpret
+        # it as KO evidence before any final video can start.
+        if state in (10, 11) and self.round_number > 0 and not self.match_finishing_authorized:
+            if self.double_ko_pending:
+                self.match_finishing_authorized = True
+                print("[JT-KO] double-KO keeps historical finishing direction state={}".format(state), flush=True)
+            else:
+                if self.pending_round_action is None:
+                    self._register_ko("st" if state == 10 else "tr", "historical-finish-state")
+                if self.pending_round_action is not None:
+                    self._apply_pending_round_action()
+                    return
+
+        if state in (21, 22, 23, 24, 25, 26):
+            if self.cinematic_state != state:
+                self.cinematic_state = state
+                self.media_done = self.media_failed = False
+            self._set_phase("POWER")
+            return
+
+        if state in (10, 11):
+            if self.cinematic_state != state:
+                self.cinematic_state = state
+                self.media_done = self.media_failed = False
+            self._set_phase("FINISH")
             return
 
         if state == 4 and self.round_number == 0:
@@ -368,7 +506,10 @@ class JTPhaseController:
                 self._queue_gauge_verdict(previous_state, "red-blue")
                 return
 
-            if self.name != "ORB_FREEZE":
+            if self.pending_round_action is not None:
+                self._apply_pending_round_action()
+                return
+            if self.name not in ("ORB_FREEZE", "FIGHT_INTRO"):
                 self._set_phase("ROUND_ACTIVE")
             return
 
@@ -379,7 +520,7 @@ class JTPhaseController:
             return
 
         if state == 7 and not self.yellow_active:
-            self._begin_fight()
+            self._begin_fight("yellow")
             return
 
         if state in (5, 6, 7):
@@ -405,11 +546,24 @@ class JTPhaseController:
             self.apply_ui()
             return
         if self.name == "FIGHT_INTRO":
-            if self.engine["indexa"] not in (5, 6, 7):
+            target = self.fight_target
+            if target == "yellow":
+                if self.engine["indexa"] not in (5, 6, 7):
+                    return
+                self.media.cancel_round_presentation()
+                self.fight_target = None
+                self._set_phase("YELLOW_INTERACTIVE")
+                self.apply_ui()
                 return
-            self.media.cancel_round_presentation()
-            self._set_phase("YELLOW_INTERACTIVE")
-            self.apply_ui()
+            if target == "orbs":
+                if self.engine["indexa"] != 1:
+                    return
+                self.media.cancel_round_presentation()
+                self.fight_target = None
+                self.engine["_JT_ORB_TOUCH_PROTECT_UNTIL"] = self.clock.get_time()
+                self._cancel_orb_freeze()
+                self._set_phase("ROUND_ACTIVE")
+                self.apply_ui()
 
     def video_complete(self, state, failed=False):
         if state == self.gauge_verdict_state:

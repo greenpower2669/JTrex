@@ -169,8 +169,21 @@ class Harness:
     def start_round(self):
         self.state(4)
         self.ns["colstop"] = {i: False for i in range(1, 7)}
-        self.state(1)
         self.finish_start()
+        # Deterministic setup shortcut: complete the opening red/blue as a tie,
+        # consume ZeroWin, then consume the canonical FIGHT! before orbs.
+        self.state(1)
+        if self.media.phases.name == "GAUGE_VERDICT":
+            if self.media._scene_player is not None:
+                self.frame()
+                self.eos()
+            self.media._sync_current_scene()
+        if self.media.phases.name == "FIGHT_INTRO":
+            self.finish_start()
+        if self.media.phases.name == "ORB_FREEZE":
+            event = self.media.phases._orb_freeze_event
+            if event is not None:
+                event.callback(2.0)
 
     def finish_start(self):
         for _ in range(60):
@@ -182,7 +195,7 @@ class Harness:
     def touch(self, name):
         x, y = self.ns['pbout'][name]
         x += self.ns['mdo']; y += self.ns['mdo']
-        t = SimpleNamespace(x=x, y=y, pos=(x,y), uid='test', id='1', ud={}, profile=[])
+        t = SimpleNamespace(x=x, y=y, pos=(x,y), uid='test', id='1', ud={}, profile=[], grab_current=None)
         t.grab = lambda widget: setattr(t, 'grab_current', widget)
         t.ungrab = lambda widget: setattr(t, 'grab_current', None)
         self.last_touch = t
