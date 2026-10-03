@@ -73,6 +73,22 @@ jobs:
           print('[JT-KO] selected reset assertion aligned with generated dict')
           PY
 
+      - name: Inspect patched round reset
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          lines = Path('tools/jtrex_phase_runtime.py').read_text(encoding='utf-8').splitlines()
+          for needle in ('def _reset_round_state', 'def _reset_round', 'selected'):
+              hits = [i for i, line in enumerate(lines) if needle in line]
+              print(f'=== {needle} hits={hits} ===')
+              for i in hits[:8]:
+                  for n in range(max(0, i-5), min(len(lines), i+35)):
+                      print(f'{n+1:04d}: {lines[n]}')
+                  print('---')
+          PY
+
       - name: Prepare generated historical engine
         shell: bash
         run: |
