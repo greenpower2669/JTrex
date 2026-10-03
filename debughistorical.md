@@ -626,3 +626,14 @@ Pendant le build du premier candidat df03316 (run54), dernière vérification de
 ### JT-PHASES-001 — textes des chronos au changement de phase
 
 Dernier contrôle de sortie : sous le candidat589ddbe/run55, le petit texte10 pouvait rester visible au menu après finishing car carupdate, désormais suspendu, ne le vidait plus. Échec reproduit dans les deux branches du test pouvoir fatal→finishing→menu; correction de présentation seule, valeurs numériques inchangées. Les18 tests repassent. Le candidat livré doit inclure ce nettoyage; runs54/55 intermédiaires.
+
+## 2026-10-03 — JT-PHASES-001 — build final réellement produit
+
+Candidat retenu : JuneT-Rex-1.0.12-debug.apk, version1.0.12/code112, package com.junedady.junetrex. Branche port/android-first-apk, commit construit `622ab09964e23d7951542c82f8bcfa30df1b7d91`.
+
+Run Android #56 : https://github.com/greenpower2669/JTrex/actions/runs/37043101864 — SUCCESS complet, artefact produit le02/10/2026 vers18:05UTC. Job110957782430. Préparation, validations historiques,18 tests du moteur généré, FFprobe, Buildozer et uploads : tous réussis. Aucun correctif natif supplémentaire.
+
+Artefact APK GitHub :11243159151. APK extrait et vérifié le03/10 :148268312octets; manifest binaire confirmé package/version/code; bibliothèques arm64-v8a et armeabi-v7a présentes. SHA-256 de l'APK (recalculé et identique à SHA256SUMS.txt du build) :
+`9e936e028cda2a363c0e76b9f1105e6e46d5b2841c82e81ddc2ef2619ec3639e`.
+
+Les runs54/55 sont des candidats intermédiaires remplacés avant livraison. Aucune release et aucun merge main. Code/tests/compilation APK validés; rendu, son et comportement téléphone encore à vérifier par Fab, notamment ROUND/START, gel complet pendant pouvoirs, deux finishing après pouvoir fatal, jauges interactives, continuité VV et doublon vocal T-Rex. Ne pas déclarer ce dernier résolu sans capture/logs téléphone.

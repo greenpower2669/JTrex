@@ -813,3 +813,14 @@ apply_ui construit à chaque entrée masquée un inventaire des attributs Rectan
 ### JT-PHASES-001 — textes des chronos au changement de phase
 
 _set_phase actualise label/labelf/label2/label2f après affbt/affpv. Le callback carupdate étant volontairement absent au menu, le nettoyage de ces textes ne peut plus dépendre de son ancien else. Le test complet des deux finishing vérifie désormais les deux labels vides au retour menu.
+
+## 2026-10-03 — JT-PHASES-001 — build final réellement produit
+
+Candidat retenu : JuneT-Rex-1.0.12-debug.apk, version1.0.12/code112, package com.junedady.junetrex. Branche port/android-first-apk, commit construit `622ab09964e23d7951542c82f8bcfa30df1b7d91`.
+
+Run Android #56 : https://github.com/greenpower2669/JTrex/actions/runs/37043101864 — SUCCESS complet, artefact produit le02/10/2026 vers18:05UTC. Job110957782430. Préparation, validations historiques,18 tests du moteur généré, FFprobe, Buildozer et uploads : tous réussis. Aucun correctif natif supplémentaire.
+
+Artefact APK GitHub :11243159151. APK extrait et vérifié le03/10 :148268312octets; manifest binaire confirmé package/version/code; bibliothèques arm64-v8a et armeabi-v7a présentes. SHA-256 de l'APK (recalculé et identique à SHA256SUMS.txt du build) :
+`9e936e028cda2a363c0e76b9f1105e6e46d5b2841c82e81ddc2ef2619ec3639e`.
+
+Les runs54/55 sont des candidats intermédiaires remplacés avant livraison. Aucune release et aucun merge main. Code/tests/compilation APK validés; rendu, son et comportement téléphone encore à vérifier par Fab, notamment ROUND/START, gel complet pendant pouvoirs, deux finishing après pouvoir fatal, jauges interactives, continuité VV et doublon vocal T-Rex. Ne pas déclarer ce dernier résolu sans capture/logs téléphone.

@@ -624,7 +624,7 @@ Les sections antérieures conservent l'historique.
 - [x] Corriger car2 lors du lancement IA, sans changement de coût/probabilité/effet.
 - [x] 16 tests sur moteur généré/IO simulées; compilation Python et assertions code/helpers existantes vertes.
 - [x] Préserver chaîne native/médias/pruning/score/coûts/auras/admin; traces audio ciblées ajoutées.
-- [ ] Obtenir build CI et consigner commit/run/SHA256 APK; aucune release ni merge main.
+- [x] Build final run56 réussi; commit/run/SHA256 APK consignés; aucune release ni merge main.
 - [ ] Fab : charge rouge/bleu interactive, puis VV/vies/deux chronos figés, ROUND1 jaune~1s, START! animé; aucun tick avant sa fin.
 - [ ] Fab : égalité jaune interactive puis ROUND2 au prochain échange; aucun nouveau ROUND au simple retour de pouvoir.
 - [ ] Fab : six pouvoirs sans UI/chrono/orbes actifs avant EOS; noter car/car2 avant/après. Humain/IA et seuils40/40,5;60/60,5;80/80,5, selected.
@@ -638,10 +638,21 @@ Les sections antérieures conservent l'historique.
 - [x] Masquer/restaurer aussi les géométries canvas directes, test reproduit avant correction.
 - [x] Conserver le nettoyage historique de on_touch_up pendant cinématique; test dédié vert.
 - [x] 18 tests déterministes verts.
-- [ ] Suivre le build du commit complémentaire; ne pas livrer le premier candidat df03316/run54 comme résultat final.
+- [x] Candidats intermédiaires remplacés; livraison retenue sur622ab09/run56.
 
 ### JT-PHASES-001 — textes des chronos au changement de phase
 
 - [x] Vérifier puis corriger le petit chrono résiduel au menu après finishing; valeurs numériques conservées.
 - [x] 18 tests verts avec assertion des deux textes vides dans les deux finishing.
-- [ ] Livrer le build incluant ce nettoyage final; runs54/55 remplacés avant validation téléphone.
+- [x] APK du nettoyage final622ab09/run56 récupéré et vérifié; runs54/55 remplacés avant validation téléphone.
+
+## 2026-10-03 — JT-PHASES-001 — build final réellement produit
+
+Candidat retenu : JuneT-Rex-1.0.12-debug.apk, version1.0.12/code112, package com.junedady.junetrex. Branche port/android-first-apk, commit construit `622ab09964e23d7951542c82f8bcfa30df1b7d91`.
+
+Run Android #56 : https://github.com/greenpower2669/JTrex/actions/runs/37043101864 — SUCCESS complet, artefact produit le02/10/2026 vers18:05UTC. Job110957782430. Préparation, validations historiques,18 tests du moteur généré, FFprobe, Buildozer et uploads : tous réussis. Aucun correctif natif supplémentaire.
+
+Artefact APK GitHub :11243159151. APK extrait et vérifié le03/10 :148268312octets; manifest binaire confirmé package/version/code; bibliothèques arm64-v8a et armeabi-v7a présentes. SHA-256 de l'APK (recalculé et identique à SHA256SUMS.txt du build) :
+`9e936e028cda2a363c0e76b9f1105e6e46d5b2841c82e81ddc2ef2619ec3639e`.
+
+Les runs54/55 sont des candidats intermédiaires remplacés avant livraison. Aucune release et aucun merge main. Code/tests/compilation APK validés; rendu, son et comportement téléphone encore à vérifier par Fab, notamment ROUND/START, gel complet pendant pouvoirs, deux finishing après pouvoir fatal, jauges interactives, continuité VV et doublon vocal T-Rex. Ne pas déclarer ce dernier résolu sans capture/logs téléphone.
