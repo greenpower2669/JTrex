@@ -8,8 +8,10 @@ from functools import wraps
 
 class JTPhaseController:
     BLOCKED = frozenset(("INTRO", "PRE_ROUND", "POWER", "FINISH"))
+    FROZEN = BLOCKED | frozenset(("GAUGE_VERDICT",))
     TOUCHES = frozenset(("on_touch_down", "on_touch_move", "on_touch_up"))
     MINIMAL_HUD = frozenset(("cadre", "calque", "pvg", "pvd"))
+    GAUGE_WINNERS = {2: 9, 3: 8, 5: 8, 6: 9}
 
     def __init__(self, media, engine, clock, rectangle_type, label_type):
         self.media, self.root, self.engine, self.clock = media, media.root, engine, clock
@@ -21,6 +23,9 @@ class JTPhaseController:
         self.cinematic_state = None
         self.media_done = False
         self.media_failed = False
+        self.gauge_verdict_state = None
+        self.gauge_verdict_done = False
+        self.gauge_verdict_failed = False
         self.paused = False
         self._timer_event = None
         self._masked = False
@@ -35,13 +40,96 @@ class JTPhaseController:
             if isinstance(obj, label_type)
         }
         self._saved_opacity = {name: obj.opacity for name, obj in self._labels.items()}
+        self._install_gauge_media_hooks()
 
     @property
     def round_active(self):
         return self.name == "ROUND_ACTIVE" and not self.paused
 
+    def _install_gauge_media_hooks(self):
+        """Use states 8/9 as media only after a decisive gauge result.
+
+        The historical engine has already applied the gauge consequence before it
+        returns to state 1. Re-entering engine state 8/9 here would apply their
+        unrelated historical orb-score impacts a second time. The media therefore
+        receives a presentation state while the engine remains frozen in state 1.
+        """
+        media = self.media
+        if getattr(media, "_jt_gauge_verdict_hooks", False):
+            return
+        original_sync_scene_state = media.sync_scene_state
+        original_scene_eos = media._on_scene_eos
+        media._jt_gauge_verdict_hooks = True
+        media._jt_original_sync_scene_state = original_sync_scene_state
+        media._jt_original_scene_eos = original_scene_eos
+
+        def sync_scene_state(indexa):
+            actual_state = self.engine["indexa"]
+            self.sync()
+            self.apply_ui()
+            presentation_state = (
+                self.gauge_verdict_state
+                if self.name == "GAUGE_VERDICT" and not self.gauge_verdict_done
+                else None
+            )
+            if presentation_state is None:
+                return original_sync_scene_state(actual_state)
+            if not media._intro_done:
+                return
+
+            media._engine_state = actual_state
+            key = media._key_for_state(presentation_state)
+            if key is None:
+                self.video_complete(presentation_state, failed=True)
+                return
+            if key != media._scene_key:
+                media._stop_scene(
+                    "gauge-verdict={}".format(presentation_state),
+                    preserve_failure=False,
+                )
+            media._scene_state = presentation_state
+            if (
+                media._scene_player is None
+                and not (
+                    key == media._scene_failed_key
+                    and media._scene_key == key
+                )
+            ):
+                media._start_scene(key, presentation_state)
+
+        def scene_eos(player, generation):
+            if (
+                self.name == "GAUGE_VERDICT"
+                and self.gauge_verdict_state in (8, 9)
+                and media._scene_state == self.gauge_verdict_state
+                and media._scene_key in ("st-win", "tr-win")
+            ):
+                if (
+                    player is not media._scene_player
+                    or generation != media._scene_generation
+                ):
+                    return
+                media._scene_eos_reached = True
+                print(
+                    "[JT-GAUGE-VERDICT] eos presentation={} engine={} key={} generation={}".format(
+                        self.gauge_verdict_state,
+                        self.engine["indexa"],
+                        media._scene_key,
+                        generation,
+                    ),
+                    flush=True,
+                )
+                self.video_complete(self.gauge_verdict_state)
+                media._stop_scene("gauge-verdict-eos", preserve_failure=False)
+                return
+            return original_scene_eos(player, generation)
+
+        media.sync_scene_state = sync_scene_state
+        media._on_scene_eos = scene_eos
+
     def sync(self):
         state = self.engine["indexa"]
+        previous_state = self.state
         if state != self.state:
             print("[JT-PHASE] engine {} -> {} anim={} car={} car2={} media={} generation={}".format(
                 self.state, state, self.engine["anim1"], self.engine["car"],
@@ -62,12 +150,38 @@ class JTPhaseController:
             self.media_done = self.media_failed = False
             self._set_phase("POWER" if state >= 21 else "FINISH")
         elif state == 0:
+            self.gauge_verdict_state = None
+            self.gauge_verdict_done = self.gauge_verdict_failed = False
             self.round_number = 0
             self.last_exchange = self.engine["_JT_EXCHANGE_ID"]
             self.round_token += self.name != "MENU"
             self.media.cancel_round_presentation()
             self._set_phase("MENU")
         elif state == 1:
+            if self.gauge_verdict_state is not None:
+                if not self.gauge_verdict_done:
+                    self._set_phase("GAUGE_VERDICT")
+                    return
+                print(
+                    "[JT-GAUGE-VERDICT] release presentation={} failed={} engine=1".format(
+                        self.gauge_verdict_state, self.gauge_verdict_failed
+                    ),
+                    flush=True,
+                )
+                self.gauge_verdict_state = None
+                self.gauge_verdict_done = self.gauge_verdict_failed = False
+            elif previous_state in self.GAUGE_WINNERS:
+                self.gauge_verdict_state = self.GAUGE_WINNERS[previous_state]
+                self.gauge_verdict_done = self.gauge_verdict_failed = False
+                print(
+                    "[JT-GAUGE-VERDICT] queue from_state={} presentation={} engine=1".format(
+                        previous_state, self.gauge_verdict_state
+                    ),
+                    flush=True,
+                )
+                self._set_phase("GAUGE_VERDICT")
+                return
+
             exchange = self.engine["_JT_EXCHANGE_ID"]
             if self.round_number == 0 or exchange != self.last_exchange:
                 self.last_exchange = exchange
@@ -101,6 +215,17 @@ class JTPhaseController:
         self.apply_ui()
 
     def video_complete(self, state, failed=False):
+        if state == self.gauge_verdict_state:
+            self.gauge_verdict_done = True
+            self.gauge_verdict_failed = failed
+            print(
+                "[JT-GAUGE-VERDICT] media-complete presentation={} failed={} engine={}".format(
+                    state, failed, self.engine["indexa"]
+                ),
+                flush=True,
+            )
+            self.clock.schedule_once(self.media._sync_current_scene, 0)
+            return
         if state == self.cinematic_state:
             self.media_done = True
             self.media_failed = failed
@@ -168,7 +293,7 @@ class JTPhaseController:
                 return self.engine["indexa"] == self.cinematic_state
             if self.name == "FINISH":
                 return self.media_failed or self.root._jt_finishing_complete_pending == self.engine["indexa"]
-        return self.name not in self.BLOCKED
+        return self.name not in self.FROZEN
 
     def apply_ui(self):
         if self.name not in self.BLOCKED:
