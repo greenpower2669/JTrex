@@ -46,19 +46,31 @@ jobs:
           python3 /tmp/apply_jt_ko_patch.py
           python3 - <<'PY'
           import importlib.util
+          import re
           from pathlib import Path
+
           spec = importlib.util.spec_from_file_location('prep', 'tools/prepare_android.py')
           prep = importlib.util.module_from_spec(spec)
           spec.loader.exec_module(prep)
+
           path = Path('buildozer.spec')
           text = path.read_text(encoding='utf-8')
-          import re
           text, c1 = re.subn(r'(?m)^version\s*=\s*[^\n]+$', f'version = {prep.VERSION}', text, count=1)
           text, c2 = re.subn(r'(?m)^android\.numeric_version\s*=\s*[^\n]+$', f'android.numeric_version = {prep.NUMERIC_VERSION}', text, count=1)
           if (c1, c2) != (1, 1):
               raise SystemExit(f'buildozer version rewrite failed: {(c1, c2)}')
           path.write_text(text, encoding='utf-8')
           print(f'[JT-KO] buildozer aligned to {prep.VERSION}/{prep.NUMERIC_VERSION}')
+
+          test_path = Path('tests/test_round_ko_contract.py')
+          test_text = test_path.read_text(encoding='utf-8')
+          old = "self.assertFalse(any(h.ns['selected'][1:7]))"
+          new = "self.assertFalse(any(h.ns['selected'][i] for i in range(1, 7)))"
+          count = test_text.count(old)
+          if count != 1:
+              raise SystemExit(f'selected reset test rewrite expected once, found {count}')
+          test_path.write_text(test_text.replace(old, new), encoding='utf-8')
+          print('[JT-KO] selected reset assertion aligned with generated dict')
           PY
 
       - name: Prepare generated historical engine
