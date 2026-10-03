@@ -66,6 +66,44 @@ class PhaseIntegration(unittest.TestCase):
                 self.assertEqual(h.ns['tapg'], 3)
                 self.assertEqual(len(Video.instances), 1)
 
+    def test_decisive_gauges_present_verdict_before_orbs(self):
+        cases = (
+            (4, 'gr', 3, 'st-win', 'Stegtrexresultstegwin.mp4'),
+            (4, 'dr', 2, 'tr-win', 'Stegtrexresulttrexwin.mp4'),
+            (7, 'gj', 5, 'st-win', 'Stegtrexresultstegwin.mp4'),
+            (7, 'dj', 6, 'tr-win', 'Stegtrexresulttrexwin.mp4'),
+        )
+        for state, button, decided_state, scene_key, filename in cases:
+            with self.subTest(state=state, button=button):
+                h = Harness(); h.state(state); h.frame()
+                h.ns['anim1'] = 1
+                h.callbacks()
+                for _ in range(3):
+                    h.touch(button)
+                self.assertEqual(h.ns['indexa'], decided_state)
+
+                for _ in range(360):
+                    h.root.mc1(.03)
+                    if h.ns['indexa'] == 1:
+                        break
+                self.assertEqual(h.ns['indexa'], 1)
+                damage_after_gauge = (h.ns['degg'], h.ns['degd'])
+
+                self.assertEqual(h.media.phases.name, 'GAUGE_VERDICT')
+                self.assertEqual(h.media._scene_key, scene_key)
+                self.assertTrue(h.media._scene_player.filename.endswith(filename))
+
+                stopped_before = dict(h.ns['colstop'])
+                h.touch('gr')
+                h.callbacks()
+                self.assertEqual(h.ns['colstop'], stopped_before)
+                self.assertEqual((h.ns['degg'], h.ns['degd']), damage_after_gauge)
+
+                h.frame(); h.eos(); h.media._sync_current_scene()
+                self.assertEqual(h.ns['indexa'], 1)
+                self.assertEqual(h.media.phases.name, 'PRE_ROUND')
+                self.assertEqual((h.ns['degg'], h.ns['degd']), damage_after_gauge)
+
     def test_power_deals_one_historical_impact_then_waits_for_eos(self):
         h = Harness(); h.start_round()
         h.ns.update(anim1=0, anim1vv=1, car=75, car2=7)
