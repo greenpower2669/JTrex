@@ -49,23 +49,10 @@ jobs:
           import re
           from pathlib import Path
 
-          # Real generated engine uses selected as a dict keyed 1..6.
-          # Keep compatibility with the list-shaped harness/older variants too.
           phase_path = Path('tools/jtrex_phase_runtime.py')
           phase = phase_path.read_text(encoding='utf-8')
-          old_reset = '''        selected = self.engine.get("selected")
-        if isinstance(selected, list):
-            for slot in range(1, min(7, len(selected))):
-                selected[slot] = False
-'''
-          new_reset = '''        selected = self.engine.get("selected")
-        if isinstance(selected, dict):
-            for slot in range(1, 7):
-                selected[slot] = False
-        elif isinstance(selected, list):
-            for slot in range(1, min(7, len(selected))):
-                selected[slot] = False
-'''
+          old_reset = "        selected = self.engine.get(\"selected\")\n        if isinstance(selected, list):\n            for slot in range(1, min(7, len(selected))):\n                selected[slot] = False\n"
+          new_reset = "        selected = self.engine.get(\"selected\")\n        if isinstance(selected, dict):\n            for slot in range(1, 7):\n                selected[slot] = False\n        elif isinstance(selected, list):\n            for slot in range(1, min(7, len(selected))):\n                selected[slot] = False\n"
           count = phase.count(old_reset)
           if count != 1:
               raise SystemExit(f'power reset source rewrite expected once, found {count}')
