@@ -649,3 +649,22 @@ Contre-correctif explicitement rejeté : forcer réellement `indexa=8/9`. Ces é
 Preuve TDD : commit test `ad62d52a5d91461cff4b54f5050a2fb2489888ca`, run #57 `37119715733`. Les quatre sous-cas attendus échouent avec `PRE_ROUND != GAUGE_VERDICT`, tandis que le reste de la suite demeure vert. Correctif `02269f17ce0c9d00ac1aff1f08838d17a9175c6d` : verdict uniquement dans la couche de présentation, moteur inchangé. Run #58 `37120140189` entièrement vert avec 19 tests et build Android réussi.
 
 Reste à valider sur téléphone : visibilité/son réel des verdicts ST/TR après rouge-bleu et après jaune, absence d'orbes intercalés, reprise PRE_ROUND/ROUND correcte et absence de conséquence doublée. Le harness CI simule Kivy/décodeur ; il ne constitue pas une preuve de rendu matériel Android.
+
+
+## 2026-10-03 — JT-ROUNDS-KO-CANON-001 — correction de compréhension
+
+Cause de confusion identifiée : les termes `ROUND`, échange d'orbes, verdict 8/9 et jauges avaient été assimilés à tort.
+
+Règle confirmée par Fab après vérification du jeu modèle :
+- un round contient plusieurs fights ;
+- seul un KO (vie à zéro) gagne le round ;
+- 8/9, rouge/bleu et jaune sont des résultats intermédiaires qui infligent des dégâts mais n'attribuent pas un round ;
+- égalité rouge/bleu : dégâts partagés + vidéo ZeroWin puis orbes ; pas de jauge jaune immédiate ;
+- `FIGHT!` jaune est une annonce séparée qui précède la jauge jaune lorsqu'elle survient après la logique d'orbes ;
+- un seul cercle visible par camp ; les deux cercles peuvent être allumés à 1-1 ; le deuxième succès d'un même camp est gardé en score interne et termine la partie ;
+- premier KO : aucun finishing final, mais reset vies/pouvoirs puis nouveau ROUND ;
+- victoire match 2-0 ou 2-1 : finishing intégral puis accueil.
+
+Preuve moteur déjà observée : l'égalité de charge applique 1 000 000 brut aux deux puis la réduction ordinaire laisse 750 000 dégâts effectifs chacun. Le test doit valider le comportement effectif sans imposer 1 000 000 final.
+
+Historique de travail : RED run #60 avait exposé l'absence de `ROUND_INTRO`, `FIGHT_INTRO`, `round_wins` et ZeroWin ; le commit d'implémentation `6cfe746bf3d62f65d69d6212d44fd9fdcb0a4276` a ensuite été construit sur une interprétation encore incorrecte où un résultat d'orbes pouvait scorer le round. Son run #62 est en échec. Il est donc **non canonique et non validé téléphone** pour la règle KO actuelle.

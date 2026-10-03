@@ -669,3 +669,21 @@ Les runs54/55 sont des candidats intermédiaires remplacés avant livraison. Auc
 - [x] Candidat produit : 📦 `JuneT-Rex-1.0.12-debug.apk`, versionCode 112, SHA-256 `fcab869588ee611947c2f262f8e0b76f4af86282342f857a04140ea34018697a`.
 - [ ] Fab téléphone : valider rouge/bleu ST puis TR, jaune ST puis TR, le jaune uniquement dans son contexte de départage, aucun passage par les orbes pour décider le verdict, aucun double impact, chronos gelés jusqu'au bon raccord.
 - [ ] Ne pas merger `main` et ne pas publier de release avant validation explicite de Fab.
+
+
+## JT-ROUNDS-KO-CANON-001 — TODO canonique avant nouveau code
+
+- [ ] Astra : relire les quatre mémoires et traiter cette section comme priorité sur les anciennes formulations de rounds.
+- [ ] Astra : auditer la branche active et le commit `6cfe746...` sans le supposer correct ; le run #62 est rouge.
+- [ ] Astra : construire un nouvel ordre de mission fondé sur **KO = seule victoire de round**.
+- [ ] Vérifier le nouvel asset Git `assets/combat/Zerowinstegtrexsurleschargedejaugejauneetbleuetrouge.mp4` et son intégration attendue.
+- [ ] Tests RED à réviser/créer : une victoire rouge/bleu n'incrémente jamais le score de round ; un verdict d'orbes 8/9 n'incrémente pas à lui seul le round ; seule la transition de vie à zéro le fait.
+- [ ] Premier KO : cercle du vainqueur ON, pas de finishing final, reset vies + pouvoirs, `ROUND 2`, rouge/bleu.
+- [ ] 1-1 : les deux cercles visibles ON, reset, `ROUND 3`.
+- [ ] 2-0 ou 2-1 : vidéo finale complète du gagnant puis accueil.
+- [ ] Début de chaque round : `ROUND N` → rouge/bleu → résultat/ZeroWin → orbes.
+- [ ] Égalité rouge/bleu : conserver l'impact effectif historique observé (750 000 chacun après réduction), ZeroWin, puis orbes ; aucun jaune direct.
+- [ ] Avant jauge jaune appelée après les orbes : annoncer `FIGHT!` jaune avec gel chronos/touches, puis libérer les contrôles jaunes.
+- [ ] Affichage : un seul cercle par camp (2 visibles total), score de rounds interne séparé.
+- [ ] Vérifier zéro double impact, zéro impact perdu, gels et protections tactiles sur toutes les transitions.
+- [ ] Après implémentation Sol : tests verts + build Android + validation téléphone Fab avant toute release/merge main.

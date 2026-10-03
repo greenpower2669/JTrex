@@ -1175,3 +1175,24 @@ Mapping de présentation : état décisif 3 (rouge/bleu ST) -> média verdict ST
 Pendant `GAUGE_VERDICT`, l'état logique réel peut déjà être `indexa=1`, mais orbes, timers et gameplay restent gelés. Le lecteur montre `Stegtrexresultstegwin.mp4` ou `Stegtrexresulttrexwin.mp4` selon la décision déjà prise. L'EOS réel libère ensuite la présentation vers le PRE_ROUND ordinaire. L'EOS n'applique aucun dégât, aucun soin, aucun débit/crédit d'énergie et ne recalcule aucun gagnant.
 
 TDD : run #57 sur le commit `ad62d52a5d91461cff4b54f5050a2fb2489888ca` a échoué exactement sur les quatre cas ST/TR rouge-bleu et ST/TR jaune parce que la phase observée restait PRE_ROUND. Correctif minimal : `02269f17ce0c9d00ac1aff1f08838d17a9175c6d`. Run Android #58 `37120140189` : 19 tests déterministes verts et APK Android produit. Cette preuve valide code/CI, pas encore le rendu et le son sur téléphone ; Fab doit valider les quatre cas réels.
+
+
+## 2026-10-03 — JT-ROUNDS-KO-CANON-001 — règle canonique Fab
+
+Cette décision remplace toute interprétation précédente où une victoire de jauge ou d'orbes attribuait directement un round.
+
+- Un **round contient plusieurs fights** et se termine **uniquement quand la vie d'un dinosaure tombe à zéro**.
+- Une victoire intermédiaire rouge/bleu, orbes, jaune ou pouvoir ne vaut jamais un round à elle seule : elle applique seulement ses conséquences historiques (dégâts/énergie/etc.).
+- Au début d'un vrai round : annoncer `ROUND N`, puis lancer la charge rouge/bleu interactive.
+- Rouge/bleu : Steg win ou T-Rex win applique son impact historique ; en égalité, les deux prennent l'impact historique puis jouer `assets/combat/Zerowinstegtrexsurleschargedejaugejauneetbleuetrouge.mp4`. Après le résultat, reprendre les orbes ; **aucun jaune immédiat**.
+- L'impact partagé historique brut de 1 000 000 est réduit par la logique historique à **750 000 dégâts effectifs chacun** dans le chemin observé ; ne pas réécrire cette valeur arbitrairement.
+- Après la phase d'orbes, lorsque la logique historique appelle la jauge jaune, afficher d'abord **`FIGHT!` en jaune** avec le même mécanisme de gel de présentation, puis lancer la jauge jaune.
+- Le mécanisme actuel de gel des orbes reste distinct du vrai numéro de round et doit être conservé.
+- Premier KO d'un match : allumer l'unique cercle visible du vainqueur, réinitialiser vies et disponibilité/utilisation des pouvoirs, annoncer `ROUND 2`, puis repartir par rouge/bleu.
+- Après le deuxième round : si le même dinosaure gagne encore, il gagne la partie ; si l'autre gagne, son cercle s'allume aussi, réinitialiser vies/pouvoirs et annoncer `ROUND 3`.
+- Le vainqueur du troisième round gagne la partie.
+- Affichage : **un seul cercle par camp, deux cercles visibles au total**. Le nombre de rounds gagnés reste suivi en interne.
+- Ne jamais lancer le finishing définitif au premier KO. La vidéo finale du vainqueur ne se joue qu'une fois la partie gagnée (2-0 ou 2-1), intégralement, puis retour accueil.
+- Maintenir protections tactiles, gel des chronos et absence de double impact pendant annonces et vidéos de résultat.
+- Le commit `6cfe746bf3d62f65d69d6212d44fd9fdcb0a4276` est une **tentative d'implémentation antérieure à cette précision KO** et son workflow #62 est en échec : ne pas le considérer comme validation de la règle canonique actuelle.
+- Pour Astra : lecture directe du dépôt public par Internet sans API GitHub est explicitement autorisée pour l'audit. Astra raisonne et construit l'ordre de mission ; Sol modifie Git, teste, build et synchronise les mémoires.

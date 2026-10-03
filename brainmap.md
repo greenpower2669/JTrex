@@ -834,3 +834,23 @@ Flux rouge/bleu : 4 -> décision tactile -> 3(ST) ou 2(TR) -> moteur historique 
 Le contrôleur média est enveloppé de façon ciblée : quand le moteur est déjà en 1 et qu'un verdict de jauge est en attente, `sync_scene_state` demande la scène 8/9 sans écrire 8/9 dans le moteur. L'EOS est protégé par identité du player et génération ; il marque le verdict terminé, arrête cette scène, puis la synchronisation normale reprend sur le vrai état moteur 1. Le menu 0 purge tout verdict en attente. Le chemin d'échec média reste borné et libère la logique sans restaurer une conséquence historique supplémentaire.
 
 Aucune formule de score, seuil, dégâts, soin, énergie, probabilité IA ou coût de pouvoir n'est modifiée. Test de régression `test_decisive_gauges_present_verdict_before_orbs` couvre les quatre directions et vérifie : bon média, moteur déjà en 1, phase gelée, dégâts inchangés pendant la présentation, puis PRE_ROUND seulement après EOS.
+
+
+## JT-ROUNDS-KO-CANON-001 — carte décisionnelle 2026-10-03
+
+`MATCH`
+→ `ROUND N` (N=1,2,3)
+→ charge rouge/bleu
+→ résultat `ST win | TR win | ZeroWin`
+→ impacts historiques seulement, **pas de point de round**
+→ orbes / fights successifs
+→ si logique orbes appelle jaune : `FIGHT!` jaune → jauge jaune → résultat/impact
+→ continuer les fights tant que ST et TR ont encore de la vie
+→ **KO = seule fin de round**
+→ incrémenter score interne du vainqueur + allumer son unique cercle visible
+→ si vainqueur atteint 2 rounds : vidéo finale complète → accueil
+→ sinon reset vies + pouvoirs → `ROUND N+1` → rouge/bleu.
+
+Contraintes : 2 cercles visibles au total (1 ST, 1 TR), score de rounds interne ; rouge/bleu égalité = ZeroWin + dégâts aux deux puis orbes, jamais jaune direct ; impact partagé observé = 750 000 effectifs chacun après réduction historique ; gels/touches/chronos protégés pendant présentations.
+
+ATTENTION : `6cfe746...` a été produit avant cette clarification KO et le run #62 échoue ; il ne doit pas servir de contrat fonctionnel.
