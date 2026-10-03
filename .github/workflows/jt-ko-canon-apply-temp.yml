@@ -26,6 +26,17 @@ jobs:
         run: |
           set -euo pipefail
           base64 -d .github/scripts/jt-ko-patch.gz.b64 | gzip -d > /tmp/apply_jt_ko_patch.py
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('/tmp/apply_jt_ko_patch.py')
+          text = path.read_text(encoding='utf-8')
+          old = "pi = replace_once(pi, \"                h = Harness(); h.state(state); h.frame()\\n\", \"                h = Harness(); h.state(state); h.finish_start(); h.frame()\\n\", 'gauge family setup')"
+          new = "pi = pi.replace(\"                h = Harness(); h.state(state); h.frame()\\n\", \"                h = Harness(); h.state(state); h.finish_start(); h.frame()\\n\")"
+          count = text.count(old)
+          if count != 1:
+              raise SystemExit(f'helper guard rewrite expected once, found {count}')
+          path.write_text(text.replace(old, new), encoding='utf-8')
+          PY
           python3 /tmp/apply_jt_ko_patch.py
 
       - name: Prepare generated historical engine
