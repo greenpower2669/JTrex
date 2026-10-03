@@ -23,18 +23,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
 
-          append_once() {
-            file="$1"
-            marker="$2"
-            if grep -Fq "$marker" "$file"; then
-              echo "$file already contains $marker"
-              return
-            fi
-            cat >> "$file"
-          }
-
-          append_once brain.md "JT-ROUNDS-KO-CANON-001" <<'EOF'
+          entries = {
+              "brain.md": r'''
 
 ## 2026-10-03 — JT-ROUNDS-KO-CANON-001 — règle canonique Fab
 
@@ -55,9 +48,8 @@ Cette décision remplace toute interprétation précédente où une victoire de 
 - Maintenir protections tactiles, gel des chronos et absence de double impact pendant annonces et vidéos de résultat.
 - Le commit `6cfe746bf3d62f65d69d6212d44fd9fdcb0a4276` est une **tentative d'implémentation antérieure à cette précision KO** et son workflow #62 est en échec : ne pas le considérer comme validation de la règle canonique actuelle.
 - Pour Astra : lecture directe du dépôt public par Internet sans API GitHub est explicitement autorisée pour l'audit. Astra raisonne et construit l'ordre de mission ; Sol modifie Git, teste, build et synchronise les mémoires.
-EOF
-
-          append_once brainmap.md "JT-ROUNDS-KO-CANON-001" <<'EOF'
+''',
+              "brainmap.md": r'''
 
 ## JT-ROUNDS-KO-CANON-001 — carte décisionnelle 2026-10-03
 
@@ -77,9 +69,8 @@ EOF
 Contraintes : 2 cercles visibles au total (1 ST, 1 TR), score de rounds interne ; rouge/bleu égalité = ZeroWin + dégâts aux deux puis orbes, jamais jaune direct ; impact partagé observé = 750 000 effectifs chacun après réduction historique ; gels/touches/chronos protégés pendant présentations.
 
 ATTENTION : `6cfe746...` a été produit avant cette clarification KO et le run #62 échoue ; il ne doit pas servir de contrat fonctionnel.
-EOF
-
-          append_once debughistorical.md "JT-ROUNDS-KO-CANON-001" <<'EOF'
+''',
+              "debughistorical.md": r'''
 
 ## 2026-10-03 — JT-ROUNDS-KO-CANON-001 — correction de compréhension
 
@@ -98,9 +89,8 @@ Règle confirmée par Fab après vérification du jeu modèle :
 Preuve moteur déjà observée : l'égalité de charge applique 1 000 000 brut aux deux puis la réduction ordinaire laisse 750 000 dégâts effectifs chacun. Le test doit valider le comportement effectif sans imposer 1 000 000 final.
 
 Historique de travail : RED run #60 avait exposé l'absence de `ROUND_INTRO`, `FIGHT_INTRO`, `round_wins` et ZeroWin ; le commit d'implémentation `6cfe746bf3d62f65d69d6212d44fd9fdcb0a4276` a ensuite été construit sur une interprétation encore incorrecte où un résultat d'orbes pouvait scorer le round. Son run #62 est en échec. Il est donc **non canonique et non validé téléphone** pour la règle KO actuelle.
-EOF
-
-          append_once todo.md "JT-ROUNDS-KO-CANON-001" <<'EOF'
+''',
+              "todo.md": r'''
 
 ## JT-ROUNDS-KO-CANON-001 — TODO canonique avant nouveau code
 
@@ -118,7 +108,19 @@ EOF
 - [ ] Affichage : un seul cercle par camp (2 visibles total), score de rounds interne séparé.
 - [ ] Vérifier zéro double impact, zéro impact perdu, gels et protections tactiles sur toutes les transitions.
 - [ ] Après implémentation Sol : tests verts + build Android + validation téléphone Fab avant toute release/merge main.
-EOF
+''',
+          }
+
+          marker = "JT-ROUNDS-KO-CANON-001"
+          for filename, addition in entries.items():
+              path = Path(filename)
+              text = path.read_text(encoding="utf-8")
+              if marker in text:
+                  print(f"{filename}: already synchronized")
+                  continue
+              path.write_text(text.rstrip() + addition + "\n", encoding="utf-8")
+              print(f"{filename}: synchronized")
+          PY
 
       - name: Commit living memories only
         shell: bash
