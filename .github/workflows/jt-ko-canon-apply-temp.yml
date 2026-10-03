@@ -1,0 +1,71 @@
+name: Apply JT KO canon
+
+on:
+  push:
+    branches:
+      - port/android-first-apk
+    paths:
+      - .github/workflows/jt-ko-canon-apply-temp.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply-and-test:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: port/android-first-apk
+          fetch-depth: 0
+
+      - name: Apply KO canonical patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          base64 -d .github/scripts/jt-ko-patch.gz.b64 | gzip -d > /tmp/apply_jt_ko_patch.py
+          python3 /tmp/apply_jt_ko_patch.py
+
+      - name: Prepare generated historical engine
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 \
+            --output /tmp/JuneTrex.zip \
+            'https://github.com/greenpower2669/JTrex/releases/download/JTrex/JuneTrex.zip'
+          cp buildozer.spec /tmp/jt-buildozer.spec
+          python3 tools/prepare_android.py \
+            --archive /tmp/JuneTrex.zip \
+            --output /tmp/jt-app \
+            --spec /tmp/jt-buildozer.spec
+
+      - name: Run deterministic generated-engine tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          JT_GENERATED_MAIN=/tmp/jt-app/main.py \
+            python3 -W ignore::SyntaxWarning -m unittest discover -s tests -v 2>&1 | tee /tmp/jt-tests.log
+          grep -E 'Ran [0-9]+ tests' /tmp/jt-tests.log | tail -1
+
+      - name: Record verification and clean temporary files
+        shell: bash
+        run: |
+          set -euo pipefail
+          ran=$(grep -E 'Ran [0-9]+ tests' /tmp/jt-tests.log | tail -1 || true)
+          printf '\nDeterministic verification: GREEN — %s — helper run %s.\n' "$ran" "$GITHUB_RUN_ID" >> diagnostics/JT-ROUNDS-KO-CANON-001.md
+          git rm -- 'assets/powers/trph-phoenix-attacka sipprimer.mp4'
+          git rm -- '.github/scripts/jt-ko-patch.gz.b64'
+          git rm -- '.github/workflows/jt-ko-canon-apply-temp.yml'
+
+      - name: Commit tested implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'greenpower2669'
+          git config user.email '80179295+greenpower2669@users.noreply.github.com'
+          git add -A
+          git status --short
+          git commit -m 'fix: implement KO-based rounds canon'
+          git push origin HEAD:port/android-first-apk
