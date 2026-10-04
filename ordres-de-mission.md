@@ -36,8 +36,31 @@ Autorisation explicite de Fab reçue pour réorganiser les mémoires, archiver l
 - SHA-256 APK : `2fbad1d19084fa7ad2c00ac81156ef0c5db0c933b679075df3ddf7fbb5f330b1`.
 - Workflow temporaire de publication retiré après succès.
 
+## JT-ASSETS-LIGHT-001 — EN ATTENTE DE LA LISTE DE FAB
+Objectif : permettre à Fab de remplacer un lot d’assets avec la méthode la plus légère possible, sans rouvrir un chantier applicatif.
+
+### Préparation déjà faite
+- Branche canonique de départ : `main`.
+- Répertoire temporaire créé : `tempreplace/`.
+- `tempreplace/.gitkeep` a été ajouté pour conserver le dossier dans Git.
+- Commit de création : `82ad4ba066d32c41028ac597fa80a7ab1698d60a`.
+
+### Méthode Assets-Light
+1. Fab fournit d’abord la liste complète des assets à remplacer et/ou les nouveaux fichiers.
+2. Tant que cette liste n’est pas reçue, ne remplacer, déplacer, renommer, supprimer ou convertir aucun asset.
+3. Tant que cette liste n’est pas reçue, ne modifier aucun code, manifeste, configuration, workflow ou mémoire supplémentaire.
+4. Tant que cette liste n’est pas reçue, ne lancer aucun build, aucune Release et aucun merge.
+5. Après réception de la liste : identifier pour chaque fichier la cible exacte et vérifier nom, chemin, format, codec/résolution si pertinent.
+6. Favoriser le remplacement au même chemin et même nom pour éviter toute modification de code.
+7. Regrouper le lot de remplacements, faire une inspection média légère, puis un seul rebuild Android du lot.
+8. Fab teste ensuite l’APK téléphone.
+9. Seulement après validation de Fab : nettoyage de `tempreplace/`, consolidation minimale des mémoires si nécessaire, puis merge/Release uniquement si Fab l’ordonne explicitement.
+
+### VERROU ACTIF
+**ATTENDRE LA LISTE / LES INSTRUCTIONS DE FAB AVANT DE FAIRE QUOI QUE CE SOIT SUR JT-ASSETS-LIGHT-001.**
+
 ## Mission suivante
-Aucune correction code ouverte par cette consolidation. La prochaine action utile est le test téléphone de `v1.0.15-main`, selon `todo.md`.
+JT-ASSETS-LIGHT-001 est la mission active, mais elle est volontairement bloquée en attente de la liste d’assets et des instructions de Fab.
 
 ## Archive
 Ancien contrat/chronologie complet : `archive/memories/2026-10-04-pre-main-merge/ordres-de-mission.md`.
