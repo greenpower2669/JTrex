@@ -1,0 +1,117 @@
+name: Apply JT ORBS PRESENTATION 002
+
+on:
+  push:
+    branches:
+      - port/android-first-apk
+    paths:
+      - '.github/workflows/apply-jt-orbs-presentation-002.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply verified orb presentation patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'greenpower2669'
+          git config user.email '80179295+greenpower2669@users.noreply.github.com'
+          git fetch origin main
+
+          mkdir -p assets/combat
+          git show 995a2eb9c35f2dfb06de587f0b6641e5dedd342c:StegTrexPlageVideoenboucledesorbes.mp4 > assets/combat/StegTrexPlageVideoenboucledesorbes.mp4
+          test "$(stat -c%s assets/combat/StegTrexPlageVideoenboucledesorbes.mp4)" = "9848376"
+          test "$(git hash-object assets/combat/StegTrexPlageVideoenboucledesorbes.mp4)" = "908d0f2bc2db08522d9924bd0909b5ef36ddd1dd"
+          sha256sum assets/combat/StegTrexPlageVideoenboucledesorbes.mp4 | tee /tmp/beach.sha256
+          ffprobe -v error -show_entries format=duration:stream=index,codec_name,codec_type,width,height,r_frame_rate -of json assets/combat/StegTrexPlageVideoenboucledesorbes.mp4 | tee /tmp/beach.ffprobe.json
+
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace_exact(path, old, new, count=1):
+              text = path.read_text(encoding='utf-8')
+              actual = text.count(old)
+              if actual != count:
+                  raise SystemExit(f'{path}: expected {count} occurrence(s), found {actual}: {old!r}')
+              path.write_text(text.replace(old, new), encoding='utf-8')
+
+          phase = Path('tools/jtrex_phase_runtime.py')
+          old = '''    def _begin_fight(self, target):
+        if target not in ("orbs", "yellow"):
+            raise ValueError("unknown FIGHT target: {}".format(target))
+        self.fight_target = target
+'''
+          new = '''    def _prepare_new_orb_exchange(self):
+        """Reset only state that belongs to a genuinely new orb exchange."""
+        self.engine["car2"] = 10
+        for name in ("stopg", "stopd"):
+            if name in self.engine:
+                self.engine[name] = False
+        colstop = self.engine.get("colstop")
+        if isinstance(colstop, dict):
+            for slot in range(1, 7):
+                colstop[slot] = False
+        elif isinstance(colstop, list):
+            for slot in range(1, min(7, len(colstop))):
+                colstop[slot] = False
+        stop_cause = self.engine.get("_JT_STOP_CAUSE")
+        if isinstance(stop_cause, dict):
+            for slot in range(1, 7):
+                stop_cause.pop(slot, None)
+        print(
+            "[JT-ORB-EXCHANGE] reset car2=10 stops=clear phase={} indexa={} car={}".format(
+                self.name, self.engine["indexa"], self.engine["car"]
+            ),
+            flush=True,
+        )
+
+    def _begin_fight(self, target):
+        if target not in ("orbs", "yellow"):
+            raise ValueError("unknown FIGHT target: {}".format(target))
+        if target == "orbs":
+            self._prepare_new_orb_exchange()
+        self.fight_target = target
+'''
+          replace_exact(phase, old, new)
+
+          media = Path('tools/jtrex_media_runtime.py')
+          replace_exact(
+              media,
+              '"file": "assets/combat/StegVsTrexvaetviensremolacebisorigune.mp4",',
+              '"file": "assets/combat/StegTrexPlageVideoenboucledesorbes.mp4",',
+          )
+
+          prep = Path('tools/prepare_android.py')
+          replace_exact(prep, 'VERSION = "1.0.13"\nNUMERIC_VERSION = "113"', 'VERSION = "1.0.14"\nNUMERIC_VERSION = "114"')
+          marker = '    "assets/combat/StegVsTrexvaetviensremolacebisorigune.mp4": 2472718,\n'
+          replacement = marker + '    "assets/combat/StegTrexPlageVideoenboucledesorbes.mp4": 9848376,\n'
+          replace_exact(prep, marker, replacement)
+
+          spec = Path('buildozer.spec')
+          replace_exact(spec, 'version = 1.0.13\nandroid.numeric_version = 113', 'version = 1.0.14\nandroid.numeric_version = 114')
+
+          workflow = Path('.github/workflows/android.yml')
+          marker = '              "StegVsTrexvaetviensremolacebisorigune.mp4",\n'
+          replacement = marker + '              "StegTrexPlageVideoenboucledesorbes.mp4",\n'
+          replace_exact(workflow, marker, replacement)
+          PY
+
+          python3 -m py_compile tools/jtrex_phase_runtime.py tools/jtrex_media_runtime.py tools/prepare_android.py tests/test_orb_presentation.py
+          grep -q 'StegTrexPlageVideoenboucledesorbes.mp4' tools/jtrex_media_runtime.py
+          grep -q 'StegTrexPlageVideoenboucledesorbes.mp4' tools/prepare_android.py
+          grep -q 'version = 1.0.14' buildozer.spec
+          grep -q 'VERSION = "1.0.14"' tools/prepare_android.py
+
+          git add tools/jtrex_phase_runtime.py tools/jtrex_media_runtime.py tools/prepare_android.py buildozer.spec .github/workflows/android.yml assets/combat/StegTrexPlageVideoenboucledesorbes.mp4
+          git diff --cached --check
+          git commit -m 'fix: reset new orb exchanges and loop beach background'
+          git push origin HEAD:port/android-first-apk
