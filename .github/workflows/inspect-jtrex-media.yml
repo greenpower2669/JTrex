@@ -110,7 +110,7 @@ jobs:
           inspect_video assets/intro/JTrexintro1.mp4 intro1
           inspect_video assets/intro/JTrexintro2.mp4 intro2
           inspect_video assets/intro/JTrexintro3.mp4 intro3
-          inspect_video assets/combat/StegVsTrexvaetviensremolace.mp4 steg-vs-trex
+          inspect_video assets/combat/StegTrexPlageVideoenboucledesorbes.mp4 orb-beach-loop
 
           ffprobe -v error -show_entries stream=codec_name,codec_type,width,height -of json \
             assets/icon/JtrexIcon.png > media-inspection/icon.json
