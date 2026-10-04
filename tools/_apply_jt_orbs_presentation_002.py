@@ -7,7 +7,7 @@ import subprocess
 REPO_FILE = "StegTrexPlageVideoenboucledesorbes.mp4"
 DEST = Path("assets/combat") / REPO_FILE
 SOURCE_COMMIT = "995a2eb9c35f2dfb06de587f0b6641e5dedd342c"
-EXPECTED_BLOB = "908d0f2bc2db08522d9924bd0909b5ef36ddd1dd"
+EXPECTED_BLOB = "908d0f2ba5ef9a9da4b1316ff28ec21e7bce04ee"
 EXPECTED_SIZE = 9848376
 
 
