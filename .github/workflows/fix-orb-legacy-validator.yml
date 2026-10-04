@@ -1,0 +1,50 @@
+name: Fix orb legacy validator
+
+on:
+  push:
+    branches:
+      - port/android-first-apk
+    paths:
+      - .github/workflows/fix-orb-legacy-validator.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch-validator:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Narrow legacy wait guard to the active wait scene
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('.github/workflows/android.yml')
+          text = path.read_text(encoding='utf-8')
+          old = '''          if "StegVsTrexvaetviensremolace" in runtime:
+              raise SystemExit("retired wait media still referenced by runtime")'''
+          new = '''          wait_scene = runtime.split('"wait": {', 1)[1].split('"charge": {', 1)[0]
+          if "StegVsTrexvaetviensremolace" in wait_scene:
+              raise SystemExit("retired wait media is still active in SCENES['wait']")'''
+          if text.count(old) != 1:
+              raise SystemExit(f'expected one stale legacy guard, found {text.count(old)}')
+          path.write_text(text.replace(old, new), encoding='utf-8')
+          PY
+          git diff --check
+
+      - name: Commit validator fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'greenpower2669'
+          git config user.email '80179295+greenpower2669@users.noreply.github.com'
+          git add .github/workflows/android.yml
+          git commit -m 'ci: allow declared legacy orb fallback'
+          git push origin HEAD:port/android-first-apk
