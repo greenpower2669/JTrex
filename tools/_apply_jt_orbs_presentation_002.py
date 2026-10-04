@@ -64,11 +64,6 @@ def main():
         "version = 1.0.13\nandroid.numeric_version = 113",
         "version = 1.0.14\nandroid.numeric_version = 114",
     )
-    marker = '              "StegVsTrexvaetviensremolacebisorigune.mp4",\n'
-    replace_exact(
-        ".github/workflows/android.yml", marker,
-        marker + '              "StegTrexPlageVideoenboucledesorbes.mp4",\n'
-    )
 
     subprocess.run([
         "python3", "-m", "py_compile",
