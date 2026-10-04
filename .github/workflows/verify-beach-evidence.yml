@@ -1,0 +1,52 @@
+name: Verify beach media evidence
+
+on:
+  push:
+    branches:
+      - port/android-first-apk
+    paths:
+      - '.github/workflows/verify-beach-evidence.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify and correct evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          FILE='assets/combat/StegTrexPlageVideoenboucledesorbes.mp4'
+          SHA256="$(sha256sum "$FILE" | awk '{print $1}')"
+          BLOB="$(git hash-object "$FILE")"
+          SIZE="$(stat -c '%s' "$FILE")"
+          echo "BEACH_SHA256=$SHA256"
+          echo "BEACH_BLOB=$BLOB"
+          echo "BEACH_SIZE=$SIZE"
+          test "$BLOB" = '908d0f2ba5ef9a9da4b1316ff28ec21e7bce04ee'
+          test "$SIZE" = '9848376'
+          python3 - "$SHA256" <<'PY'
+          import sys
+          from pathlib import Path
+          sha = sys.argv[1]
+          files = ['ordres-de-mission.md', 'brain.md', 'brainmap.md', 'debughistorical.md', 'todo.md']
+          for name in files:
+              p = Path(name)
+              text = p.read_text(encoding='utf-8')
+              text = text.replace('bcfff302eee3fb6f3067edfb47ace788fa7f6654', '908d0f2ba5ef9a9da4b1316ff28ec21e7bce04ee')
+              text = text.replace('71b1abe5498d7e9f5dfd61cccede099759c49ec0a82324e8dd76b8c054dccd9d', sha)
+              p.write_text(text, encoding='utf-8')
+          PY
+          git diff --check
+          git config user.name 'greenpower2669'
+          git config user.email '80179295+greenpower2669@users.noreply.github.com'
+          git add ordres-de-mission.md brain.md brainmap.md debughistorical.md todo.md
+          if ! git diff --cached --quiet; then
+            git commit -m 'docs: correct verified beach media evidence'
+            git push origin HEAD:port/android-first-apk
+          fi
