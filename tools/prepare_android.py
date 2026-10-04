@@ -11,8 +11,8 @@ import zipfile
 from pathlib import Path, PurePosixPath
 
 
-VERSION = "1.0.13"
-NUMERIC_VERSION = "113"
+VERSION = "1.0.14"
+NUMERIC_VERSION = "114"
 ARCHIVE_SIZE = 327992765
 ARCHIVE_SHA256 = (
     "f73ca1fd5e96ca6e11df5987bda8b2e59"
@@ -61,6 +61,7 @@ MEDIA_ASSETS = {
     "assets/finishing/trex-finishing-steg.mp4": 1834787,
     "assets/combat/Stegtrexegalitechargeboutonjaune.mp4": 1432415,
     "assets/combat/StegVsTrexvaetviensremolacebisorigune.mp4": 2472718,
+    "assets/combat/StegTrexPlageVideoenboucledesorbes.mp4": 9848376,
     "assets/combat/Stegtrexresultstegwin.mp4": 1521350,
     "assets/combat/Stegtrexresulttrexwin.mp4": 760242,
     "assets/combat/Zerowinstegtrexsurleschargedejaugejauneetbleuetrouge.mp4": 1147683,

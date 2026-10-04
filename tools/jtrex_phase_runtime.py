@@ -193,9 +193,35 @@ class JTPhaseController:
         self.media.present_round(self.round_number, self.round_token)
         print("[JT-ROUND] begin round={} score={}".format(self.round_number, self.round_wins), flush=True)
 
+    def _prepare_new_orb_exchange(self):
+        """Reset only state that belongs to a genuinely new orb exchange."""
+        self.engine["car2"] = 10
+        for name in ("stopg", "stopd"):
+            if name in self.engine:
+                self.engine[name] = False
+        colstop = self.engine.get("colstop")
+        if isinstance(colstop, dict):
+            for slot in range(1, 7):
+                colstop[slot] = False
+        elif isinstance(colstop, list):
+            for slot in range(1, min(7, len(colstop))):
+                colstop[slot] = False
+        stop_cause = self.engine.get("_JT_STOP_CAUSE")
+        if isinstance(stop_cause, dict):
+            for slot in range(1, 7):
+                stop_cause.pop(slot, None)
+        print(
+            "[JT-ORB-EXCHANGE] reset car2=10 stops=clear phase={} indexa={} car={}".format(
+                self.name, self.engine["indexa"], self.engine["car"]
+            ),
+            flush=True,
+        )
+
     def _begin_fight(self, target):
         if target not in ("orbs", "yellow"):
             raise ValueError("unknown FIGHT target: {}".format(target))
+        if target == "orbs":
+            self._prepare_new_orb_exchange()
         self.fight_target = target
         self.yellow_active = target == "yellow"
         if target == "yellow":

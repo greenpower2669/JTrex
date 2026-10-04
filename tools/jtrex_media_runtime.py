@@ -33,7 +33,7 @@ INTRO_FILES = (
 SCENES = {
     "wait": {
         "states": frozenset((1,)),
-        "file": "assets/combat/StegVsTrexvaetviensremolacebisorigune.mp4",
+        "file": "assets/combat/StegTrexPlageVideoenboucledesorbes.mp4",
         "loop": True,
     },
     "charge": {
