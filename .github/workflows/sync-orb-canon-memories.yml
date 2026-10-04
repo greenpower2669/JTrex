@@ -23,54 +23,19 @@ jobs:
         run: |
           set -euo pipefail
           python3 - <<'PY'
+          import base64
           from pathlib import Path
-
           marker = '## 2026-10-04 — JT-ORBS-PRESENTATION-002 / JT-BEACH-ENERGY-CANON-003 — CANON ACTIF'
-          common = r'''
-
-## 2026-10-04 — JT-ORBS-PRESENTATION-002 / JT-BEACH-ENERGY-CANON-003 — CANON ACTIF
-
-Cette clôture est postérieure aux variantes précédentes et fait autorité pour la suite. L'historique reste conservé pour diagnostic, mais les règles qu'elle remplace ne doivent plus être réintroduites.
-
-### Règles actives
-- Fond des orbes : exclusivement `assets/combat/StegTrexPlageVideoenboucledesorbes.mp4`, scène `wait` en boucle derrière HUD/orbes.
-- Les anciens `StegVsTrexvaetviensremolace*.mp4` sont retirés du candidat actif : ni runtime, ni manifeste, ni APK.
-- Chaque **nouvel échange d'orbes** passe par `_begin_fight("orbs")` puis `_prepare_new_orb_exchange()` : `car2=10`, `stopg=False`, `stopd=False`, six `colstop` libérés, causes d'arrêt périmées nettoyées.
-- Le retour d'un pouvoir n'est pas un nouvel échange : il conserve le temps `car2` restant et ne réarme pas artificiellement dix secondes.
-- Les présentations verdict/FIGHT restent gelées : aucun déplacement, stop IA/humain ni tick anticipé avant la reprise autorisée.
-- Chaque **nouveau vrai round après KO** remet `stamg=0` et `stamd=0`. Le réarmement `selected[1..6]` est distinct puis la disponibilité est recalculée.
-- KO, deux rounds gagnants, coûts ST `60/40/60`, TR `60/60/80`, seuil strict `energy > cost`, chaîne native et autres règles historiques restent inchangés.
-- Aucun merge `main`. Aucune Release sans autorisation explicite de Fab.
-
-### Preuves code/CI au moment de cette clôture
-- Commit fonctionnel candidat : `ed1842bae1176ffb08d76905b597a548c7ecf382` (`fix: retire superseded orb wait media`).
-- Commit d'inspection uniquement : `5a2ef44b06c8789b19d9328ca8f9081e02975fe8` ; aucune modification gameplay.
-- La vidéo plage du candidat est le même blob Git que la source `995a2eb9c35f2dfb06de587f0b6641e5dedd342c` : blob `bcfff302eee3fb6f3067edfb47ace788fa7f6654`, taille `9 848 376` octets, SHA-256 `71b1abe5498d7e9f5dfd61cccede099759c49ec0a82324e8dd76b8c054dccd9d`.
-- FFprobe validé par l'inspection CI #23 : durée `44.916667 s`, `852x480`, H.264, 24 i/s, AAC stéréo 44.1 kHz.
-- Run Android #75 : préparation, validation média/code, tests du moteur généré, phases et inspection média ont passé avant la compilation native APK. Le résultat APK final est consigné séparément après fin du build ; ne pas inventer son SHA.
-
-### Limite / retour téléphone
-La preuve CI valide le code généré et les médias ; elle ne remplace pas le test physique Android. À confirmer par Fab sur téléphone : deux fights successifs dans un même round, placement/arrêt des orbes, verdicts ST/TR/ZeroWin + FIGHT, retour pouvoir avec temps restant, KO/nouveau round avec énergie zéro, plusieurs raccords EOS de la boucle plage et audio.
-'''
-
-          files = ['ordres-de-mission.md', 'brain.md', 'brainmap.md', 'debughistorical.md', 'todo.md']
-          for name in files:
+          common = base64.b64decode('IyMgMjAyNi0xMC0wNCDigJQgSlQtT1JCUy1QUkVTRU5UQVRJT04tMDAyIC8gSlQtQkVBQ0gtRU5FUkdZLUNBTk9OLTAwMyDigJQgQ0FOT04gQUNUSUYKCkNldHRlIGNsw7R0dXJlIGVzdCBwb3N0w6lyaWV1cmUgYXV4IHZhcmlhbnRlcyBwcsOpY8OpZGVudGVzIGV0IGZhaXQgYXV0b3JpdMOpIHBvdXIgbGEgc3VpdGUuIEwnaGlzdG9yaXF1ZSByZXN0ZSBjb25zZXJ2w6kgcG91ciBkaWFnbm9zdGljLCBtYWlzIGxlcyByw6hnbGVzIHF1J2VsbGUgcmVtcGxhY2UgbmUgZG9pdmVudCBwbHVzIMOqdHJlIHLDqWludHJvZHVpdGVzLgoKIyMjIFLDqGdsZXMgYWN0aXZlcwotIEZvbmQgZGVzIG9yYmVzIDogZXhjbHVzaXZlbWVudCBgYXNzZXRzL2NvbWJhdC9TdGVnVHJleFBsYWdlVmlkZW9lbmJvdWNsZWRlc29yYmVzLm1wNGAsIHNjw6huZSBgd2FpdGAgZW4gYm91Y2xlIGRlcnJpw6hyZSBIVUQvb3JiZXMuCi0gTGVzIGFuY2llbnMgYFN0ZWdWc1RyZXh2YWV0dmllbnNyZW1vbGFjZSoubXA0YCBzb250IHJldGlyw6lzIGR1IGNhbmRpZGF0IGFjdGlmIDogbmkgcnVudGltZSwgbmkgbWFuaWZlc3RlLCBuaSBBUEsuCi0gQ2hhcXVlICoqbm91dmVsIMOpY2hhbmdlIGQnb3JiZXMqKiBwYXNzZSBwYXIgYF9iZWdpbl9maWdodCgib3JicyIpYCBwdWlzIGBfcHJlcGFyZV9uZXdfb3JiX2V4Y2hhbmdlKClgIDogYGNhcjI9MTBgLCBgc3RvcGc9RmFsc2VgLCBgc3RvcGQ9RmFsc2VgLCBzaXggYGNvbHN0b3BgIGxpYsOpcsOpcywgY2F1c2VzIGQnYXJyw6p0IHDDqXJpbcOpZXMgbmV0dG95w6llcy4KLSBMZSByZXRvdXIgZCd1biBwb3V2b2lyIG4nZXN0IHBhcyB1biBub3V2ZWwgw6ljaGFuZ2UgOiBpbCBjb25zZXJ2ZSBsZSB0ZW1wcyBgY2FyMmAgcmVzdGFudCBldCBuZSByw6lhcm1lIHBhcyBhcnRpZmljaWVsbGVtZW50IGRpeCBzZWNvbmRlcy4KLSBMZXMgcHLDqXNlbnRhdGlvbnMgdmVyZGljdC9GSUdIVCByZXN0ZW50IGdlbMOpZXMgOiBhdWN1biBkw6lwbGFjZW1lbnQsIHN0b3AgSUEvaHVtYWluIG5pIHRpY2sgYW50aWNpcMOpIGF2YW50IGxhIHJlcHJpc2UgYXV0b3Jpc8OpZS4KLSBDaGFxdWUgKipub3V2ZWF1IHZyYWkgcm91bmQgYXByw6hzIEtPKiogcmVtZXQgYHN0YW1nPTBgIGV0IGBzdGFtZD0wYC4gTGUgcsOpYXJtZW1lbnQgYHNlbGVjdGVkWzEuLjZdYCBlc3QgZGlzdGluY3QgcHVpcyBsYSBkaXNwb25pYmlsaXTDqSBlc3QgcmVjYWxjdWzDqWUuCi0gS08sIGRldXggcm91bmRzIGdhZ25hbnRzLCBjb8O7dHMgU1QgYDYwLzQwLzYwYCwgVFIgYDYwLzYwLzgwYCwgc2V1aWwgc3RyaWN0IGBlbmVyZ3kgPiBjb3N0YCwgY2hhw65uZSBuYXRpdmUgZXQgYXV0cmVzIHLDqGdsZXMgaGlzdG9yaXF1ZXMgcmVzdGVudCBpbmNoYW5nw6lzLgotIEF1Y3VuIG1lcmdlIGBtYWluYC4gQXVjdW5lIFJlbGVhc2Ugc2FucyBhdXRvcmlzYXRpb24gZXhwbGljaXRlIGRlIEZhYi4KCiMjIyBQcmV1dmVzIGNvZGUvQ0kgYXUgbW9tZW50IGRlIGNldHRlIGNsw7R0dXJlCi0gQ29tbWl0IGZvbmN0aW9ubmVsIGNhbmRpZGF0IDogYGVkMTg0MmJhZTExNzZmZmIwOGQ3NjkwNWI1OTdhNTQ4YzdlY2YzODJgIChgZml4OiByZXRpcmUgc3VwZXJzZWRlZCBvcmIgd2FpdCBtZWRpYWApLgotIENvbW1pdCBkJ2luc3BlY3Rpb24gdW5pcXVlbWVudCA6IGA1YTJlZjQ0YjA2Yzg3ODliMTlkOTMyOGNhOGY5MDgxZTAyOTc1ZmU4YCA7IGF1Y3VuZSBtb2RpZmljYXRpb24gZ2FtZXBsYXkuCi0gTGEgdmlkw6lvIHBsYWdlIGR1IGNhbmRpZGF0IGVzdCBsZSBtw6ptZSBibG9iIEdpdCBxdWUgbGEgc291cmNlIGA5OTVhMmViOWMzNWYyZGZiMDZkZTU4N2YwYjY2NDFlNWRlZGQzNDJjYCA6IGJsb2IgYGJjZmZmMzAyZWVlM2ZiNmYzMDY3ZWRmYjQ3YWNlNzg4ZmE3ZjY2NTRgLCB0YWlsbGUgYDkgODQ4IDM3NmAgb2N0ZXRzLCBTSEEtMjU2IGA3MWIxYWJlNTQ5OGQ3ZTlmNWRmZDYxY2NjZWRlMDk5NzU5YzQ5ZWMwYTgyMzI0ZThkZDc2YjhjMDU0ZGNjZDlkYC4KLSBGRnByb2JlIHZhbGlkw6kgcGFyIGwnaW5zcGVjdGlvbiBDSSAjMjMgOiBkdXLDqWUgYDQ0LjkxNjY2NyBzYCwgYDg1Mng0ODBgLCBILjI2NCwgMjQgaS9zLCBBQUMgc3TDqXLDqW8gNDQuMSBrSHouCi0gUnVuIEFuZHJvaWQgIzc1IDogcHLDqXBhcmF0aW9uLCB2YWxpZGF0aW9uIG3DqWRpYS9jb2RlLCB0ZXN0cyBkdSBtb3RldXIgZ8OpbsOpcsOpLCBwaGFzZXMgZXQgaW5zcGVjdGlvbiBtw6lkaWEgb250IHBhc3PDqSBhdmFudCBsYSBjb21waWxhdGlvbiBuYXRpdmUgQVBLLiBMZSByw6lzdWx0YXQgQVBLIGZpbmFsIGVzdCBjb25zaWduw6kgc8OpcGFyw6ltZW50IGFwcsOocyBmaW4gZHUgYnVpbGQgOyBuZSBwYXMgaW52ZW50ZXIgc29uIFNIQS4KCiMjIyBMaW1pdGUgLyByZXRvdXIgdMOpbMOpcGhvbmUKTGEgcHJldXZlIENJIHZhbGlkZSBsZSBjb2RlIGfDqW7DqXLDqSBldCBsZXMgbcOpZGlhcyA7IGVsbGUgbmUgcmVtcGxhY2UgcGFzIGxlIHRlc3QgcGh5c2lxdWUgQW5kcm9pZC4gw4AgY29uZmlybWVyIHBhciBGYWIgc3VyIHTDqWzDqXBob25lIDogZGV1eCBmaWdodHMgc3VjY2Vzc2lmcyBkYW5zIHVuIG3Dqm1lIHJvdW5kLCBwbGFjZW1lbnQvYXJyw6p0IGRlcyBvcmJlcywgdmVyZGljdHMgU1QvVFIvWmVyb1dpbiArIEZJR0hULCByZXRvdXIgcG91dm9pciBhdmVjIHRlbXBzIHJlc3RhbnQsIEtPL25vdXZlYXUgcm91bmQgYXZlYyDDqW5lcmdpZSB6w6lybywgcGx1c2lldXJzIHJhY2NvcmRzIEVPUyBkZSBsYSBib3VjbGUgcGxhZ2UgZXQgYXVkaW8uCg==').decode('utf-8')
+          todo = base64.b64decode('IyMjIFRPRE8gdMOpbMOpcGhvbmUgcmVzdGFudCDigJQgSlQtQkVBQ0gtRU5FUkdZLUNBTk9OLTAwMwotIFsgXSBJbnN0YWxsZXIgbGUgY2FuZGlkYXQgMS4wLjE1IGlzc3UgZHUgcnVuIEFuZHJvaWQgIzc1IGxvcnNxdWUgbCdhcnRlZmFjdCBlc3QgcHJvZHVpdC4KLSBbIF0gVsOpcmlmaWVyIGRldXggw6ljaGFuZ2VzIGQnb3JiZXMgc3VjY2Vzc2lmcyBkYW5zIGxlIG3Dqm1lIHJvdW5kIDogMTAgc2Vjb25kZXMgY29tcGzDqHRlcyBldCBjb21tYW5kZXMgdXRpbGlzYWJsZXMuCi0gWyBdIFbDqXJpZmllciB2ZXJkaWN0IFNUL1RSL1plcm9XaW4gLT4gRklHSFQgLT4gcGxhZ2Uvb3JiZXMgc2FucyB0aWNrIGFudGljaXDDqS4KLSBbIF0gVsOpcmlmaWVyIHJldG91ciBkJ3VuIHBvdXZvaXIgOiB0ZW1wcyBkJ29yYmVzIHJlc3RhbnQgY29uc2VydsOpLgotIFsgXSBWw6lyaWZpZXIgS08gLT4gbm91dmVhdSByb3VuZCA6IMOpbmVyZ2llIFNUL1RSIMOgIHrDqXJvIGV0IHBvdXZvaXJzIHLDqWFybcOpcyBzw6lwYXLDqW1lbnQuCi0gWyBdIFbDqXJpZmllciBwbHVzaWV1cnMgYm91Y2xlcyBkZSBsYSBwbGFnZSA6IHBhcyBkZSByZXNldCBkZSBjb21iYXQgw6AgRU9TLCByYWNjb3JkIGFjY2VwdGFibGUgZXQgYXVkaW8gY29ow6lyZW50Lgo=').decode('utf-8')
+          todo_marker = '### TODO téléphone restant — JT-BEACH-ENERGY-CANON-003'
+          for name in ['ordres-de-mission.md', 'brain.md', 'brainmap.md', 'debughistorical.md', 'todo.md']:
               path = Path(name)
               text = path.read_text(encoding='utf-8')
               if marker not in text:
-                  text = text.rstrip() + common + '\n'
-              if name == 'todo.md':
-                  todo_marker = '### TODO téléphone restant — JT-BEACH-ENERGY-CANON-003'
-                  if todo_marker not in text:
-                      text += r'''
-### TODO téléphone restant — JT-BEACH-ENERGY-CANON-003
-- [ ] Installer le candidat 1.0.15 issu du run Android #75 lorsque l'artefact est produit.
-- [ ] Vérifier deux échanges d'orbes successifs dans le même round : 10 secondes complètes et commandes utilisables.
-- [ ] Vérifier verdict ST/TR/ZeroWin -> FIGHT -> plage/orbes sans tick anticipé.
-- [ ] Vérifier retour d'un pouvoir : temps d'orbes restant conservé.
-- [ ] Vérifier KO -> nouveau round : énergie ST/TR à zéro et pouvoirs réarmés séparément.
-- [ ] Vérifier plusieurs boucles de la plage : pas de reset de combat à EOS, raccord acceptable et audio cohérent.
-'''
+                  text = text.rstrip() + '\n\n' + common.rstrip() + '\n'
+              if name == 'todo.md' and todo_marker not in text:
+                  text = text.rstrip() + '\n\n' + todo.rstrip() + '\n'
               path.write_text(text, encoding='utf-8')
           PY
           git diff --check
