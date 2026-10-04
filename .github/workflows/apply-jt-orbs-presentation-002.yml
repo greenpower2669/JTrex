@@ -19,23 +19,18 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install ffprobe
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y ffmpeg
-
-      - name: Apply patch
+      - name: Apply compatibility guard
         run: python3 tools/_apply_jt_orbs_presentation_002.py
 
-      - name: Commit verified changes
+      - name: Commit verified change
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'greenpower2669'
           git config user.email '80179295+greenpower2669@users.noreply.github.com'
-          git add tools/jtrex_phase_runtime.py tools/jtrex_media_runtime.py tools/prepare_android.py buildozer.spec assets/combat/StegTrexPlageVideoenboucledesorbes.mp4
+          git add tools/jtrex_media_runtime.py
           git diff --cached --check
-          git commit -m 'fix: reset new orb exchanges and loop beach background'
+          git commit -m 'fix: preserve legacy wait media reference'
           git push origin HEAD:port/android-first-apk
 
-# trigger without android.yml mutation
+# JT-ORBS-PRESENTATION-002 compatibility rerun
