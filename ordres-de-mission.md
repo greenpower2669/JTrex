@@ -604,3 +604,27 @@ Décision canonique téléphone, postérieure à JT-ORBS-PRESENTATION-002 :
 - les règles KO / 2 rounds gagnants / coûts 60-40-60 et 60-60-80 / seuil strict `energy > cost` restent inchangées.
 
 Cet avenant remplace explicitement les anciennes mentions « énergie préservée entre rounds » et « conserver l'ancien média wait disponible ». L'historique peut rester documenté mais ne doit plus être interprété comme règle active.
+
+## 2026-10-04 — JT-ORBS-PRESENTATION-002 / JT-BEACH-ENERGY-CANON-003 — CANON ACTIF
+
+Cette clôture est postérieure aux variantes précédentes et fait autorité pour la suite. L'historique reste conservé pour diagnostic, mais les règles qu'elle remplace ne doivent plus être réintroduites.
+
+### Règles actives
+- Fond des orbes : exclusivement `assets/combat/StegTrexPlageVideoenboucledesorbes.mp4`, scène `wait` en boucle derrière HUD/orbes.
+- Les anciens `StegVsTrexvaetviensremolace*.mp4` sont retirés du candidat actif : ni runtime, ni manifeste, ni APK.
+- Chaque **nouvel échange d'orbes** passe par `_begin_fight("orbs")` puis `_prepare_new_orb_exchange()` : `car2=10`, `stopg=False`, `stopd=False`, six `colstop` libérés, causes d'arrêt périmées nettoyées.
+- Le retour d'un pouvoir n'est pas un nouvel échange : il conserve le temps `car2` restant et ne réarme pas artificiellement dix secondes.
+- Les présentations verdict/FIGHT restent gelées : aucun déplacement, stop IA/humain ni tick anticipé avant la reprise autorisée.
+- Chaque **nouveau vrai round après KO** remet `stamg=0` et `stamd=0`. Le réarmement `selected[1..6]` est distinct puis la disponibilité est recalculée.
+- KO, deux rounds gagnants, coûts ST `60/40/60`, TR `60/60/80`, seuil strict `energy > cost`, chaîne native et autres règles historiques restent inchangés.
+- Aucun merge `main`. Aucune Release sans autorisation explicite de Fab.
+
+### Preuves code/CI au moment de cette clôture
+- Commit fonctionnel candidat : `ed1842bae1176ffb08d76905b597a548c7ecf382` (`fix: retire superseded orb wait media`).
+- Commit d'inspection uniquement : `5a2ef44b06c8789b19d9328ca8f9081e02975fe8` ; aucune modification gameplay.
+- La vidéo plage du candidat est le même blob Git que la source `995a2eb9c35f2dfb06de587f0b6641e5dedd342c` : blob `bcfff302eee3fb6f3067edfb47ace788fa7f6654`, taille `9 848 376` octets, SHA-256 `71b1abe5498d7e9f5dfd61cccede099759c49ec0a82324e8dd76b8c054dccd9d`.
+- FFprobe validé par l'inspection CI #23 : durée `44.916667 s`, `852x480`, H.264, 24 i/s, AAC stéréo 44.1 kHz.
+- Run Android #75 : préparation, validation média/code, tests du moteur généré, phases et inspection média ont passé avant la compilation native APK. Le résultat APK final est consigné séparément après fin du build ; ne pas inventer son SHA.
+
+### Limite / retour téléphone
+La preuve CI valide le code généré et les médias ; elle ne remplace pas le test physique Android. À confirmer par Fab sur téléphone : deux fights successifs dans un même round, placement/arrêt des orbes, verdicts ST/TR/ZeroWin + FIGHT, retour pouvoir avec temps restant, KO/nouveau round avec énergie zéro, plusieurs raccords EOS de la boucle plage et audio.
