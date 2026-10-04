@@ -1,4 +1,4 @@
-name: Apply JT ORBS PRESENTATION 002
+name: Apply JT Beach Energy Canon 003
 
 on:
   push:
@@ -19,8 +19,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Apply compatibility guard
-        run: python3 tools/_apply_jt_orbs_presentation_002.py
+      - name: Apply canonical beach and energy reset
+        run: python3 tools/_apply_jt_beach_energy_cleanup_003.py
 
       - name: Commit verified change
         shell: bash
@@ -28,9 +28,15 @@ jobs:
           set -euo pipefail
           git config user.name 'greenpower2669'
           git config user.email '80179295+greenpower2669@users.noreply.github.com'
-          git add tools/jtrex_media_runtime.py
+          git add -A \
+            tools/jtrex_media_runtime.py \
+            tools/jtrex_phase_runtime.py \
+            tools/prepare_android.py \
+            buildozer.spec \
+            tests/test_orb_presentation.py \
+            brain.md brainmap.md debughistorical.md todo.md ordres-de-mission.md \
+            assets/combat/StegVsTrexvaetviensremolace.mp4 \
+            assets/combat/StegVsTrexvaetviensremolacebisorigune.mp4
           git diff --cached --check
-          git commit -m 'fix: preserve legacy wait media reference'
+          git commit -m 'fix: use beach wait and reset round energy'
           git push origin HEAD:port/android-first-apk
-
-# JT-ORBS-PRESENTATION-002 compatibility rerun
