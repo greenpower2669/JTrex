@@ -1,0 +1,186 @@
+diff --git a/pythonforandroid/bootstraps/common/build/jni/application/src/start.c b/pythonforandroid/bootstraps/common/build/jni/application/src/start.c
+--- a/pythonforandroid/bootstraps/common/build/jni/application/src/start.c
++++ b/pythonforandroid/bootstraps/common/build/jni/application/src/start.c
+@@ -39,6 +39,108 @@ static void LOGP(const char *fmt, ...) {
+     __android_log_vprint(ANDROID_LOG_INFO, "python", fmt, args);
+     va_end(args);
+ }
++
++#define P4A_DIAG_MAX_EXCEPTION_DEPTH 4
++#define P4A_DIAG_MAX_WIDE_CHARS 96
++
++static void p4a_diag_log_wide_path(const char *label, const wchar_t *value) {
++    char preview[1024];
++    size_t out = 0;
++    size_t i = 0;
++    const char *safe_label = label != NULL ? label : "<null-label>";
++
++    if (value == NULL) {
++        LOGP("P4A_DIAG %s=<null>", safe_label);
++        return;
++    }
++
++    while (value[i] != L'\0' &&
++           i < P4A_DIAG_MAX_WIDE_CHARS &&
++           out + 1 < sizeof(preview)) {
++        unsigned long codepoint = (unsigned long)value[i];
++        if (codepoint >= 0x20UL && codepoint <= 0x7eUL) {
++            preview[out++] = (char)codepoint;
++        } else {
++            int written;
++            if (codepoint <= 0xffffUL) {
++                written = snprintf(
++                    preview + out, sizeof(preview) - out,
++                    "\\u%04lx", codepoint);
++            } else {
++                written = snprintf(
++                    preview + out, sizeof(preview) - out,
++                    "\\U%08lx", codepoint);
++            }
++            if (written < 0 ||
++                (size_t)written >= sizeof(preview) - out) {
++                out = sizeof(preview) - 1;
++                break;
++            }
++            out += (size_t)written;
++        }
++        i += 1;
++    }
++
++    preview[out] = '\0';
++    LOGP("P4A_DIAG %s=%s", safe_label, preview);
++    if (value[i] != L'\0') {
++        LOGP("P4A_DIAG %s=<truncated after %d wide chars>",
++             safe_label, P4A_DIAG_MAX_WIDE_CHARS);
++    }
++}
++
++#if PY_VERSION_HEX >= 0x030C0000
++static void p4a_diag_log_exception_chain(
++        const char *label, PyObject *exception, int depth) {
++    const char *safe_label = label != NULL ? label : "<null-label>";
++
++    if (exception == NULL) {
++        LOGP("P4A_DIAG exception.%s=<none>", safe_label);
++        return;
++    }
++
++    const char *type_name = "<unknown>";
++    if (Py_TYPE(exception) != NULL && Py_TYPE(exception)->tp_name != NULL) {
++        type_name = Py_TYPE(exception)->tp_name;
++    }
++
++    PyObject *message_object = PyObject_Str(exception);
++    if (message_object != NULL) {
++        const char *message = PyUnicode_AsUTF8(message_object);
++        if (message != NULL) {
++            LOGP("P4A_DIAG exception.%s type=%s message=%s",
++                 safe_label, type_name, message);
++        } else {
++            LOGP("P4A_DIAG exception.%s type=%s message=<utf8 unavailable>",
++                 safe_label, type_name);
++            PyErr_Clear();
++        }
++        Py_DECREF(message_object);
++    } else {
++        LOGP("P4A_DIAG exception.%s type=%s message=<str unavailable>",
++             safe_label, type_name);
++        PyErr_Clear();
++    }
++
++    if (depth >= P4A_DIAG_MAX_EXCEPTION_DEPTH) {
++        LOGP("P4A_DIAG exception.%s=<chain depth limit reached>",
++             safe_label);
++        return;
++    }
++
++    PyObject *cause = PyException_GetCause(exception);
++    if (cause != NULL) {
++        p4a_diag_log_exception_chain("cause", cause, depth + 1);
++        Py_DECREF(cause);
++    }
++
++    PyObject *context = PyException_GetContext(exception);
++    if (context != NULL) {
++        p4a_diag_log_exception_chain("context", context, depth + 1);
++        Py_DECREF(context);
++    }
++}
++#endif
+ 
+ static PyObject *androidembed_log(PyObject *self, PyObject *args) {
+   char *logstr = NULL;
+@@ -317,7 +419,40 @@ int main(int argc, char *argv[]) {
+ 
+             config.module_search_paths_set = 1;
+             PyWideStringList_Append(&config.module_search_paths, wchar_zip_path);
+             PyWideStringList_Append(&config.module_search_paths, wchar_modules_path);
++
++            char stdlib_zip_path[512];
++            snprintf(stdlib_zip_path, sizeof(stdlib_zip_path),
++                     "%s/stdlib.zip", python_bundle_dir);
++            struct stat stdlib_zip_stat;
++            int stdlib_zip_stat_ok =
++                stat(stdlib_zip_path, &stdlib_zip_stat) == 0;
++            int stdlib_zip_exists =
++                access(stdlib_zip_path, F_OK) == 0;
++            int stdlib_zip_readable =
++                access(stdlib_zip_path, R_OK) == 0;
++
++            LOGP("P4A_DIAG python.version=%s", Py_GetVersion());
++            LOGP("P4A_DIAG stdlib.zip.path=%s", stdlib_zip_path);
++            LOGP("P4A_DIAG stdlib.zip exists=%d readable=%d stat_ok=%d size=%lld",
++                 stdlib_zip_exists, stdlib_zip_readable,
++                 stdlib_zip_stat_ok,
++                 stdlib_zip_stat_ok ?
++                     (long long)stdlib_zip_stat.st_size : -1LL);
++            LOGP("P4A_DIAG module_search_paths.length=%zd",
++                 config.module_search_paths.length);
++            Py_ssize_t p4a_diag_path_index;
++            for (p4a_diag_path_index = 0;
++                 p4a_diag_path_index < config.module_search_paths.length &&
++                 p4a_diag_path_index < 8;
++                 p4a_diag_path_index++) {
++                char path_label[64];
++                snprintf(path_label, sizeof(path_label),
++                         "module_search_paths[%zd]", p4a_diag_path_index);
++                p4a_diag_log_wide_path(
++                    path_label,
++                    config.module_search_paths.items[p4a_diag_path_index]);
++            }
+         #else
+             char paths[512];
+             snprintf(paths, 512, "%s/stdlib.zip:%s/modules", python_bundle_dir, python_bundle_dir);
+@@ -336,8 +471,31 @@ int main(int argc, char *argv[]) {
+ #if PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= P4A_MIN_VER
+     PyStatus status = Py_InitializeFromConfig(&config);
+     if (PyStatus_Exception(status)) {
++        PyObject *raised_exception = NULL;
++        #if PY_VERSION_HEX >= 0x030C0000
++        raised_exception = PyErr_GetRaisedException();
++        #endif
++
+         LOGP("Python initialization failed:");
+-        LOGP(status.err_msg);
++        LOGP("P4A_DIAG status.func=%s",
++             status.func != NULL ? status.func : "<null>");
++        LOGP("P4A_DIAG status.err_msg=%s",
++             status.err_msg != NULL ? status.err_msg : "<null>");
++        LOGP("%s", status.err_msg != NULL ? status.err_msg : "<null>");
++
++        #if PY_VERSION_HEX >= 0x030C0000
++        if (raised_exception != NULL) {
++            p4a_diag_log_exception_chain(
++                "raised", raised_exception, 0);
++            Py_DECREF(raised_exception);
++        } else {
++            LOGP("P4A_DIAG exception.raised=<none>");
++        }
++        #else
++        LOGP("P4A_DIAG exception.raised=<unsupported Python version>");
++        #endif
++
++        return -1;
+     }
+ #else
+     Py_Initialize();

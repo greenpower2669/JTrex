@@ -6,6 +6,16 @@ on:
     paths:
       - '.github/workflows/android.yml'
       - 'buildozer.spec'
+      - 'tools/prepare_android.py'
+      - 'tools/jtrex_media_runtime.py'
+      - 'tools/jtrex_phase_runtime.py'
+      - 'tests/**'
+      - 'tools/p4a-ffmpeg-6.1.2.py'
+      - 'tools/patches/p4a-venv-clear.patch'
+      - 'tools/patches/p4a-python312-grp-api21.patch'
+      - 'tools/patches/p4a-python312-bootstrap-exception-diag.patch'
+      - 'tools/patches/p4a-python312-libpython-global.patch'
+      - 'assets/**'
   release:
     types: [published]
 
@@ -14,6 +24,7 @@ permissions:
 
 jobs:
   build-android:
+    if: github.event_name != 'release' || github.event.release.tag_name == 'JTrex'
     runs-on: ubuntu-24.04
     timeout-minutes: 180
 
@@ -21,75 +32,471 @@ jobs:
       - name: Checkout build files
         uses: actions/checkout@v4
 
-      - name: Download JuneTrex.zip from published release
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Download fixed historical archive
+        shell: bash
         run: |
           set -euo pipefail
-          ASSET_URL=$(curl -fsSL \
-            -H "Authorization: Bearer $GH_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/latest" \
-            | jq -r '.assets[] | select(.name == "JuneTrex.zip") | .url' \
-            | head -n 1)
-          if [ -z "$ASSET_URL" ] || [ "$ASSET_URL" = "null" ]; then
-            echo "JuneTrex.zip introuvable dans la dernière Release publiée" >&2
-            exit 1
-          fi
-          curl -fL --retry 3 \
-            -H "Authorization: Bearer $GH_TOKEN" \
-            -H "Accept: application/octet-stream" \
-            "$ASSET_URL" -o JuneTrex.zip
+          curl --fail --location --retry 3 \
+            --output JuneTrex.zip \
+            'https://github.com/greenpower2669/JTrex/releases/download/JTrex/JuneTrex.zip'
           test -s JuneTrex.zip
-          ls -lh JuneTrex.zip
 
-      - name: Prepare game sources
+      - name: Verify and prepare JuneTrex sources
+        shell: bash
         run: |
           set -euo pipefail
-          rm -rf payload app
-          mkdir -p payload app
-          unzip -q JuneTrex.zip -d payload
-          MAIN=$(find payload -type f -name main.py -print -quit)
-          if [ -z "$MAIN" ]; then
-            echo "main.py introuvable dans JuneTrex.zip" >&2
-            exit 1
-          fi
-          ROOT=$(dirname "$MAIN")
-          echo "Racine du jeu: $ROOT"
-          rsync -a "$ROOT"/ app/
-          cp buildozer.spec app/buildozer.spec
-          test -f app/main.py
-          du -sh app
+          python3 tools/prepare_android.py \
+            --archive JuneTrex.zip \
+            --output app \
+            --spec buildozer.spec \
+            2>&1 | tee preparation.log
+
+      - name: Inspect historical integration hooks
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY' > main-hooks.txt
+          from pathlib import Path
+
+          path = Path("app/main.py")
+          lines = path.read_text(encoding="utf-8").splitlines()
+          markers = (
+              "def on_touch_down",
+              "def mc1",
+              "def anim_1",
+              "def on_start",
+              "namea",
+              "longanim1",
+              "genrea",
+              "sona",
+              "indexa=",
+              "indexa =",
+              "jtrm0.wav",
+              "Clock.schedule_interval",
+          )
+          hits = []
+          for i, line in enumerate(lines):
+              if any(marker in line for marker in markers):
+                  hits.append(i)
+
+          emitted = set()
+          for i in hits:
+              start = max(0, i - 8)
+              end = min(len(lines), i + 18)
+              key = (start, end)
+              if key in emitted:
+                  continue
+              emitted.add(key)
+              print(f"===== lines {start + 1}-{end} =====")
+              for n in range(start, end):
+                  print(f"{n + 1:05d}: {lines[n]}")
+          PY
+
+      - name: Validate media, audio, power and score adaptation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import ast
+          import json
+          from pathlib import Path
+
+          main = Path("app/main.py").read_text(encoding="utf-8")
+          runtime = Path("app/jtrex_media_runtime.py").read_text(encoding="utf-8")
+
+          required_main = (
+              "POWER_COSTS={1:60,2:40,3:60,4:60,5:60,6:80}",
+              "def jt_power_available(slot):",
+              "energy>POWER_COSTS[slot]",
+              "jt_power_available(i)",
+              "[JT-POWER]",
+              "[JT-SCORE][STOP]",
+              "[JT-SCORE][FINAL]",
+              "[JT-SCORE][LETTER]",
+              "media_controller.sync_scene_state(indexa)",
+              "_jt_scene_video_active",
+              "_jt_set_native_scene_audio",
+              "[JT-SCENE] AUDIO_LEGACY",
+              "self._jt_media.set_legacy_catalog(namea, longanim1, genrea, sona)",
+              "self.b1s.size=(mdo,mdo) if jt_power_available(1) else (0,0)",
+              "self.b2s.size=(mdo,mdo) if jt_power_available(2) else (0,0)",
+              "self.b3s.size=(mdo,mdo) if jt_power_available(3) else (0,0)",
+              "self.b4s.size=(mdo,mdo) if jt_power_available(4) else (0,0)",
+              "self.b5s.size=(mdo,mdo) if jt_power_available(5) else (0,0)",
+              "self.b6s.size=(mdo,mdo) if jt_power_available(6) else (0,0)",
+              "_JT_ORB_TOUCH_PROTECT_UNTIL",
+              "def jt_orb_protected():",
+              "Clock.get_time() < _JT_ORB_TOUCH_PROTECT_UNTIL",
+              "if indexa==1 and not jt_orb_protected():",
+              "_jt_charge_state=indexa",
+              "_JT_ORB_TOUCH_PROTECT_UNTIL=Clock.get_time()+2.0",
+              "charge-entry freeze+protection 2.0s",
+              "if jt_orb_protected():",
+              "if car2on and indexa==1 and not jt_orb_protected():",
+              "if indexa==1 and not stopd and not stopg and not jt_orb_protected():",
+              "_jt_scene_cinematic_lock",
+              "_jt_finishing_complete_pending",
+              "_jt_finishing_video_hold",
+              "[JT-FINISH] video-complete",
+              "JT_MP4_ONLY_STATES=frozenset((1,2,3,4,5,6,7,8,9,10,11,21,22,23,24,25,26))",
+              "indexa not in JT_MP4_ONLY_STATES",
+              "def jt_hide_power_cinematic_ui(root):",
+              "def jt_hide_finishing_hud(root):",
+              "_jt_power_video_hold",
+              "self._jt_power_controls_were_hidden=True",
+              "jt_hide_finishing_hud(self)",
+          )
+          for token in required_main:
+              if token not in main:
+                  raise SystemExit(f"missing generated main token: {token}")
+
+          forbidden_main = (
+              "stamg>60 and select[i]",
+              "stamd>60 and select[i]",
+              "stamg-=60;selected[",
+              "stamd-=60;selected[",
+              "and select[i] and not selected[i]",
+              "and bonus[1] and collide",
+              "and bonus[2] and collide",
+              "and bonus[3] and collide",
+              "and bonus[4] and collide",
+              "and bonus[5] and collide",
+              "and bonus[6] and collide",
+              "babokpbd=False",
+              "_jt_touch_start_indexa",
+              "time.time()>=_JT_ORB_TOUCH_PROTECT_UNTIL",
+          )
+          for token in forbidden_main:
+              if token in main:
+                  raise SystemExit(f"stale power rule remains: {token}")
+
+          required_runtime = (
+              "StegTrexPlageVideoenboucledesorbes.mp4",
+              "Chargestegtrexchargerougebleucorrected.mp4",
+              "stsf-sanctuary-force.mp4",
+              "stls-lifestream.mp4",
+              "stta-tornado-attack.mp4",
+              "trfs-fire-storm.mp4",
+              "trph-phoenix-attack.mp4",
+              "trma-meteor-attack.mp4",
+              "steg-finishing-trex.mp4",
+              "trex-finishing-steg.mp4",
+              "Stegtrexegalitechargeboutonjaune.mp4",
+              "Stegtrexresultstegwin.mp4",
+              "Stegtrexresulttrexwin.mp4",
+              "scale = max(",
+              'if scene["loop"]:',
+              'eos_policy = "stop"',
+              'eos_policy = "pause"',
+              "AUDIO_NATIVE enabled",
+              "player.volume = 1.0",
+              "audio=pending-first-frame",
+              "JUNE T-REX — ADMIN MEDIA",
+              "MODE 20 TOUCHES : ACTIF",
+              "VIDEO ACTIVE",
+              "LEGACY / FALLBACK",
+              "_on_admin_trigger",
+              "_legacy_directory",
+              "20-tap mode enabled",
+              "ROUGE : le repertoire legacy est affiche au-dessus du voyant",
+              '"play_to_end": True',
+              "eos-complete",
+              "_jt_scene_cinematic_lock",
+              "[JT-FINISH] hold historical state until real MP4 EOS",
+              "[JT-FINISH] real MP4 EOS; release historical finish state=",
+              "self.root._jt_finishing_complete_pending = finishing_state",
+              "POWER_SCENE_KEYS",
+              "MP4_ONLY_STATES",
+              "_jt_power_video_hold = key in POWER_SCENE_KEYS",
+              "[JT-POWER-VIDEO] hold controls/timers until real MP4 EOS",
+              "[JT-WAIT] remember position=",
+              "[JT-WAIT] resume fraction=",
+              "MP4-ONLY ",
+              "20-tap mode enabled",
+          )
+          for token in required_runtime:
+              if token not in runtime:
+                  raise SystemExit(f"missing runtime token: {token}")
+          if "StegVsTrexvaetviensremolace" in runtime:
+              raise SystemExit("retired wait media still referenced by runtime")
+
+          tree = ast.parse(main, filename="app/main.py")
+          helper_names = {"jt_power_available", "jt_refresh_power_flags", "jt_orb_protected"}
+          helpers = [
+              node for node in tree.body
+              if isinstance(node, ast.FunctionDef) and node.name in helper_names
+          ]
+          if {node.name for node in helpers} != helper_names:
+              raise SystemExit("canonical power helpers missing from generated main")
+
+          class FakeClock:
+              now = 0.0
+
+              @classmethod
+              def get_time(cls):
+                  return cls.now
+
+          ns = {
+              "Clock": FakeClock,
+              "_JT_ORB_TOUCH_PROTECT_UNTIL": 0.0,
+              "POWER_COSTS": {1:60,2:40,3:60,4:60,5:60,6:80},
+              "POWER_READY_STATE": {i:False for i in range(1,7)},
+              "stamg": 0.0,
+              "stamd": 0.0,
+              "indexa": 1,
+              "selected": [False] * 7,
+              "select": [False] * 7,
+              "bonus": [False] * 7,
+              "range": range,
+          }
+          exec(compile(ast.Module(body=helpers, type_ignores=[]), "<power-helpers>", "exec"), ns)
+
+          for slot, cost in ns["POWER_COSTS"].items():
+              energy_name = "stamg" if slot < 4 else "stamd"
+              ns["selected"] = [False] * 7
+              ns["indexa"] = 1
+              ns[energy_name] = float(cost)
+              assert ns["jt_power_available"](slot) is False, (slot, cost, "exact")
+              ns[energy_name] = float(cost) + 0.5
+              assert ns["jt_power_available"](slot) is True, (slot, cost, "+0.5")
+              ns["selected"][slot] = True
+              assert ns["jt_power_available"](slot) is False, (slot, cost, "used")
+              ns["selected"][slot] = False
+              ns["indexa"] = 0
+              assert ns["jt_power_available"](slot) is False, (slot, cost, "phase")
+              ns["indexa"] = 1
+
+          FakeClock.now = 100.0
+          ns["indexa"] = 1
+          ns["_JT_ORB_TOUCH_PROTECT_UNTIL"] = 102.0
+          assert ns["jt_orb_protected"]() is True
+          FakeClock.now = 102.0
+          assert ns["jt_orb_protected"]() is False
+          FakeClock.now = 100.0
+          ns["indexa"] = 4
+          assert ns["jt_orb_protected"]() is False
+          ns["indexa"] = 1
+
+          ns["stamg"], ns["stamd"] = 40.5, 80.5
+          ns["selected"] = [False] * 7
+          ns["jt_refresh_power_flags"]()
+          assert ns["select"][2] and ns["bonus"][2]
+          assert not ns["select"][1] and not ns["bonus"][1]
+          assert ns["select"][6] and ns["bonus"][6]
+          assert main.count("jt_refresh_power_flags();print('[JT-POWER]") == 8
+          assert main.count("stamg-=cost") == 4
+          assert main.count("stamd-=cost") == 4
+          assert main.count("if indexa==1 and not jt_orb_protected():") == 6
+          assert main.count("if jt_orb_protected():") == 1
+          assert "_jt_touch_start_indexa" not in main
+          assert "time.time()>=_JT_ORB_TOUCH_PROTECT_UNTIL" not in main
+          assert "_jt_charge_state=indexa" in main
+          assert "_JT_ORB_TOUCH_PROTECT_UNTIL=Clock.get_time()+2.0" in main
+          assert "if car2on and indexa==1 and not jt_orb_protected():" in main
+          assert "if indexa==1 and not stopd and not stopg and not jt_orb_protected():" in main
+          assert main.count("if not getattr(self, '_jt_scene_video_active', False):") >= 1
+          assert "if not getattr(self, '_jt_scene_video_active', False) and indexa not in JT_MP4_ONLY_STATES:" in main
+          assert main.count("if getattr(self, '_jt_power_video_hold', False):") >= 3
+          assert "if getattr(self, '_jt_power_video_hold', False) and indexa in (1,10,11):" in main
+          assert "jt_hide_power_cinematic_ui(self)" in main
+          assert "jt_hide_finishing_hud(self)" in main
+          assert main.count("if getattr(self, '_jt_finishing_video_hold', False):") == 2
+          assert main.count("if _jt_finish_pending==indexa:") == 1
+          assert "[JT-FINISH] video-complete state={} -> menu" in main
+          power_finish_bridge = main.index("if getattr(self, '_jt_power_video_hold', False) and indexa in (1,10,11):")
+          finish_gate = main.index("if indexa in (10,11):")
+          legacy_finish_exit = main.index("if indexa==10 or indexa==11:")
+          assert power_finish_bridge < finish_gate < legacy_finish_exit
+          pending_at = runtime.index("self.root._jt_finishing_complete_pending = finishing_state")
+          stop_at = runtime.index('self._stop_scene("eos-complete", preserve_failure=False)')
+          assert pending_at < stop_at
+          assert "if finishing_state in (10, 11):\n                return" in runtime
+          assert "audio=muted" not in runtime
+          assert "set_legacy_catalog" in runtime
+          assert "Window.bind(on_touch_down=self._on_admin_trigger)" in runtime
+          assert "if not self._intro_done or not self._admin_enabled:" in runtime
+          assert "self._status_dot_color.rgba = (0.0, 1.0, 0.0, alpha)" in runtime
+          assert "self._status_dot_color.rgba = (1.0, 0.0, 0.0, alpha)" in runtime
+          assert "self._wait_resume_fraction = (position % duration) / duration" in runtime
+          assert "player.seek(resume, precise=True)" in runtime
+          assert "self.root._jt_power_video_hold = False" in runtime
+
+          preparation = json.loads(Path("app/android-preparation.json").read_text(encoding="utf-8"))
+          expected_pruned_dirs = {
+              "dinos1","chargetr","chargest","horseg2ko","egtrwin","eg2ko",
+              "stwin","trwin","finishst","finishtr",
+              "stsf","stls","stta","trfs","trph","trma",
+          }
+          assert set(preparation["pruned_legacy_image_dirs"]) == expected_pruned_dirs
+          assert preparation["pruned_legacy_image_files"] > 0
+          assert preparation["pruned_legacy_image_bytes"] > 0
+          assert preparation["mp4_only_states"] == [1,2,3,4,5,6,7,8,9,10,11,21,22,23,24,25,26]
+          image_exts = {".png",".jpg",".jpeg",".gif"}
+          sequence_prefixes = {
+              "dinos1":"dinos_",
+              "chargetr":"chargetrwin_",
+              "chargest":"chargetrwin_",
+              "horseg2ko":"chargetrwin_",
+              "egtrwin":"egtrwin_",
+              "eg2ko":"eg2ko_",
+              "stwin":"stwin_",
+              "trwin":"trwin_",
+              "finishst":"finishst_",
+              "finishtr":"finishtr_",
+              "stsf":"stsf_",
+              "stls":"stls_",
+              "stta":"stta_",
+              "trfs":"trfs_",
+              "trph":"trph_",
+              "trma":"trma_",
+          }
+          assert preparation["preserved_legacy_nonframe_images"] >= 0
+          assert preparation["preserved_legacy_nonframe_bytes"] >= 0
+          for directory, prefix in sequence_prefixes.items():
+              folder = Path("app") / directory
+              if folder.is_dir():
+                  leftovers = [
+                      path for path in folder.rglob("*")
+                      if (
+                          path.is_file()
+                          and path.suffix.lower() in image_exts
+                          and path.name.startswith(prefix)
+                      )
+                  ]
+                  assert not leftovers, (directory, leftovers[:3])
+
+          compile(main, "app/main.py", "exec")
+          compile(runtime, "app/jtrex_media_runtime.py", "exec")
+          print("JT validation: Python compiles; gauge interaction preserved, power EOS gate, beach wait, finishing HUD and MP4 frame pruning pass")
+          PY
+
+      - name: Exercise actual generated engine and presentation phases
+        shell: bash
+        run: |
+          set -euo pipefail
+          JT_GENERATED_MAIN=app/main.py python3 -W ignore::SyntaxWarning \
+            -m unittest discover -s tests -v 2>&1 | tee phase-tests.log
 
       - name: Install Buildozer system dependencies
+        shell: bash
         run: |
+          set -euo pipefail
           sudo apt-get update
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
             git zip unzip openjdk-17-jdk python3-pip python3-virtualenv \
-            autoconf libtool pkg-config zlib1g-dev libncurses5-dev \
+            python3-venv \
+            autoconf libtool libltdl-dev pkg-config zlib1g-dev libncurses5-dev \
             libncursesw5-dev libtinfo6 cmake libffi-dev libssl-dev \
-            automake autopoint gettext
+            automake autopoint gettext ffmpeg
           java -version
           python3 --version
 
-      - name: Install Buildozer
+      - name: Inspect JTrex media
+        shell: bash
         run: |
+          set -euo pipefail
+          mkdir -p media-inspection
+          : > media-inspection/media-inspection.txt
+
+          inspect_video() {
+            src="$1"
+            stem="$2"
+            echo "===== $src =====" | tee -a media-inspection/media-inspection.txt
+            sha256sum "$src" | tee -a media-inspection/media-inspection.txt
+            ffprobe -v error \
+              -show_entries format=filename,duration,size,bit_rate \
+              -show_entries stream=index,codec_name,codec_type,width,height,sample_aspect_ratio,display_aspect_ratio,r_frame_rate,avg_frame_rate,sample_rate,channels:stream_tags=rotate:stream_side_data=rotation \
+              -of json "$src" | tee -a media-inspection/media-inspection.txt
+
+            duration="$(ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 "$src")"
+            middle="$(python3 -c 'import sys; print(max(0.0, float(sys.argv[1]) / 2.0))' "$duration")"
+
+            ffmpeg -y -v error -ss 0 -i "$src" -frames:v 1 "media-inspection/$stem-first.png"
+            ffmpeg -y -v error -ss "$middle" -i "$src" -frames:v 1 "media-inspection/$stem-middle.png"
+            ffmpeg -y -v error -sseof -0.10 -i "$src" -frames:v 1 "media-inspection/$stem-last.png"
+          }
+
+          inspect_video assets/intro/JTrexintro1.mp4 intro1
+          inspect_video assets/intro/JTrexintro2.mp4 intro2
+          inspect_video assets/intro/JTrexintro3.mp4 intro3
+          inspect_video assets/combat/Chargestegtrexchargerougebleucorrected.mp4 scene-15-charge-corrected
+          inspect_video assets/combat/Stegtrexegalitechargeboutonjaune.mp4 scene-16-yellow
+          inspect_video assets/powers/stsf-sanctuary-force.mp4 power-21-stsf
+          inspect_video assets/powers/stls-lifestream.mp4 power-22-stls
+          inspect_video assets/powers/stta-tornado-attack.mp4 power-23-stta
+          inspect_video assets/powers/trfs-fire-storm.mp4 power-24-trfs
+          inspect_video assets/powers/trph-phoenix-attack.mp4 power-25-trph
+          inspect_video assets/powers/trma-meteor-attack.mp4 power-26-trma
+          inspect_video assets/finishing/steg-finishing-trex.mp4 finishing-10-steg-wins
+          inspect_video assets/finishing/trex-finishing-steg.mp4 finishing-11-trex-wins
+          inspect_video assets/combat/StegTrexPlageVideoenboucledesorbes.mp4 scene-20-wait-beach
+          inspect_video assets/combat/Stegtrexresultstegwin.mp4 scene-60-st-win
+          inspect_video assets/combat/Stegtrexresulttrexwin.mp4 scene-61-tr-win
+
+          echo "===== assets/icon/JtrexIcon.png =====" | tee -a media-inspection/media-inspection.txt
+          ffprobe -v error -show_entries stream=codec_name,codec_type,width,height -of json \
+            assets/icon/JtrexIcon.png | tee -a media-inspection/media-inspection.txt
+          cp assets/icon/JtrexIcon.png media-inspection/JtrexIcon.png
+
+      - name: Install Buildozer and record Python dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
           python3 -m venv .venv
           . .venv/bin/activate
           python -m pip install --upgrade pip wheel
           python -m pip install git+https://github.com/kivy/buildozer
           python -m pip install setuptools cython==0.29.34
           buildozer --version
-          python -m pip freeze | sort
+          python -m pip freeze | sort | tee toolchain.txt
 
-      - name: Build APK with Buildozer
-        id: build_apk
+      - name: Prepare pinned patched python-for-android
+        shell: bash
+        run: |
+          set -euo pipefail
+          P4A_DIR="app/.buildozer/android/platform/python-for-android"
+          rm -rf "$P4A_DIR"
+          mkdir -p "$(dirname "$P4A_DIR")"
+          git clone --branch master --single-branch \
+            https://github.com/kivy/python-for-android.git "$P4A_DIR"
+          git -C "$P4A_DIR" reset --hard \
+            58d21141f17c889bf8585f5665921d72028f8831
+          test "$(git -C "$P4A_DIR" rev-parse HEAD)" = \
+            "58d21141f17c889bf8585f5665921d72028f8831"
+          git -C "$P4A_DIR" apply --check \
+            "$GITHUB_WORKSPACE/tools/patches/p4a-venv-clear.patch"
+          git -C "$P4A_DIR" apply \
+            "$GITHUB_WORKSPACE/tools/patches/p4a-venv-clear.patch"
+          git -C "$P4A_DIR" apply --check \
+            "$GITHUB_WORKSPACE/tools/patches/p4a-python312-grp-api21.patch"
+          git -C "$P4A_DIR" apply \
+            "$GITHUB_WORKSPACE/tools/patches/p4a-python312-grp-api21.patch"
+          git -C "$P4A_DIR" apply --check \
+            "$GITHUB_WORKSPACE/tools/patches/p4a-python312-bootstrap-exception-diag.patch"
+          git -C "$P4A_DIR" apply \
+            "$GITHUB_WORKSPACE/tools/patches/p4a-python312-bootstrap-exception-diag.patch"
+          git -C "$P4A_DIR" apply --check \
+            "$GITHUB_WORKSPACE/tools/patches/p4a-python312-libpython-global.patch"
+          git -C "$P4A_DIR" apply \
+            "$GITHUB_WORKSPACE/tools/patches/p4a-python312-libpython-global.patch"
+          cp "$GITHUB_WORKSPACE/tools/p4a-ffmpeg-6.1.2.py" \
+            "$P4A_DIR/pythonforandroid/recipes/ffmpeg/__init__.py"
+          echo "ffmpeg_recipe_source=p4a@541fe992ea86b3902f0e0f776167555da6dbca01" \
+            >> p4a-patch.txt
+          echo "p4a_base=$(git -C "$P4A_DIR" rev-parse HEAD)" | tee p4a-patch.txt
+          echo "p4a_branch=$(git -C "$P4A_DIR" branch --show-current)" | tee -a p4a-patch.txt
+          echo "===== EFFECTIVE P4A DIFF =====" | tee -a p4a-patch.txt
+          git -C "$P4A_DIR" diff --check
+          git -C "$P4A_DIR" diff | tee -a p4a-patch.txt
+
+      - name: Build debug APK
         working-directory: app
         shell: bash
         run: |
           set -uo pipefail
           . ../.venv/bin/activate
-          echo "===== June T-Rex Android diagnostic build ====="
+          export VERSION_hostpython3=3.11.13
+          echo "VERSION_hostpython3=$VERSION_hostpython3" | tee -a ../toolchain.txt
           python --version
           java -version
           buildozer --version
@@ -97,31 +504,66 @@ jobs:
           buildozer -v android debug 2>&1 | tee ../buildozer.log
           STATUS=${PIPESTATUS[0]}
           set -e
-          echo "===== LAST 300 BUILDOZER LINES ====="
           tail -n 300 ../buildozer.log || true
           echo "buildozer_exit_code=$STATUS"
           exit "$STATUS"
 
-      - name: Upload Buildozer diagnostic log
+      - name: Record python-for-android revision
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          for directory in \
+            app/.buildozer/android/platform/python-for-android \
+            "$HOME/.buildozer/android/platform/python-for-android"
+          do
+            if [ -d "$directory/.git" ]; then
+              revision=$(git -C "$directory" rev-parse HEAD)
+              echo "python-for-android=$revision" >> toolchain.txt
+            fi
+          done
+
+      - name: Collect APK
+        if: success()
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          apks=(app/bin/*.apk)
+          if [ "${#apks[@]}" -ne 1 ]; then
+            echo "Un APK attendu, ${#apks[@]} trouvé(s)." >&2
+            exit 1
+          fi
+          mkdir -p artifacts
+          cp "${apks[0]}" artifacts/JuneT-Rex-1.0.15-debug.apk
+          cd artifacts
+          sha256sum JuneT-Rex-1.0.15-debug.apk > SHA256SUMS.txt
+
+      - name: Upload diagnostic files
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: JuneTrex-Buildozer-Log
-          path: buildozer.log
+          name: JuneTrex-Android-Diagnostics
+          path: |
+            preparation.log
+            buildozer.log
+            toolchain.txt
+            p4a-patch.txt
+            main-hooks.txt
+            phase-tests.log
+            media-inspection/
+            app/android-preparation.json
           if-no-files-found: warn
           retention-days: 7
           compression-level: 6
 
-      - name: Show APK
-        if: success()
-        run: |
-          find app/bin -maxdepth 1 -type f -print -exec ls -lh {} \;
-
-      - name: Upload APK
+      - name: Upload debug APK
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: JuneTrex-APK
-          path: app/bin/*.apk
+          name: JuneT-Rex-1.0.15-debug
+          path: |
+            artifacts/JuneT-Rex-1.0.15-debug.apk
+            artifacts/SHA256SUMS.txt
           if-no-files-found: error
           compression-level: 0

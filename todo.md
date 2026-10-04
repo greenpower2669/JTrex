@@ -1,111 +1,40 @@
-# JTrex / June T-Rex — TODO
+# JTREX — TODO VIVANT
 
-## État actuel
+Dernière consolidation : 2026-10-04
 
-Phase : RECONSTRUCTION DOCUMENTAIRE AVANT PORTAGE ANDROID.
+## Priorité immédiate
+- [ ] Finaliser la consolidation des mémoires vivantes et conserver le snapshot intégral sous `archive/memories/2026-10-04-pre-main-merge/`.
+- [ ] Merger la branche Android vers `main` avec historique préservé.
+- [ ] Vérifier le build Android déclenché par le `main` fusionné.
+- [ ] Publier une Release du `main` fusionné avec un APK dont le SHA-256 est vérifié.
 
-Référence fonctionnelle : JuneTrex/main.py de la release JTrex, SHA-256 3673fb85d12bea18276e485c5956530b4b8c0dda283cacb022e784bfe8c35231.
+## Validation téléphone post-merge
+- [ ] Installer l’APK issu du `main` fusionné.
+- [ ] Vérifier deux nouveaux échanges d’orbes successifs : 10 s complets chacun.
+- [ ] Vérifier retour d’un pouvoir : chrono restant conservé.
+- [ ] Vérifier qu’aucune transition verdict/FIGHT ne bloque la pose des orbes.
+- [ ] Vérifier KO -> nouveau round : ST = 0 et TR = 0.
+- [ ] Vérifier plusieurs boucles de la vidéo plage sans effet gameplay à l’EOS.
+- [ ] Vérifier finishings et pouvoirs jusqu’à EOS réel.
 
-Révision main servant de référence : 164d03be77c83f49e1094294f36f860ec183df68.
+## Canon à ne pas modifier pendant ces validations
+- KO réel seul = victoire de round.
+- Deux rounds gagnés = fin du match.
+- Coûts pouvoirs ST 60/40/60 ; TR 60/60/80.
+- Disponibilité stricte `energy > cost`.
+- Wait canonique = vidéo plage uniquement.
 
-Interdictions actuelles :
+## Maintenance repo à traiter seulement si elle devient utile
+Les workflows temporaires anciens `apply-jt-orbs-presentation-002.yml` et `jt-ko-impl-temp.yml` existent encore. Ne pas les supprimer automatiquement sans vérifier qu’aucune procédure active ne les utilise.
 
-- ne modifier aucun code ;
-- ne supprimer aucun bloc hérité ;
-- ne renommer ou convertir aucun média ;
-- ne corriger aucune JT-OBS ;
-- ne changer aucun réglage Buildozer/workflow ;
-- ne lancer aucun build ni déploiement dans la mission documentaire ;
-- ne rechercher/remplacer les vidéos originales qu'après nouvelle autorisation de Fab.
+## Terminé récemment
+- [x] Correctif KO canonique.
+- [x] Correctif nouveau chrono d’orbes à 10 s.
+- [x] Préservation du chrono au retour d’un pouvoir.
+- [x] Reset énergie à 0 au vrai nouveau round.
+- [x] Remplacement du wait historique par la boucle plage.
+- [x] Build Android #75 vert.
+- [x] Release `v1.0.15` publiée depuis le candidat fonctionnel `ed1842b...`.
 
-## Terminé dans cette mission documentaire
-
-- [x] Créer le cerveau fonctionnel JTrex dans brain.md.
-- [x] Cartographier classes, fonctions, variables, états, callbacks et Android dans brainmap.md.
-- [x] Consigner JT-OBS-001 à JT-OBS-026 dans debughistorical.md.
-- [x] Séparer constats, conséquences à confirmer et intentions à valider.
-- [x] Documenter le moteur air hockey comme héritage encore exécuté.
-- [x] Documenter les séries d'images et leurs indices.
-- [x] Documenter les deux chronomètres car et car2.
-- [x] Documenter l'IA et les cinq niveaux.
-- [x] Documenter les six pouvoirs et leur asymétrie.
-- [x] Documenter les confrontations rouge/bleu et jaunes.
-- [x] Ajouter six organigrammes Mermaid du comportement actuel.
-- [x] Enregistrer l'ordre de mission et l'objectif futur Android.
-
-## À valider avec Fab avant toute modification fonctionnelle
-
-- [ ] Nom complet historique de ST si une documentation utilisateur l'exige.
-- [ ] Noms complets des six pouvoirs ; ne pas les déduire de sf/ls/ta/fs/ph/ma.
-- [ ] Confirmer si le seuil S différent gauche/droite est voulu.
-- [ ] Confirmer si les asymétries d'énergie sont voulues.
-- [ ] Confirmer le comportement voulu en cas de double KO.
-- [ ] Confirmer le comportement voulu de l'IA dans les confrontations au tapotement.
-- [ ] Confirmer l'intention de conservation ou de retrait futur du moteur air hockey une fois ses dépendances prouvées.
-- [ ] Confirmer le comportement attendu du soin état 22.
-
-## Validation future du jeu de référence — seulement après autorisation
-
-- [ ] Démarrer une partie humain/humain.
-- [ ] Vérifier rouge/vert/bleu à gauche et à droite.
-- [ ] Arrêter les trois orbes d'un camp avant l'autre.
-- [ ] Laisser car2 forcer l'arrêt des six orbes.
-- [ ] Comparer un échange gagné à gauche puis à droite.
-- [ ] Obtenir une égalité et vérifier l'état jaune.
-- [ ] Faire basculer une confrontation avec une puis trois touches d'avance.
-- [ ] Vérifier la continuité d'images lors d'un changement de variante.
-- [ ] Tester séparément les six pouvoirs.
-- [ ] Comparer énergie=60 et énergie>60.
-- [ ] Vérifier qu'un pouvoir utilisé ne redevient pas disponible pendant le même combat.
-- [ ] Observer le soin avec vie très basse et vie presque pleine.
-- [ ] Tester une fin gauche, une fin droite et un double KO.
-- [ ] Vérifier le retour menu puis une deuxième partie.
-- [ ] Tester les cinq niveaux et les quatre combinaisons humain/ordinateur.
-- [ ] Observer l'ordinateur pendant les phases de tapotement.
-- [ ] Comparer le score sur plusieurs tailles de fenêtre.
-- [ ] Appuyer à l'emplacement d'une commande graphiquement masquée.
-- [ ] Vérifier pause/reprise.
-- [ ] Vérifier quel main.py le workflow Android sélectionne réellement.
-
-## Préparation future du portage Android — ne pas commencer ici
-
-Ordre recommandé après validation du comportement historique :
-
-1. figer une version de référence reproductible ;
-2. sélectionner explicitement JuneTrex/main.py dans le pipeline ;
-3. vérifier les ressources sensibles à la casse ;
-4. vérifier l'image absente charge tr win 83 sans substitution automatique ;
-5. vérifier dimensions/ratios des séries ;
-6. décider quelles dépendances du moteur air hockey sont encore nécessaires ;
-7. définir une architecture Android qui reproduit d'abord le comportement observé ;
-8. conserver les formules de score, dégâts, énergie et timers jusqu'à validation ;
-9. ajouter nom/version/icône cohérents ;
-10. produire et tester un APK installable ;
-11. produire un AAB séparé si la diffusion Play l'exige.
-
-## Médias futurs
-
-Après stabilisation du portage seulement :
-
-- [ ] Retrouver les vidéos originales.
-- [ ] Établir une table vidéo ↔ séquence d'images.
-- [ ] Comparer timing, événements d'impact, audio et embranchements.
-- [ ] Faire valider par Fab.
-- [ ] Remplacer progressivement les séries, sans perte des états 2–7 ni des bifurcations.
-
-## Prochain geste
-
-Ne rien coder à partir de cette seule reconstruction.
-
-Le prochain geste autorisable est une phase de validation d'exécution de la référence historique ou un nouvel ordre de mission explicite de Fab.
-
-
-## Audit de complétude du relais Astra
-
-- [x] Relire le relais Astra contre les cinq mémoires.
-- [x] Rendre explicites choixidh/choixidb.
-- [x] Rendre explicite le rôle temporel non normalisant de colv[7..9].
-- [x] Conserver les limites de provenance : hash main.py seulement, variantes historiques non comparées, séries non toutes vérifiées visuellement.
-- [x] Consigner les variantes/sauvegardes horseg2ko sans substitution automatique.
-- [x] Conserver les nuances du suivi tactile hérité.
-- [x] Confirmer qu'aucune correction de code ni validation d'exécution n'a été effectuée.
+## Archive
+Ancien TODO complet : `archive/memories/2026-10-04-pre-main-merge/todo.md`.

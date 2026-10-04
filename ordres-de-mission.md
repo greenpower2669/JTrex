@@ -1,161 +1,48 @@
-# JTrex / June T-Rex — Ordres de mission
+# JTREX — ORDRES DE MISSION VIVANTS
 
-## ODM-JTREX-001 — Reconstruction documentaire avant portage Android
+Dernière consolidation : 2026-10-04
 
-### Statut
+## Contrat permanent
+1. Ne jamais recoder de mémoire : relire code, tests et preuves Git avant toute modification.
+2. `ordres-de-mission.md` définit le contrat actif ; `brain.md`, `brainmap.md`, `debughistorical.md`, `todo.md` servent de mémoires vivantes spécialisées.
+3. Les mémoires vivantes restent courtes. Les chronologies, preuves anciennes, hypothèses dépassées et missions closes vont dans `archive/`.
+4. Séparer explicitement faits vérifiés, retours téléphone, hypothèses et tâches restantes.
+5. Ne pas modifier les règles canoniques historiques sans ordre explicite de Fab.
+6. Avant toute annonce de succès : preuve fraîche par CI, test ou inspection Git adaptée.
 
-MISSION DOCUMENTAIRE.
+## Canon gameplay protégé
+- 3 orbes par camp.
+- Nouvel échange d’orbes = 10 s complets.
+- Retour d’un pouvoir = temps restant conservé.
+- KO réel seul = victoire de round.
+- Deux rounds gagnés = fin du match.
+- Nouveau vrai round = énergie ST/TR remise à 0.
+- Pouvoirs ST 60/40/60 ; TR 60/60/80 ; condition stricte `énergie > coût`.
+- Wait canonique = `assets/combat/StegTrexPlageVideoenboucledesorbes.mp4` en boucle, sans conséquence gameplay à l’EOS.
 
-Cette mission crée la mémoire durable du projet. Elle ne constitue pas une autorisation de modifier le jeu.
+## Mission active — JT-MEMORY-ARCHIVE-MAIN-001
+Autorisation explicite de Fab :
+- réorganiser les mémoires vivantes ;
+- archiver les éléments historiques/supersédés sans perte ;
+- merger vers `main` ;
+- publier une Release issue du `main` fusionné.
 
-### Autorité et rôles
+### Procédure
+1. Snapshot intégral des cinq mémoires avant réduction.
+2. Réécriture des cinq fichiers vivants selon leur rôle.
+3. Vérification de l’état Git et du contenu archivé.
+4. Merge avec `main` en conservant les deux historiques de branche.
+5. Build Android depuis le `main` fusionné.
+6. Vérification de l’APK et de son SHA-256.
+7. Publication d’une Release traçable vers le `main` fusionné.
+8. Mise à jour finale des mémoires avec les preuves de merge/build/release.
 
-Fab dirige le projet et valide le comportement sur téléphone.
+## Références avant merge
+- Branche Android : `port/android-first-apk`.
+- Candidat fonctionnel : `ed1842bae1176ffb08d76905b597a548c7ecf382`.
+- Build #75 : succès.
+- Release existante avant merge : `v1.0.15`.
+- APK SHA-256 : `54f5490ccf346b3e80e3117b4cf020b24898ad89cb44e6a2bd6bf73051d99c11`.
 
-La reconstruction fonctionnelle fournie par Astra sert de source documentaire pour la transcription dans :
-
-- brain.md ;
-- brainmap.md ;
-- debughistorical.md ;
-- todo.md ;
-- ordres-de-mission.md.
-
-Le travail doit respecter l'esprit FAB Copilot et le protocole FAB Human Sol Slaves : préserver l'intention de Fab, transmettre une connaissance vérifiable, distinguer ce qui est observé de ce qui est supposé, et ne pas transformer une mission documentaire en correction autonome.
-
-### Références
-
-Dépôt :
-https://github.com/greenpower2669/JTrex
-
-Révision main :
-164d03be77c83f49e1094294f36f860ec183df68
-
-Release :
-https://github.com/greenpower2669/JTrex/releases/tag/JTrex
-
-Archive :
-https://github.com/greenpower2669/JTrex/releases/download/JTrex/JuneTrex.zip
-
-Programme de référence :
-JuneTrex/main.py
-
-SHA-256 :
-3673fb85d12bea18276e485c5956530b4b8c0dda283cacb022e784bfe8c35231
-
-Le main.py de « June air hockey » n'est pas la référence JTrex.
-
-### Objectif fonctionnel à mémoriser
-
-JTrex est un jeu d'adresse compétitif à deux camps avec :
-
-- trois orbes rouge/vert/bleu par camp ;
-- arrêt des orbes par trois boutons de couleur ;
-- comparaison de précision ;
-- séquences de dinosaures image par image ;
-- confrontations spéciales au tapotement ;
-- vie ;
-- énergie ;
-- trois pouvoirs par camp ;
-- modes humain/ordinateur indépendants ;
-- cinq niveaux indépendants ;
-- deux chronomètres ;
-- états de fin et retour menu.
-
-La référence exacte des règles et formules est dans brain.md.
-La localisation technique de ces règles est dans brainmap.md.
-
-### Objectif futur
-
-Préparer à terme un portage Android propre et installable.
-
-Ce futur portage devra d'abord reproduire le comportement historique validé avant toute simplification.
-
-Livraison future attendue, lorsque Fab l'autorisera :
-
-- nom/version cohérents ;
-- icône Android ;
-- APK installable 📦 ;
-- AAB séparé si nécessaire pour la diffusion 📦.
-
-### Souhait futur médias
-
-Fab souhaite retrouver les vidéos originales et remplacer plus tard les séries d'images par de vraies vidéos.
-
-Ce souhait est reporté.
-
-Interdictions actuelles :
-
-- ne pas rechercher activement ces vidéos dans cette mission ;
-- ne pas convertir les JPEG en vidéos ;
-- ne pas supprimer les séries ;
-- ne pas modifier les timings ;
-- ne pas fusionner des embranchements ;
-- ne pas inventer une vidéo de remplacement.
-
-### Interdiction de coder
-
-Pendant ODM-JTREX-001 :
-
-- aucune modification de main.py ;
-- aucune modification de main.kv ;
-- aucune modification de buildozer.spec ;
-- aucune modification du workflow Android ;
-- aucune modification de ressource ;
-- aucune correction des observations JT-OBS ;
-- aucun build ;
-- aucun déploiement ;
-- aucune publication de release.
-
-Seuls les fichiers documentaires du cerveau du projet peuvent être créés ou mis à jour.
-
-### Mémoire obligatoire
-
-brain.md doit décrire le jeu et ses règles.
-
-brainmap.md doit expliquer où ces règles se trouvent et comment elles s'enchaînent techniquement.
-
-debughistorical.md doit conserver les anomalies et incertitudes sans les déclarer corrigées.
-
-todo.md doit décrire l'état réel, les validations à faire et le prochain geste.
-
-Aucune mémoire antérieure ne doit être écrasée silencieusement lors des mises à jour futures. En cas de divergence de référence, conserver l'historique et signaler explicitement la nouvelle source.
-
-### Organigrammes obligatoires
-
-La brainmap doit conserver des diagrammes distincts pour :
-
-1. menu et cycle complet ;
-2. arrêt des orbes et comparaison ;
-3. embranchements rouge/bleu ;
-4. embranchements jaunes ;
-5. disponibilité/utilisation/effet des pouvoirs ;
-6. fin de combat et retour menu.
-
-Ces schémas doivent représenter le programme actuel, y compris ses exceptions. Ils ne doivent pas remplacer la réalité par un comportement idéal.
-
-### Registre d'observations
-
-JT-OBS-001 à JT-OBS-026 sont des observations documentaires.
-
-Certaines asymétries peuvent être volontaires. Une observation ne devient un bug à corriger qu'après validation de Fab.
-
-### Passation
-
-À la fin de cette mission documentaire :
-
-- le cerveau fonctionnel existe ;
-- la cartographie technique existe ;
-- le registre des observations existe ;
-- le TODO sépare documentation, validation et portage futur ;
-- aucun code n'a été touché.
-
-Toute phase suivante exige un nouvel ordre explicite de Fab.
-
-
-### Contrôle de complétude documentaire
-
-Après création initiale des mémoires, une relecture croisée avec le relais Astra a été effectuée pour vérifier la fidélité de transcription.
-
-Les détails qui restaient implicites ont été rendus explicites dans brain.md et brainmap.md, notamment le suivi tactile choixidh/choixidb, colv[7..9], les limites exactes du hash et de l'inventaire, les variantes de ressources horseg2ko et certaines nuances de l'héritage tactile.
-
-Ce contrôle reste strictement documentaire : aucun code, média, build, workflow ou comportement n'a été modifié.
+## Archive
+Ancien contrat/chronologie complet : `archive/memories/2026-10-04-pre-main-merge/ordres-de-mission.md`.

@@ -1,0 +1,25 @@
+name: JT KO Implementation Temp
+
+on:
+  push:
+    branches:
+      - port/android-first-apk
+    paths:
+      - .github/workflows/jt-ko-impl-temp.yml
+
+permissions:
+  contents: write
+
+jobs:
+  implement:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: port/android-first-apk
+          fetch-depth: 1
+      - name: Apply KO round contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo 'CmltcG9ydCB0ZXh0d3JhcAo=' >/tmp/placeholder

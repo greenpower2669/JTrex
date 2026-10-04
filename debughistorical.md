@@ -1,187 +1,50 @@
-# JTrex / June T-Rex — Debug historical
+# JTREX — DEBUG HISTORICAL VIVANT
 
-## Statut
+Dernière consolidation : 2026-10-04
 
-Registre documentaire issu d'une analyse statique de JuneTrex/main.py et de ses ressources.
+## Rôle
+Ce fichier ne garde que les incidents encore utiles au diagnostic courant et les dernières résolutions structurantes. L’historique intégral est archivé dans `archive/memories/2026-10-04-pre-main-merge/debughistorical.md`.
 
-Aucune observation ci-dessous n'a été corrigée pendant la mission. Le jeu n'a pas été exécuté ; les manifestations à l'écran restent à confirmer lorsque Fab autorisera une phase de validation.
+## Résolus et à ne pas rouvrir sans preuve
+### Bootstrap Android / zlib
+L’ancien crash Android où `zlib.cpython-312.so` échouait sur `PyExc_MemoryError` a été corrigé dans la chaîne native. Ne pas revenir aux anciens contournements sans reproduire le défaut sur un build récent.
 
-Statuts utilisés :
+### KO et rounds
+- Les verdicts de jauges ne comptent pas comme victoire de round.
+- Seul un KO réel incrémente le score de round.
+- Deux rounds gagnés terminent le match.
+- Préserver ce contrat lors de toute modification de phase.
 
-- CONSTAT STATIQUE : directement lisible dans le code, la configuration ou l'inventaire ;
-- CONSÉQUENCE À CONFIRMER : effet probable qui demande une exécution ;
-- INTENTION À VALIDER : asymétrie ou comportement qui peut être volontaire.
+### Orbes / chrono
+Le correctif canonique de `JT-ORBS-PRESENTATION-002` prépare chaque véritable nouvel échange avec :
+- `car2 = 10` ;
+- arrêts gauche/droite effacés ;
+- `colstop` effacé ;
+- causes d’arrêt obsolètes retirées.
 
-Référence :
-main 164d03be77c83f49e1094294f36f860ec183df68
-main.py SHA-256 3673fb85d12bea18276e485c5956530b4b8c0dda283cacb022e784bfe8c35231
+Le retour d’un pouvoir n’est pas un nouvel échange et ne doit pas réinitialiser `car2`.
 
-## Observations JT-OBS
+### Énergie entre rounds
+Un vrai nouveau round après KO remet `stamg` et `stamd` à 0.
 
-### JT-OBS-001 — Casse a.png / A.png
-Statut : CONSTAT STATIQUE.
-Source : chargement de ressource actif vs inventaire de JuneTrex.
-Le code demande a.png tandis que l'archive contient A.png. Risque sur systèmes sensibles à la casse.
+### Média d’attente
+Le wait canonique est `assets/combat/StegTrexPlageVideoenboucledesorbes.mp4`. L’ancien `StegVsTrexvaetviensremolace*` ne doit plus être référencé par le runtime ni requis par le manifest.
 
-### JT-OBS-002 — Casse boutbleu0.png / boutBleu0.png
-Statut : CONSTAT STATIQUE.
-Source : chargement de ressource actif vs inventaire.
-Même risque de casse.
+## Preuves récentes
+- Commit fonctionnel : `ed1842bae1176ffb08d76905b597a548c7ecf382`.
+- Build Android #75 : succès.
+- Inspection média plage : H.264 852x480, 24 fps, AAC 44.1 kHz, durée ~44.916667 s.
+- SHA-256 vidéo plage : `71b1abe5498d7e9f5dfd61cccede099759c49ec0a82324e8dd76b8c054dccd9d`.
+- Git blob vidéo plage : `908d0f2ba5ef9a9da4b1316ff28ec21e7bce04ee`.
+- Release `v1.0.15` APK SHA-256 : `54f5490ccf346b3e80e3117b4cf020b24898ad89cb44e6a2bd6bf73051d99c11`.
 
-### JT-OBS-003 — horseg2ko/chargetrwin_83.jpeg absent
-Statut : CONSTAT STATIQUE.
-Source : série horseg2ko et inventaire.
-Ne pas renommer automatiquement un fichier voisin sans comparaison visuelle.
+## Vérifications téléphone à refaire si régression signalée
+1. deux échanges d’orbes successifs : 10 s chacun ;
+2. retour pouvoir : temps restant conservé ;
+3. transition verdict/FIGHT : aucune saisie orbe bloquée ;
+4. KO -> round suivant : énergie ST/TR = 0 ;
+5. boucle plage : au moins plusieurs EOS sans saut de logique gameplay ;
+6. finishing : lecture complète lorsque le canon exige un finishing.
 
-### JT-OBS-004 — Score dépendant des coordonnées de fenêtre
-Statut : CONSTAT STATIQUE.
-Source : colpts.
-Le score utilise les écarts verticaux en coordonnées de fenêtre avec des constantes fixes. L'indépendance à la résolution n'est pas démontrée.
-
-### JT-OBS-005 — Pas des orbes non normalisé au temps
-Statut : CONSTAT STATIQUE.
-Source : colvv.
-haut[i] est incrémenté par sens*pas à chaque callback, sans multiplication par delta temps.
-
-### JT-OBS-006 — Zones tactiles actives malgré rectangle masqué
-Statut : CONSTAT STATIQUE avec CONSÉQUENCE À CONFIRMER.
-Source : on_touch_down + représentation par Rectangle.
-La taille/visibilité graphique n'est pas une garde tactile automatique.
-
-### JT-OBS-007 — Menu/IA/niveaux sans garde générale de phase
-Statut : CONSTAT STATIQUE avec CONSÉQUENCE À CONFIRMER.
-Source : tests tactiles indépendants dans on_touch_down.
-Vérifier les effets d'appuis hors menu.
-
-### JT-OBS-008 — Lettres et minima ex æquo
-Statut : CONSTAT STATIQUE avec CONSÉQUENCE À CONFIRMER.
-Source : asb.
-Les comparaisons strictes du minimum peuvent ne sélectionner aucun des trois écarts en cas d'ex æquo.
-
-### JT-OBS-009 — Seuil S asymétrique
-Statut : CONSTAT STATIQUE / INTENTION À VALIDER.
-Source : asb.
-S gauche <5,6 ; S droite <8.
-
-### JT-OBS-010 — Pas de nouvelle lettre pour valeur >=320
-Statut : CONSTAT STATIQUE.
-Source : asb.
-Aucune branche supérieure identifiée après F<320.
-
-### JT-OBS-011 — Énergie : branche supplémentaire asymétrique
-Statut : CONSTAT STATIQUE / INTENTION À VALIDER.
-Source : fin de anim_1.
-La branche if ΔD<ΔG ... else ... n'est pas symétrique pour toutes les variations, notamment égales.
-
-### JT-OBS-012 — Soin état 22 et références de dégâts
-Statut : CONSTAT STATIQUE avec CONSÉQUENCE À CONFIRMER.
-Source : anim_1.
-Le soin écarte une partie du bloc commun et ne met pas degg0/degd0 à jour comme les autres états. Vérifier réinterprétation ultérieure de la variation négative et effet sur énergie.
-
-### JT-OBS-013 — Pouvoirs héritent anim1 / anim1vv
-Statut : CONSTAT STATIQUE avec CONSÉQUENCE À CONFIRMER.
-Source : on_touch_down/carupdate vers états 21..26.
-Le changement d'indexa n'est pas accompagné d'un reset explicite de l'indice/sens.
-
-### JT-OBS-014 — Ancien préfixe + nouvel indice possible
-Statut : CONSTAT STATIQUE avec CONSÉQUENCE À CONFIRMER.
-Source : ordre des opérations de anim_1.
-Le préfixe est mémorisé avant certaines transitions de indexa/anim1.
-
-### JT-OBS-015 — Frames logiques non affichées lors de retard
-Statut : CONSTAT STATIQUE.
-Source : mc1.
-anim_1(False) avance la logique sans changer l'image.
-
-### JT-OBS-016 — Premier/troisième pouvoirs droits visuellement inversés
-Statut : CONSTAT STATIQUE avec CONSÉQUENCE À CONFIRMER.
-Source : création des rectangles vs affbt.
-Création associe premier à trfs et troisième à trma ; affbt emploie ensuite trma pour le premier et trfs pour le troisième.
-
-### JT-OBS-017 — Faute babokpbd / babokepbd
-Statut : CONSTAT STATIQUE.
-Source : réinitialisation côté droit.
-Nom incohérent à vérifier en exécution.
-
-### JT-OBS-018 — Mort simultanée termine sur état 10
-Statut : CONSTAT STATIQUE avec CONSÉQUENCE À CONFIRMER.
-Source : mc1.
-Les deux if de fin sont indépendants et les comp sont calculés avant ; la branche compd<1 écrase finalement l'état précédent.
-
-### JT-OBS-019 — Retour menu avant dernières images finales
-Statut : CONSTAT STATIQUE.
-Source : états 10/11.
-Retour à longanim1[indexa]-3.
-
-### JT-OBS-020 — Reset de partie distribué
-Statut : CONSTAT STATIQUE.
-Source : affbt, carupdate, colvv, anim_1 et autres.
-Il n'existe pas un reset transactionnel unique de tout l'état.
-
-### JT-OBS-021 — Visibilité des jauges pilotée par callbacks distincts
-Statut : CONSTAT STATIQUE avec CONSÉQUENCE À CONFIRMER.
-Source : affpv et affbt.
-Vérifier les états transitoires ou clignotements inattendus.
-
-### JT-OBS-022 — Moteur air hockey encore exécuté
-Statut : CONSTAT STATIQUE.
-Source : mainApp.on_start.
-screen_up, ga, da et pter restent planifiés alors que les éléments correspondants peuvent être masqués.
-
-### JT-OBS-023 — Workflow Android peut choisir le mauvais main.py
-Statut : CONSTAT STATIQUE.
-Source : .github/workflows/android.yml + inventaire de l'archive.
-Le workflow cherche le premier main.py ; June air hockey et plusieurs variantes en contiennent.
-
-### JT-OBS-024 — Taille de fenêtre mémorisée sans recalcul global
-Statut : CONSTAT STATIQUE avec CONSÉQUENCE À CONFIRMER.
-Source : initialisation Window/xmax/ymax.
-Vérifier rotation, redimensionnement ou reprise selon plateforme.
-
-### JT-OBS-025 — Audio chargé sans garde systématique
-Statut : CONSTAT STATIQUE.
-Source : SoundLoader.load puis .play() dans plusieurs chemins.
-Un échec de chargement n'est pas toujours testé.
-
-### JT-OBS-026 — Aucun tapotement automatique IA trouvé
-Statut : CONSTAT STATIQUE.
-Source : parcours du main.py.
-Les incréments tapg/tapd identifiés se trouvent dans les commandes tactiles ; aucune stratégie de tap automatisé n'a été trouvée.
-
-## Observations supplémentaires liées au moteur hérité
-
-### JT-LEGACY-001 — tantemps et temps nul
-Statut : CONSTAT STATIQUE avec CONSÉQUENCE À CONFIRMER.
-Pas de garde explicite identifiée avant division par l'intervalle temporel.
-
-### JT-LEGACY-002 — vectoriser et axe identique
-Statut : CONSTAT STATIQUE.
-Retour (0,0) lorsque l'un des axes est exactement identique dans le chemin observé.
-
-### JT-LEGACY-003 — référence musicale m
-Statut : CONSTAT STATIQUE.
-Une branche historique référence m alors que sa création est commentée.
-
-### JT-LEGACY-004 — pbt reste False
-Statut : CONSTAT STATIQUE.
-Le drapeau pbt est forcé False dans les deux branches du test observé ; les anciennes branches de but exigeant True ne devraient pas être atteintes par ce chemin.
-
-## Règle de traitement
-
-Aucune entrée de ce fichier n'est une autorisation de correction. Avant de modifier le programme :
-
-1. reproduire si possible sur la version de référence ;
-2. distinguer bug, asymétrie volontaire et dette historique ;
-3. faire valider l'intention par Fab ;
-4. préparer un ordre de mission séparé ;
-5. préserver le gameplay historique tant que la correction n'est pas explicitement autorisée.
-
-
-## Audit de complétude documentaire
-
-### JT-DOC-001 — Vérification de transcription du relais Astra
-Statut : DOCUMENTATION COMPLÉTÉE.
-
-Une relecture croisée du relais Astra et des cinq mémoires a identifié quelques détails qui étaient seulement implicites dans la première transcription : rôle de choixidh/choixidb, colv[7..9], portée du hash, limites de l'inventaire visuel, variantes horseg2ko et nuances du suivi tactile hérité.
-
-Ces éléments ont été ajoutés à brain.md et brainmap.md. Cette opération n'est pas une validation en exécution et ne transforme aucune JT-OBS en correction.
+## Règle de diagnostic
+Avant de corriger : reproduire, identifier la phase, le média actif, `car2`, `stamg/stamd`, états stop et cause de transition. Ne jamais déduire un correctif uniquement d’une mémoire historique.

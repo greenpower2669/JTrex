@@ -1,0 +1,14 @@
+--- a/pythonforandroid/recipes/python3/__init__.py
++++ b/pythonforandroid/recipes/python3/__init__.py
+@@ -260,6 +260,11 @@
+             warning('lld not found, linking without it. '
+                     'Consider installing lld if linker errors occur.')
+ 
++        if self.version == '3.12.14' and self.ctx.ndk_api < 26:
++            # CPython gh-114875: grp requires Android API 26 functions.
++            env['py_cv_module_grp'] = 'n/a'
++            info('JT-MEDIA-001: target grp unavailable below Android API 26')
++
+         return env
+ 
+     def set_libs_flags(self, env, arch):
