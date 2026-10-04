@@ -22,9 +22,7 @@ def append_memory(path):
     text = path.read_text(encoding="utf-8")
     if MARK in text:
         return
-    block = f"""
-
-## {MARK} — avenant Fab 2026-10-04
+    block = f"""## {MARK} — avenant Fab 2026-10-04
 
 Décision canonique téléphone, postérieure à JT-ORBS-PRESENTATION-002 :
 - le fond des orbes est exclusivement `{BEACH}`, joué en boucle ;
@@ -34,9 +32,8 @@ Décision canonique téléphone, postérieure à JT-ORBS-PRESENTATION-002 :
 - un simple retour de pouvoir ne crée pas un nouveau round et ne remet donc ni le chrono d'orbes ni l'énergie à zéro ;
 - les règles KO / 2 rounds gagnants / coûts 60-40-60 et 60-60-80 / seuil strict `energy > cost` restent inchangées.
 
-Cet avenant remplace explicitement les anciennes mentions « énergie préservée entre rounds » et « conserver l'ancien média wait disponible ». L'historique peut rester documenté mais ne doit plus être interprété comme règle active.
-"""
-    path.write_text(text.rstrip() + block + "\n", encoding="utf-8")
+Cet avenant remplace explicitement les anciennes mentions « énergie préservée entre rounds » et « conserver l'ancien média wait disponible ». L'historique peut rester documenté mais ne doit plus être interprété comme règle active."""
+    path.write_text(text.rstrip() + "\n\n" + block + "\n", encoding="utf-8")
 
 
 def main():
