@@ -1044,7 +1044,7 @@ def prepare(archive, destination, spec, media_root, runtime):
             "assets/finishing/steg-finishing-trex.mp4",
             "assets/finishing/trex-finishing-steg.mp4",
             "assets/combat/Stegtrexegalitechargeboutonjaune.mp4",
-            "assets/combat/StegVsTrexvaetviensremolacebisorigune.mp4",
+            "assets/combat/StegTrexPlageVideoenboucledesorbes.mp4",
             "assets/combat/Stegtrexresultstegwin.mp4",
             "assets/combat/Stegtrexresulttrexwin.mp4",
         ):
