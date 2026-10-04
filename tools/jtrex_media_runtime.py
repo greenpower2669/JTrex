@@ -30,6 +30,8 @@ INTRO_FILES = (
     "assets/intro/JTrexintro3.mp4",
 )
 
+LEGACY_WAIT_FILE = "assets/combat/StegVsTrexvaetviensremolacebisorigune.mp4"
+
 SCENES = {
     "wait": {
         "states": frozenset((1,)),
