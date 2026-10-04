@@ -33,9 +33,9 @@ jobs:
           set -euo pipefail
           git config user.name 'greenpower2669'
           git config user.email '80179295+greenpower2669@users.noreply.github.com'
-          git add tools/jtrex_phase_runtime.py tools/jtrex_media_runtime.py tools/prepare_android.py buildozer.spec .github/workflows/android.yml assets/combat/StegTrexPlageVideoenboucledesorbes.mp4
+          git add tools/jtrex_phase_runtime.py tools/jtrex_media_runtime.py tools/prepare_android.py buildozer.spec assets/combat/StegTrexPlageVideoenboucledesorbes.mp4
           git diff --cached --check
           git commit -m 'fix: reset new orb exchanges and loop beach background'
           git push origin HEAD:port/android-first-apk
 
-# trigger with ffprobe available
+# trigger without android.yml mutation
