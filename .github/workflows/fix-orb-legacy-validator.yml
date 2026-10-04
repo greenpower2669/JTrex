@@ -27,24 +27,32 @@ jobs:
           from pathlib import Path
 
           path = Path('.github/workflows/android.yml')
-          text = path.read_text(encoding='utf-8')
-          old = '''          if "StegVsTrexvaetviensremolace" in runtime:
-              raise SystemExit("retired wait media still referenced by runtime")'''
-          new = '''          wait_scene = runtime.split('"wait": {', 1)[1].split('"charge": {', 1)[0]
-          if "StegVsTrexvaetviensremolace" in wait_scene:
-              raise SystemExit("retired wait media is still active in SCENES['wait']")'''
-          if text.count(old) != 1:
-              raise SystemExit(f'expected one stale legacy guard, found {text.count(old)}')
-          path.write_text(text.replace(old, new), encoding='utf-8')
+          lines = path.read_text(encoding='utf-8').splitlines()
+          needle = 'if "StegVsTrexvaetviensremolace" in runtime:'
+          hits = [i for i, line in enumerate(lines) if line.strip() == needle]
+          if len(hits) != 1:
+              raise SystemExit(f'expected one stale legacy guard, found {len(hits)}')
+          i = hits[0]
+          if i + 1 >= len(lines) or 'retired wait media still referenced by runtime' not in lines[i + 1]:
+              raise SystemExit('stale legacy guard raise line not found next to condition')
+          indent = lines[i][:len(lines[i]) - len(lines[i].lstrip())]
+          lines[i:i + 2] = [
+              indent + 'wait_scene = runtime.split(\'"wait": {\', 1)[1].split(\'"charge": {\', 1)[0]',
+              indent + 'if "StegVsTrexvaetviensremolace" in wait_scene:',
+              indent + '    raise SystemExit("retired wait media is still active in SCENES[\'wait\']")',
+          ]
+          path.write_text('\n'.join(lines) + '\n', encoding='utf-8')
           PY
           git diff --check
 
-      - name: Commit validator fix
+      - name: Commit validator fix and remove temporary workflow
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'greenpower2669'
           git config user.email '80179295+greenpower2669@users.noreply.github.com'
           git add .github/workflows/android.yml
+          git rm .github/workflows/fix-orb-legacy-validator.yml
+          git diff --cached --check
           git commit -m 'ci: allow declared legacy orb fallback'
           git push origin HEAD:port/android-first-apk
