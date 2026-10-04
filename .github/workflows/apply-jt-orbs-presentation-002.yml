@@ -32,3 +32,5 @@ jobs:
           git diff --cached --check
           git commit -m 'fix: reset new orb exchanges and loop beach background'
           git push origin HEAD:port/android-first-apk
+
+# trigger after verified source blob correction
