@@ -2,6 +2,8 @@ import unittest
 
 from runtime_harness import Harness
 
+# JT-BEACH-ENERGY-CANON-003: this suite guards the phone-tested beach/energy contract.
+
 
 class OrbPresentationCanon(unittest.TestCase):
     def test_new_orb_exchange_resets_countdown_and_stop_state_before_release(self):
