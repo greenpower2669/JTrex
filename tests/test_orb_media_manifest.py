@@ -10,12 +10,12 @@ class OrbMediaManifestCanon(unittest.TestCase):
             preparation,
         )
 
-    def test_legacy_wait_media_remains_explicitly_available(self):
+    def test_legacy_wait_media_remains_available_without_runtime_activation(self):
+        legacy = Path("assets/combat/StegVsTrexvaetviensremolacebisorigune.mp4")
+        self.assertTrue(legacy.is_file())
+        self.assertEqual(legacy.stat().st_size, 2472718)
         runtime = Path("tools/jtrex_media_runtime.py").read_text(encoding="utf-8")
-        self.assertIn(
-            'LEGACY_WAIT_FILE = "assets/combat/StegVsTrexvaetviensremolacebisorigune.mp4"',
-            runtime,
-        )
+        self.assertNotIn("StegVsTrexvaetviensremolace", runtime)
 
 
 if __name__ == "__main__":
