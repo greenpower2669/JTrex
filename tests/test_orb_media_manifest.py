@@ -10,10 +10,9 @@ class OrbMediaManifestCanon(unittest.TestCase):
             preparation,
         )
 
-    def test_legacy_wait_media_remains_available_without_runtime_activation(self):
+    def test_legacy_wait_media_is_retired_from_active_candidate(self):
         legacy = Path("assets/combat/StegVsTrexvaetviensremolacebisorigune.mp4")
-        self.assertTrue(legacy.is_file())
-        self.assertEqual(legacy.stat().st_size, 2472718)
+        self.assertFalse(legacy.exists())
         runtime = Path("tools/jtrex_media_runtime.py").read_text(encoding="utf-8")
         self.assertNotIn("StegVsTrexvaetviensremolace", runtime)
 
