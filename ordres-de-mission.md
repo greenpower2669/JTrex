@@ -3,10 +3,10 @@
 Dernière consolidation : 2026-10-04
 
 ## Contrat permanent
-1. Ne jamais recoder de mémoire : relire code, tests et preuves Git avant toute modification.
-2. `ordres-de-mission.md` définit le contrat actif ; `brain.md`, `brainmap.md`, `debughistorical.md`, `todo.md` servent de mémoires vivantes spécialisées.
-3. Les mémoires vivantes restent courtes. Les chronologies, preuves anciennes, hypothèses dépassées et missions closes vont dans `archive/`.
-4. Séparer explicitement faits vérifiés, retours téléphone, hypothèses et tâches restantes.
+1. Ne jamais recoder de mémoire : relire code, tests et preuves Git avant modification.
+2. `ordres-de-mission.md` définit le contrat actif ; `brain.md`, `brainmap.md`, `debughistorical.md`, `todo.md` sont les mémoires vivantes spécialisées.
+3. Les mémoires vivantes restent courtes. Chronologies, preuves anciennes, hypothèses dépassées et missions closes vont dans `archive/`.
+4. Séparer faits vérifiés, retours téléphone, hypothèses et tâches restantes.
 5. Ne pas modifier les règles canoniques historiques sans ordre explicite de Fab.
 6. Avant toute annonce de succès : preuve fraîche par CI, test ou inspection Git adaptée.
 
@@ -18,31 +18,26 @@ Dernière consolidation : 2026-10-04
 - Deux rounds gagnés = fin du match.
 - Nouveau vrai round = énergie ST/TR remise à 0.
 - Pouvoirs ST 60/40/60 ; TR 60/60/80 ; condition stricte `énergie > coût`.
-- Wait canonique = `assets/combat/StegTrexPlageVideoenboucledesorbes.mp4` en boucle, sans conséquence gameplay à l’EOS.
+- Wait canonique = `assets/combat/StegTrexPlageVideoenboucledesorbes.mp4` en boucle, EOS sans conséquence gameplay.
 
-## Mission active — JT-MEMORY-ARCHIVE-MAIN-001
-Autorisation explicite de Fab :
-- réorganiser les mémoires vivantes ;
-- archiver les éléments historiques/supersédés sans perte ;
-- merger vers `main` ;
-- publier une Release issue du `main` fusionné.
+## JT-MEMORY-ARCHIVE-MAIN-001 — CLOSE
+Autorisation explicite de Fab reçue pour réorganiser les mémoires, archiver l’historique, merger vers `main` et publier une Release.
 
-### Procédure
-1. Snapshot intégral des cinq mémoires avant réduction.
-2. Réécriture des cinq fichiers vivants selon leur rôle.
-3. Vérification de l’état Git et du contenu archivé.
-4. Merge avec `main` en conservant les deux historiques de branche.
-5. Build Android depuis le `main` fusionné.
-6. Vérification de l’APK et de son SHA-256.
-7. Publication d’une Release traçable vers le `main` fusionné.
-8. Mise à jour finale des mémoires avec les preuves de merge/build/release.
+### Exécution vérifiée
+- Snapshot intégral des cinq mémoires pré-consolidation : `archive/memories/2026-10-04-pre-main-merge/`.
+- Les blobs archivés sont identiques aux originaux du commit `5ac6962fac48f654075aacba286ddbbbf7749dbb`.
+- Mémoires vivantes compactées et spécialisées.
+- PR #1 fusionnée vers `main`.
+- Merge fonctionnel : `a2efd10a8f508c301156879ac1ab534f1a9d06ca`.
+- Inspection média #24 : succès.
+- Build Android #76 (`37203568079`) : succès complet.
+- Release : `v1.0.15-main`, cible `a2efd10a8f508c301156879ac1ab534f1a9d06ca`.
+- APK : `JuneT-Rex-1.0.15-debug.apk`, 156791394 octets.
+- SHA-256 APK : `2fbad1d19084fa7ad2c00ac81156ef0c5db0c933b679075df3ddf7fbb5f330b1`.
+- Workflow temporaire de publication retiré après succès.
 
-## Références avant merge
-- Branche Android : `port/android-first-apk`.
-- Candidat fonctionnel : `ed1842bae1176ffb08d76905b597a548c7ecf382`.
-- Build #75 : succès.
-- Release existante avant merge : `v1.0.15`.
-- APK SHA-256 : `54f5490ccf346b3e80e3117b4cf020b24898ad89cb44e6a2bd6bf73051d99c11`.
+## Mission suivante
+Aucune correction code ouverte par cette consolidation. La prochaine action utile est le test téléphone de `v1.0.15-main`, selon `todo.md`.
 
 ## Archive
 Ancien contrat/chronologie complet : `archive/memories/2026-10-04-pre-main-merge/ordres-de-mission.md`.
