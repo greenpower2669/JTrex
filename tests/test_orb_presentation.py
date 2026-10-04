@@ -42,7 +42,7 @@ class OrbPresentationCanon(unittest.TestCase):
         self.assertEqual(h.media.phases.name, 'ROUND_ACTIVE')
         self.assertEqual((h.ns['car'], h.ns['car2']), (73, 4))
 
-    def test_orb_wait_scene_uses_new_beach_loop(self):
+    def test_orb_wait_scene_uses_new_beach_loop_exclusively(self):
         h = Harness()
         scene = h.runtime.SCENES['wait']
         self.assertTrue(scene['loop'])
@@ -50,6 +50,23 @@ class OrbPresentationCanon(unittest.TestCase):
             scene['file'],
             'assets/combat/StegTrexPlageVideoenboucledesorbes.mp4',
         )
+        self.assertFalse(hasattr(h.runtime, 'LEGACY_WAIT_FILE'))
+        self.assertTrue(all(
+            'StegVsTrexvaetviensremolace' not in item['file']
+            for item in h.runtime.SCENES.values()
+        ))
+
+    def test_new_round_resets_both_energy_bars_to_zero(self):
+        h = Harness(); h.start_round()
+        h.ns['stamg'] = 91.5
+        h.ns['stamd'] = 87.25
+        h.ns['selected'] = {i: True for i in range(1, 7)}
+
+        h.media.phases._reset_between_rounds()
+
+        self.assertEqual(h.ns['stamg'], 0)
+        self.assertEqual(h.ns['stamd'], 0)
+        self.assertTrue(all(not h.ns['selected'][i] for i in range(1, 7)))
 
 
 if __name__ == '__main__':
