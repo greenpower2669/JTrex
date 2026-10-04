@@ -45,7 +45,6 @@ def main():
     prep = Path("tools/prepare_android.py")
     spec = Path("buildozer.spec")
 
-    # Beach is the sole wait scene. Remove the compatibility-only legacy constant.
     text = media.read_text(encoding="utf-8")
     legacy = 'LEGACY_WAIT_FILE = "assets/combat/StegVsTrexvaetviensremolacebisorigune.mp4"\n\n'
     if legacy in text:
@@ -57,7 +56,6 @@ def main():
         raise SystemExit("legacy wait reference remains in media runtime")
     media.write_text(text, encoding="utf-8")
 
-    # New true round resets both energy bars before availability is recalculated.
     text = phase.read_text(encoding="utf-8")
     old = '''    def _reset_between_rounds(self):\n        """Restore round-local state without passing through the menu or changing energy rules."""'''
     new = '''    def _reset_between_rounds(self):\n        """Restore round-local state; a new true round starts with zero energy."""'''
@@ -75,7 +73,6 @@ def main():
         raise SystemExit("phase log guard failed")
     phase.write_text(text.replace(old, new, 1), encoding="utf-8")
 
-    # Manifest and candidate version.
     replace_once(prep, 'VERSION = "1.0.14"', 'VERSION = "1.0.15"')
     replace_once(prep, 'NUMERIC_VERSION = "114"', 'NUMERIC_VERSION = "115"')
     text = prep.read_text(encoding="utf-8")
@@ -90,14 +87,16 @@ def main():
     for doc in ("brain.md", "brainmap.md", "debughistorical.md", "todo.md", "ordres-de-mission.md"):
         append_memory(Path(doc))
 
-    # The new beach video supersedes both former wait variants.
     for old_asset in OLD_WAIT:
         p = Path(old_asset)
         if p.exists():
             subprocess.run(["git", "rm", "--", old_asset], check=True)
 
     subprocess.run(["python3", "-m", "py_compile", str(media), str(phase), str(prep)], check=True)
-    subprocess.run(["python3", "-m", "unittest", "tests.test_orb_presentation", "-v"], check=True)
+    subprocess.run([
+        "python3", "-m", "unittest", "discover", "-s", "tests",
+        "-p", "test_orb_presentation.py", "-v"
+    ], check=True)
 
 
 if __name__ == "__main__":
