@@ -592,3 +592,15 @@ Cet avenant remplace toute règle antérieure assimilant une victoire de jauge o
 - Un pouvoir fatal termine d'abord sa vidéo ; ensuite seulement nouveau round ou finishing final. L'EOS n'applique aucun impact.
 - Coûts, énergie fractionnaire, seuil strict `énergie > coût`, score cubique, IA et dégâts historiques restent inchangés.
 - Double KO et expiration du temps conservent le comportement historique tant qu'une règle dédiée n'est pas explicitement validée par Fab.
+
+## JT-BEACH-ENERGY-CANON-003 — avenant Fab 2026-10-04
+
+Décision canonique téléphone, postérieure à JT-ORBS-PRESENTATION-002 :
+- le fond des orbes est exclusivement `assets/combat/StegTrexPlageVideoenboucledesorbes.mp4`, joué en boucle ;
+- les anciens `StegVsTrexvaetviensremolace*.mp4` sont remplacés et ne doivent plus être packagés ni utilisés ;
+- au début de chaque **nouveau vrai round**, `stamg=0` et `stamd=0` : les deux barres d'énergie repartent de zéro ;
+- le réarmement des six pouvoirs reste distinct de leur énergie : `selected[1..6]` est réarmé puis la disponibilité est recalculée avec l'énergie remise à zéro ;
+- un simple retour de pouvoir ne crée pas un nouveau round et ne remet donc ni le chrono d'orbes ni l'énergie à zéro ;
+- les règles KO / 2 rounds gagnants / coûts 60-40-60 et 60-60-80 / seuil strict `energy > cost` restent inchangées.
+
+Cet avenant remplace explicitement les anciennes mentions « énergie préservée entre rounds » et « conserver l'ancien média wait disponible ». L'historique peut rester documenté mais ne doit plus être interprété comme règle active.

@@ -247,7 +247,7 @@ class JTPhaseController:
         return self.round_wins[camp] >= 2
 
     def _reset_between_rounds(self):
-        """Restore round-local state without passing through the menu or changing energy rules."""
+        """Restore round-local state; a new true round starts with zero energy."""
         for name in ("degg", "degd", "degg0", "degd0", "deggt", "degdt"):
             if name in self.engine:
                 self.engine[name] = 0
@@ -268,6 +268,9 @@ class JTPhaseController:
         if isinstance(colstop, dict):
             for slot in range(1, 7):
                 colstop[slot] = False
+        for name in ("stamg", "stamd"):
+            if name in self.engine:
+                self.engine[name] = 0
         refresh = self.engine.get("jt_refresh_power_flags")
         if callable(refresh):
             refresh()
@@ -281,7 +284,7 @@ class JTPhaseController:
         self.yellow_outcome = None
         self.fight_target = None
         self._cancel_orb_freeze()
-        print("[JT-ROUND] reset lives/damage/power-usage; energy preserved", flush=True)
+        print("[JT-ROUND] reset lives/damage/power-usage; energy ST=0 TR=0", flush=True)
 
     def _register_ko(self, camp, source):
         if self.pending_round_action is not None or self.round_number <= 0:
