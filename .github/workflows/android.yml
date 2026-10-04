@@ -171,7 +171,7 @@ jobs:
                   raise SystemExit(f"stale power rule remains: {token}")
 
           required_runtime = (
-              "StegVsTrexvaetviensremolacebisorigune.mp4",
+              "StegTrexPlageVideoenboucledesorbes.mp4",
               "Chargestegtrexchargerougebleucorrected.mp4",
               "stsf-sanctuary-force.mp4",
               "stls-lifestream.mp4",
@@ -217,6 +217,8 @@ jobs:
           for token in required_runtime:
               if token not in runtime:
                   raise SystemExit(f"missing runtime token: {token}")
+          if "StegVsTrexvaetviensremolace" in runtime:
+              raise SystemExit("retired wait media still referenced by runtime")
 
           tree = ast.parse(main, filename="app/main.py")
           helper_names = {"jt_power_available", "jt_refresh_power_flags", "jt_orb_protected"}
@@ -365,7 +367,7 @@ jobs:
 
           compile(main, "app/main.py", "exec")
           compile(runtime, "app/jtrex_media_runtime.py", "exec")
-          print("JT validation: Python compiles; gauge interaction preserved, power EOS gate, wait resume, finishing HUD and MP4 frame pruning pass")
+          print("JT validation: Python compiles; gauge interaction preserved, power EOS gate, beach wait, finishing HUD and MP4 frame pruning pass")
           PY
 
       - name: Exercise actual generated engine and presentation phases
@@ -427,7 +429,7 @@ jobs:
           inspect_video assets/powers/trma-meteor-attack.mp4 power-26-trma
           inspect_video assets/finishing/steg-finishing-trex.mp4 finishing-10-steg-wins
           inspect_video assets/finishing/trex-finishing-steg.mp4 finishing-11-trex-wins
-          inspect_video assets/combat/StegVsTrexvaetviensremolacebisorigune.mp4 scene-20-wait
+          inspect_video assets/combat/StegTrexPlageVideoenboucledesorbes.mp4 scene-20-wait-beach
           inspect_video assets/combat/Stegtrexresultstegwin.mp4 scene-60-st-win
           inspect_video assets/combat/Stegtrexresulttrexwin.mp4 scene-61-tr-win
 
@@ -533,9 +535,9 @@ jobs:
             exit 1
           fi
           mkdir -p artifacts
-          cp "${apks[0]}" artifacts/JuneT-Rex-1.0.12-debug.apk
+          cp "${apks[0]}" artifacts/JuneT-Rex-1.0.15-debug.apk
           cd artifacts
-          sha256sum JuneT-Rex-1.0.12-debug.apk > SHA256SUMS.txt
+          sha256sum JuneT-Rex-1.0.15-debug.apk > SHA256SUMS.txt
 
       - name: Upload diagnostic files
         if: always()
@@ -559,9 +561,9 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: JuneT-Rex-1.0.12-debug
+          name: JuneT-Rex-1.0.15-debug
           path: |
-            artifacts/JuneT-Rex-1.0.12-debug.apk
+            artifacts/JuneT-Rex-1.0.15-debug.apk
             artifacts/SHA256SUMS.txt
           if-no-files-found: error
           compression-level: 0
