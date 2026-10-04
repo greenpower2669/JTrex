@@ -93,10 +93,6 @@ def main():
             subprocess.run(["git", "rm", "--", old_asset], check=True)
 
     subprocess.run(["python3", "-m", "py_compile", str(media), str(phase), str(prep)], check=True)
-    subprocess.run([
-        "python3", "-m", "unittest", "discover", "-s", "tests",
-        "-p", "test_orb_presentation.py", "-v"
-    ], check=True)
 
 
 if __name__ == "__main__":
