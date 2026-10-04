@@ -728,7 +728,7 @@ Cette clôture est postérieure aux variantes précédentes et fait autorité po
 ### Preuves code/CI au moment de cette clôture
 - Commit fonctionnel candidat : `ed1842bae1176ffb08d76905b597a548c7ecf382` (`fix: retire superseded orb wait media`).
 - Commit d'inspection uniquement : `5a2ef44b06c8789b19d9328ca8f9081e02975fe8` ; aucune modification gameplay.
-- La vidéo plage du candidat est le même blob Git que la source `995a2eb9c35f2dfb06de587f0b6641e5dedd342c` : blob `bcfff302eee3fb6f3067edfb47ace788fa7f6654`, taille `9 848 376` octets, SHA-256 `71b1abe5498d7e9f5dfd61cccede099759c49ec0a82324e8dd76b8c054dccd9d`.
+- La vidéo plage du candidat est le même blob Git que la source `995a2eb9c35f2dfb06de587f0b6641e5dedd342c` : blob `908d0f2ba5ef9a9da4b1316ff28ec21e7bce04ee`, taille `9 848 376` octets, SHA-256 `71b1abe5498d7e9f5dfd61cccede099759c49ec0a82324e8dd76b8c054dccd9d`.
 - FFprobe validé par l'inspection CI #23 : durée `44.916667 s`, `852x480`, H.264, 24 i/s, AAC stéréo 44.1 kHz.
 - Run Android #75 : préparation, validation média/code, tests du moteur généré, phases et inspection média ont passé avant la compilation native APK. Le résultat APK final est consigné séparément après fin du build ; ne pas inventer son SHA.
 
