@@ -26,7 +26,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cat docs/jt-sets-001/lot02-v4-00.b64 \
+          cat docs/jt-sets-001/lot02-v4-00a.b64 \
+              docs/jt-sets-001/lot02-v4-00b.b64 \
+              docs/jt-sets-001/lot02-v4-00c.b64 \
               docs/jt-sets-001/lot02-v4-01.b64 \
               docs/jt-sets-001/lot02-v4-02.b64 \
               docs/jt-sets-001/lot02-v4-03.b64 > /tmp/lot02.b64
