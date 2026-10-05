@@ -239,9 +239,145 @@ jobs:
           if {node.name for node in helpers} != helper_names:
               raise SystemExit("canonical power helpers missing from generated main")
 
+          class FakeClock:
+              now = 0.0
+
+              @classmethod
+              def get_time(cls):
+                  return cls.now
+
+          ns = {
+              "Clock": FakeClock,
+              "_JT_ORB_TOUCH_PROTECT_UNTIL": 0.0,
+              "POWER_COSTS": {1:60,2:40,3:60,4:60,5:60,6:80},
+              "POWER_READY_STATE": {i:False for i in range(1,7)},
+              "stamg": 0.0,
+              "stamd": 0.0,
+              "indexa": 1,
+              "selected": [False] * 7,
+              "select": [False] * 7,
+              "bonus": [False] * 7,
+              "range": range,
+          }
+          exec(compile(ast.Module(body=helpers, type_ignores=[]), "<power-helpers>", "exec"), ns)
+
+          for slot, cost in ns["POWER_COSTS"].items():
+              energy_name = "stamg" if slot < 4 else "stamd"
+              ns["selected"] = [False] * 7
+              ns["indexa"] = 1
+              ns[energy_name] = float(cost)
+              assert ns["jt_power_available"](slot) is False, (slot, cost, "exact")
+              ns[energy_name] = float(cost) + 0.5
+              assert ns["jt_power_available"](slot) is True, (slot, cost, "+0.5")
+              ns["selected"][slot] = True
+              assert ns["jt_power_available"](slot) is False, (slot, cost, "used")
+              ns["selected"][slot] = False
+              ns["indexa"] = 0
+              assert ns["jt_power_available"](slot) is False, (slot, cost, "phase")
+              ns["indexa"] = 1
+
+          FakeClock.now = 100.0
+          ns["indexa"] = 1
+          ns["_JT_ORB_TOUCH_PROTECT_UNTIL"] = 102.0
+          assert ns["jt_orb_protected"]() is True
+          FakeClock.now = 102.0
+          assert ns["jt_orb_protected"]() is False
+          FakeClock.now = 100.0
+          ns["indexa"] = 4
+          assert ns["jt_orb_protected"]() is False
+          ns["indexa"] = 1
+
+          ns["stamg"], ns["stamd"] = 40.5, 80.5
+          ns["selected"] = [False] * 7
+          ns["jt_refresh_power_flags"]()
+          assert ns["select"][2] and ns["bonus"][2]
+          assert not ns["select"][1] and not ns["bonus"][1]
+          assert ns["select"][6] and ns["bonus"][6]
+          assert main.count("jt_refresh_power_flags();print('[JT-POWER]") == 8
+          assert main.count("stamg-=cost") == 4
+          assert main.count("stamd-=cost") == 4
+          assert main.count("if indexa==1 and not jt_orb_protected():") == 6
+          assert main.count("if jt_orb_protected():") == 1
+          assert "_jt_touch_start_indexa" not in main
+          assert "time.time()>=_JT_ORB_TOUCH_PROTECT_UNTIL" not in main
+          assert "_jt_charge_state=indexa" in main
+          assert "_JT_ORB_TOUCH_PROTECT_UNTIL=Clock.get_time()+2.0" in main
+          assert "if car2on and indexa==1 and not jt_orb_protected():" in main
+          assert "if indexa==1 and not stopd and not stopg and not jt_orb_protected():" in main
+          assert main.count("if not getattr(self, '_jt_scene_video_active', False):") >= 1
+          assert "if not getattr(self, '_jt_scene_video_active', False) and indexa not in JT_MP4_ONLY_STATES:" in main
+          assert main.count("if getattr(self, '_jt_power_video_hold', False):") >= 3
+          assert "if getattr(self, '_jt_power_video_hold', False) and indexa in (1,10,11):" in main
+          assert "jt_hide_power_cinematic_ui(self)" in main
+          assert "jt_hide_finishing_hud(self)" in main
+          assert main.count("if getattr(self, '_jt_finishing_video_hold', False):") == 2
+          assert main.count("if _jt_finish_pending==indexa:") == 1
+          assert "[JT-FINISH] video-complete state={} -> menu" in main
+          power_finish_bridge = main.index("if getattr(self, '_jt_power_video_hold', False) and indexa in (1,10,11):")
+          finish_gate = main.index("if indexa in (10,11):")
+          legacy_finish_exit = main.index("if indexa==10 or indexa==11:")
+          assert power_finish_bridge < finish_gate < legacy_finish_exit
+          pending_at = runtime.index("self.root._jt_finishing_complete_pending = finishing_state")
+          stop_at = runtime.index('self._stop_scene("eos-complete", preserve_failure=False)')
+          assert pending_at < stop_at
+          assert "if finishing_state in (10, 11):\n                return" in runtime
+          assert "audio=muted" not in runtime
+          assert "set_legacy_catalog" in runtime
+          assert "Window.bind(on_touch_down=self._on_admin_trigger)" in runtime
+          assert "if not self._intro_done or not self._admin_enabled:" in runtime
+          assert "self._status_dot_color.rgba = (0.0, 1.0, 0.0, alpha)" in runtime
+          assert "self._status_dot_color.rgba = (1.0, 0.0, 0.0, alpha)" in runtime
+          assert "self._wait_resume_fraction = (position % duration) / duration" in runtime
+          assert "player.seek(resume, precise=True)" in runtime
+          assert "self.root._jt_power_video_hold = False" in runtime
+
+          preparation = json.loads(Path("app/android-preparation.json").read_text(encoding="utf-8"))
+          expected_pruned_dirs = {
+              "dinos1","chargetr","chargest","horseg2ko","egtrwin","eg2ko",
+              "stwin","trwin","finishst","finishtr",
+              "stsf","stls","stta","trfs","trph","trma",
+          }
+          assert set(preparation["pruned_legacy_image_dirs"]) == expected_pruned_dirs
+          assert preparation["pruned_legacy_image_files"] > 0
+          assert preparation["pruned_legacy_image_bytes"] > 0
+          assert preparation["mp4_only_states"] == [1,2,3,4,5,6,7,8,9,10,11,21,22,23,24,25,26]
+          image_exts = {".png",".jpg",".jpeg",".gif"}
+          sequence_prefixes = {
+              "dinos1":"dinos_",
+              "chargetr":"chargetrwin_",
+              "chargest":"chargetrwin_",
+              "horseg2ko":"chargetrwin_",
+              "egtrwin":"egtrwin_",
+              "eg2ko":"eg2ko_",
+              "stwin":"stwin_",
+              "trwin":"trwin_",
+              "finishst":"finishst_",
+              "finishtr":"finishtr_",
+              "stsf":"stsf_",
+              "stls":"stls_",
+              "stta":"stta_",
+              "trfs":"trfs_",
+              "trph":"trph_",
+              "trma":"trma_",
+          }
+          assert preparation["preserved_legacy_nonframe_images"] >= 0
+          assert preparation["preserved_legacy_nonframe_bytes"] >= 0
+          for directory, prefix in sequence_prefixes.items():
+              folder = Path("app") / directory
+              if folder.is_dir():
+                  leftovers = [
+                      path for path in folder.rglob("*")
+                      if (
+                          path.is_file()
+                          and path.suffix.lower() in image_exts
+                          and path.name.startswith(prefix)
+                      )
+                  ]
+                  assert not leftovers, (directory, leftovers[:3])
+
           compile(main, "app/main.py", "exec")
           compile(runtime, "app/jtrex_media_runtime.py", "exec")
-          print("JT validation: Python compiles; canonical set manifest and runtime contracts pass")
+          print("JT validation: Python compiles; gauge interaction preserved, power EOS gate, beach wait, finishing HUD and MP4 frame pruning pass")
           PY
 
       - name: Exercise actual generated engine and presentation phases
