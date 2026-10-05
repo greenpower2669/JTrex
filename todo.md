@@ -8,9 +8,14 @@ Dernière consolidation : 2026-10-05
 - [x] Lire `ordres-de-mission.md`, `brain.md`, `brainmap.md`, `debughistorical.md`, `todo.md`.
 - [x] Créer `feature/dinosaur-sets-v1` depuis le HEAD vérifié.
 - [x] Formaliser le design versionné.
-- [ ] Lot 01 : générer le vrai `app/main.py` depuis `JuneTrex.zip`.
-- [ ] Inventorier identités, images de pouvoirs, sons, six effets, bases/cibles/réductions/plafonds/jalons.
-- [ ] Produire le contrat de format v1 avec valeur canonique + conséquences + tests pour chaque paramètre candidat.
+- [x] Validation Fab de la spec.
+- [x] Écrire le plan Lot 01 : `docs/superpowers/plans/2026-10-05-jtrex-sets-lot01.md`.
+- [ ] Validation Fab du plan Lot 01.
+- [ ] Lot 01 / Task 1 : reproduire le vrai `app/main.py` depuis `JuneTrex.zip` prouvé par taille + SHA.
+- [ ] Lot 01 / Task 2 : inventorier identités, médias, images/variantes, sons et mapping six slots.
+- [ ] Lot 01 / Task 3 : inventorier six mécanismes, bases/cibles/réductions/plafonds/jalons et classer les vrais paramètres.
+- [ ] Lot 01 / Task 4 : produire `docs/jt-sets-001/format-v1-contract.md`.
+- [ ] Lot 01 / Task 5 : non-régression complète + synchronisation mémoires + retour Fab.
 - [ ] Lot 02 : manifeste canonique + résolution centrale + équivalence du set actuel.
 - [ ] Lot 03 : catalogue/menu + sélection persistante figée par match.
 - [ ] Lot 04 : stockage officiel/utilisateur/brouillon + import/export ZIP sûr.
