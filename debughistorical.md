@@ -3,50 +3,39 @@
 Dernière consolidation : 2026-10-05
 
 ## Rôle
-Incidents encore utiles au diagnostic courant et dernières résolutions structurantes seulement. Historique intégral : `archive/memories/2026-10-04-pre-main-merge/debughistorical.md`.
+Conserver uniquement les faits de diagnostic encore utiles à JT-SETS-001 et les protections canoniques. Historique intégral : `archive/memories/2026-10-04-pre-main-merge/debughistorical.md`.
 
-## État vérifié actuel
-- Branche canonique : `main`.
-- Merge fonctionnel historique : `a2efd10a8f508c301156879ac1ab534f1a9d06ca`.
-- Base fonctionnelle actuellement testée : `976344c39dec9bb88ef8f7e18e703f2ed2659d07`.
-- Build Android #78 (`37245309424`) : succès complet.
-- APK candidat : `JuneT-Rex-1.0.15-debug.apk`, 156445730 octets.
-- SHA-256 : `2fe8016dc3dd98d1c6303fd88c02c04e497490407489636789e291ae20fa0f23`.
-- Validation téléphone : en cours ; aucun nouveau bug runtime ne doit être déclaré sans retour téléphone ou preuve fraîche.
-- Dernière Release publiée : `v1.0.15-main`.
+## Baseline vérifiée
+- `main` au démarrage JT-SETS-001 : `ce858fe57b395c2a52967dc0e8acdd92ff6aa81e`.
+- Parent fonctionnel : `976344c39dec9bb88ef8f7e18e703f2ed2659d07`.
+- Build #78 / `37245309424` : CI verte.
+- Validation téléphone complète non enregistrée dans les mémoires.
+- Dernière Release : `v1.0.15-main`.
 
 ## Résolus — ne pas rouvrir sans preuve
 ### Bootstrap Android / zlib
-Ancien crash `zlib.cpython-312.so` / `PyExc_MemoryError` résolu dans la chaîne native. Ne pas restaurer les anciens contournements sans reproduction actuelle.
+Ancien crash natif résolu ; préserver la chaîne Python 3.12.14 / FFmpeg 6.1.2 / ffpyplayer 4.5.1.
 
-### KO / rounds
-- Verdicts de jauges ≠ victoire de round.
-- Seul un KO réel incrémente la victoire.
-- Deux rounds gagnés terminent le match.
+### KO / rounds / chrono / énergie
+- verdict de jauge != victoire de round ;
+- KO réel seul incrémente un round ;
+- deux rounds terminent le match ;
+- nouvel échange = `car2=10` + stops nettoyés ;
+- retour pouvoir = temps restant ;
+- vrai nouveau round = énergie 0/0.
 
-### Orbes / chrono
-Tout nouvel échange prépare :
-- `car2 = 10` ;
-- `stopg/stopd = False` ;
-- `colstop` effacé ;
-- causes d’arrêt périmées supprimées.
+### Média
+- wait canonique : `assets/combat/StegTrexPlageVideoenboucledesorbes.mp4` ;
+- EOS wait sans gameplay ;
+- pouvoirs/finishings protégés jusqu’à EOS réel si requis.
 
-Retour d’un pouvoir : pas un nouvel échange ; conserver `car2` restant.
-
-### Énergie
-Vrai nouveau round après KO : `stamg = 0` et `stamd = 0`.
-
-### Média d’attente
-Wait canonique : `assets/combat/StegTrexPlageVideoenboucledesorbes.mp4`. EOS sans conséquence gameplay.
-
-## Validation téléphone actuelle
-En cas de régression, capturer avant correction : phase, média actif, `car2`, `stamg/stamd`, états stop et cause de transition. Vérifier en priorité :
-1. deux nouveaux échanges = 10 s chacun ;
-2. retour pouvoir = temps restant ;
-3. verdict/FIGHT ne bloque pas les orbes ;
-4. KO -> round suivant = énergie 0/0 ;
-5. boucle attente sans conséquence gameplay ;
-6. finishings/pouvoirs jusqu’à EOS réel lorsque requis.
+## Points de risque JT-SETS-001
+1. `app/main.py` n’est pas versionné : l’inventaire doit porter sur le fichier généré depuis `JuneTrex.zip`.
+2. `jtrex_phase_runtime.py` ajoute actuellement ZeroWin dans le dictionnaire global `SCENES` : avec plusieurs sets, éviter toute mutation globale susceptible de fuir entre sessions/aperçus.
+3. `MEDIA_ASSETS` est une garde réelle testée par taille : la migration vers manifests ne doit pas supprimer cette preuve.
+4. Changer de set doit invalider lecteurs/callbacks/générations sans permettre à un ancien EOS d’agir sur une nouvelle session.
+5. Les aperçus admin ne doivent jamais réutiliser les callbacks combat.
+6. Paramètres de dégâts/soins peuvent modifier indirectement l’énergie ; aucun champ d’équilibrage ne sera exposé sans inventaire et validation Fab.
 
 ## Règle
-Reproduire et mesurer avant correctif. Une ancienne hypothèse archivée n’est jamais une preuve du bug courant.
+Aucune régression déclarée ou corrigée sans reproduction/preuve fraîche. Tests CI != validation téléphone.

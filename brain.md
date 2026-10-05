@@ -2,64 +2,48 @@
 
 Dernière consolidation : 2026-10-05
 
-## Rôle
-Canon opérationnel actuel uniquement. L’historique complet pré-consolidation reste archivé sous `archive/memories/2026-10-04-pre-main-merge/`.
+## Mission active
+JT-SETS-001 est autorisée par Fab.
+Branche : `feature/dinosaur-sets-v1`.
+Base : `ce858fe57b395c2a52967dc0e8acdd92ff6aa81e`.
+Design : `docs/superpowers/specs/2026-10-05-jtrex-dinosaur-sets-design.md`.
 
-## État Git / Android actuel
-- Branche canonique : `main`.
-- Merge Android fonctionnel historique : `a2efd10a8f508c301156879ac1ab534f1a9d06ca`.
-- Dernière base fonctionnelle avant consolidation mémoire : `976344c39dec9bb88ef8f7e18e703f2ed2659d07`.
-- Build Android #78 (`37245309424`) : succès complet.
-- APK candidat téléphone : `JuneT-Rex-1.0.15-debug.apk`.
-- Taille : 156445730 octets.
-- SHA-256 : `2fe8016dc3dd98d1c6303fd88c02c04e497490407489636789e291ae20fa0f23`.
-- Validation téléphone : en cours.
-- Dernière Release publiée : `v1.0.15-main` ; elle reste la référence publiée tant que Fab n’ordonne pas une nouvelle Release.
+But : plusieurs sets de confrontations DATA + MEDIA, un seul moteur de gameplay, set canonique inchangé.
 
-## Règles gameplay canoniques
-- 3 orbes par camp.
-- Tout nouvel échange d’orbes démarre avec 10 s complets.
-- Retour d’un pouvoir : conserver le temps restant.
-- Seul un KO réel compte comme victoire de round.
-- Deux rounds gagnés terminent le match.
-- Nouveau vrai round après KO : énergie ST = 0 et TR = 0.
-- Vie historique : `pvg = pvd = 500000000`.
-- Score : `S=max(0,150000000-Σe³)` ; seuil égalité 20000 ; lettres S..F.
+## Canon gameplay
+- 3 orbes par camp ; nouvel échange = 10 s.
+- Retour de pouvoir = temps restant.
+- KO réel seul = victoire de round ; 2 rounds = match.
+- Nouveau vrai round : énergie gauche/droite = 0.
+- Vie : 500000000 par camp.
+- Score : `max(0,150000000-Σe³)` ; égalité si différence < 20000.
+- Coûts slots 1..6 : 60/40/60/60/60/80.
+- Activation : énergie strictement > coût ; énergie fractionnaire.
+- Effets appliqués une seule fois, jamais à EOS.
 
-## Pouvoirs — coûts canoniques
-- ST : 60 / 40 / 60.
-- TR : 60 / 60 / 80.
-- Condition stricte : `énergie > coût`, jamais `>=`.
-- Énergie fractionnaire conservée.
-- Un seul usage par slot et par combat.
+## Architecture actuelle vérifiée
+- `JuneTrex.zip` -> `tools/prepare_android.py` -> `app/main.py` généré.
+- `tools/jtrex_phase_runtime.py` : phases, rounds, KO, chrono.
+- `tools/jtrex_media_runtime.py` : intros/scènes, EOS, boucle attente, admin 20 touches.
+- `app/main.py` n’est pas versionné.
+- `prepare_android.py` centralise actuellement les coûts et `MEDIA_ASSETS`.
+- `jtrex_phase_runtime.py` injecte aujourd’hui ZeroWin dans le catalogue global : point à découpler pendant JT-SETS-001.
 
-## Média d’attente canonique
-- `assets/combat/StegTrexPlageVideoenboucledesorbes.mp4`.
-- Boucle pendant attente/orbes ; EOS sans conséquence gameplay.
-- Pouvoirs et finishings restent verrouillés jusqu’à EOS réel lorsque requis.
+## Cible JT-SETS-001
+- manifeste fermé/versionné ;
+- catalogue officiel + sets utilisateur ;
+- résolveur logique central ;
+- sélection figée pendant un match ;
+- import/export ZIP transactionnel et DATA-ONLY ;
+- atelier derrière les 20 touches ;
+- aperçus sans callbacks gameplay ;
+- paramètres de pouvoirs seulement après inventaire et validation Fab.
 
-## Runtime Android
-- `tools/prepare_android.py` : préparation du source historique.
-- `tools/jtrex_phase_runtime.py` : phases, rounds, KO, chrono orbes.
-- `tools/jtrex_media_runtime.py` : médias, EOS, boucle/reprise attente.
-- Python Android 3.12.14 ; FFmpeg 6.1.2 ; ffpyplayer 4.5.1.
-- ABI : arm64-v8a + armeabi-v7a.
-- Package : `com.junedady.junetrex`.
+## État Android publié/candidat
+- Dernière Release : `v1.0.15-main`.
+- Build #78 / `37245309424` : CI verte.
+- APK candidat SHA-256 : `2fe8016dc3dd98d1c6303fd88c02c04e497490407489636789e291ae20fa0f23`.
+- Validation téléphone complète non enregistrée au démarrage de JT-SETS-001.
 
 ## Méthode
-- Ne jamais recoder depuis la mémoire : relire code, tests et preuves Git.
-- `ordres-de-mission.md` = contrat actif.
-- Garder les mémoires vivantes courtes ; archiver le reste.
-- Séparer faits vérifiés, retours téléphone et hypothèses.
-
-## Validation téléphone active
-1. installation et démarrage du candidat build #78 ;
-2. deux nouveaux échanges d’orbes successifs à 10 s ;
-3. retour d’un pouvoir avec chrono restant conservé ;
-4. aucune saisie orbe bloquée après transition normale ;
-5. KO -> nouveau round avec ST/TR à 0 ;
-6. boucles plage sans effet gameplay à l’EOS ;
-7. finishings/pouvoirs jusqu’à EOS réel lorsque requis.
-
-## Archive
-Snapshot complet pré-consolidation : `archive/memories/2026-10-04-pre-main-merge/brain.md`.
+Relire code/tests/preuves ; synchroniser les cinq mémoires à chaque changement utile ; pas de merge `main` ni Release sans Fab.
