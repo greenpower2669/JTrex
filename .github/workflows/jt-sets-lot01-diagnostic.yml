@@ -66,10 +66,11 @@ jobs:
           set -euo pipefail
           python3 - <<'PY'
           from pathlib import Path
-          import json, re
+          import hashlib, json, re
 
           p = Path('app/main.py')
           lines = p.read_text(encoding='utf-8').splitlines()
+          text='\n'.join(lines)
           patterns = (
               'namea', 'longanim1', 'genrea', 'sona',
               'def affbt', 'self.b1', 'self.b2', 'self.b3', 'self.b4', 'self.b5', 'self.b6',
@@ -77,10 +78,7 @@ jobs:
               'indexa=21', 'indexa=22', 'indexa=23', 'indexa=24', 'indexa=25', 'indexa=26',
               'deg', 'degg', 'degd', 'stamg', 'stamd', 'pvg', 'pvd', 'anim1', 'longanim1'
           )
-          hit_lines = []
-          for i, line in enumerate(lines, 1):
-              if any(x in line for x in patterns):
-                  hit_lines.append(i)
+          hit_lines = [i for i,line in enumerate(lines,1) if any(x in line for x in patterns)]
           merged=[]
           for i in hit_lines:
               a=max(1,i-4); b=min(len(lines),i+8)
@@ -95,7 +93,6 @@ jobs:
           Path('generated-main-probe.txt').write_text('\n'.join(out)+'\n', encoding='utf-8')
 
           mapping={1:21,2:22,3:23,4:24,5:25,6:26}
-          text='\n'.join(lines)
           evidence={}
           for slot,state in mapping.items():
               evidence[str(slot)]={
@@ -108,6 +105,66 @@ jobs:
                   ],
               }
           Path('slot-mapping.json').write_text(json.dumps(evidence,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+
+          state_meta={}
+          for state in range(21,27):
+              meta={'state':state}
+              for key in ('longanim1','namea','genrea','deg','sona'):
+                  rx=re.compile(rf"^{key}\[{state}\]=(.*)$")
+                  for i,line in enumerate(lines,1):
+                      m=rx.match(line.strip())
+                      if m:
+                          meta[key]={'line':i,'expr':m.group(1)}
+                          break
+              trigger=meta.get('deg',{}).get('expr')
+              try:
+                  trigger_int=int(trigger) if trigger is not None else None
+              except ValueError:
+                  trigger_int=None
+              if trigger_int is not None:
+                  for i,line in enumerate(lines,1):
+                      if line.strip()==f'if anim1=={trigger_int}:':
+                          block=[]
+                          for n in range(i, min(i+5,len(lines)+1)):
+                              block.append({'line':n,'text':lines[n-1].strip()})
+                          meta['effect_block']=block
+                          break
+              state_meta[str(state)]=meta
+          Path('power-effects.json').write_text(json.dumps(state_meta,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+
+          candidates=[
+              'assets/intro/JTrexintro1.mp4','assets/intro/JTrexintro2.mp4','assets/intro/JTrexintro3.mp4',
+              'assets/combat/StegTrexPlageVideoenboucledesorbes.mp4',
+              'assets/combat/Chargestegtrexchargerougebleucorrected.mp4',
+              'assets/combat/Stegtrexegalitechargeboutonjaune.mp4',
+              'assets/combat/Zerowinstegtrexsurleschargedejaugejauneetbleuetrouge.mp4',
+              'assets/combat/Stegtrexresultstegwin.mp4','assets/combat/Stegtrexresulttrexwin.mp4',
+              'assets/powers/stsf-sanctuary-force.mp4','assets/powers/stls-lifestream.mp4','assets/powers/stta-tornado-attack.mp4',
+              'assets/powers/trfs-fire-storm.mp4','assets/powers/trph-phoenix-attack.mp4','assets/powers/trma-meteor-attack.mp4',
+              'assets/finishing/steg-finishing-trex.mp4','assets/finishing/trex-finishing-steg.mp4',
+          ]
+          generated=[
+              'stsf0.png','stsf1.png','sth0.png','sth1.png','stta0.png','stta1.png',
+              'trfs0.png','trfs1.png','trph0.png','trph1.png','trma0.png','trma1.png',
+              'sf.wav','ls.wav','ta.wav','fs.wav','ph.wav','ma.wav',
+              'stsf.wav','stls.wav','stta.wav','trfs.wav','trph.wav','trma.wav',
+          ]
+          hashes=[]
+          for rel in candidates:
+              path=Path(rel)
+              if path.is_file():
+                  data=path.read_bytes()
+                  hashes.append({'role':'repo','path':rel,'size':len(data),'sha256':hashlib.sha256(data).hexdigest()})
+              else:
+                  hashes.append({'role':'repo','path':rel,'missing':True})
+          for rel in generated:
+              path=Path('app')/rel
+              if path.is_file():
+                  data=path.read_bytes()
+                  hashes.append({'role':'generated','path':rel,'size':len(data),'sha256':hashlib.sha256(data).hexdigest()})
+              else:
+                  hashes.append({'role':'generated','path':rel,'missing':True})
+          Path('set-asset-hashes.json').write_text(json.dumps(hashes,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
           PY
 
       - name: Upload Lot01 evidence
@@ -124,5 +181,7 @@ jobs:
             baseline-tests.log
             generated-main-probe.txt
             slot-mapping.json
+            power-effects.json
+            set-asset-hashes.json
             app/main.py
             app/android-preparation.json
