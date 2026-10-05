@@ -62,8 +62,6 @@ Deux `SyntaxWarning: invalid decimal literal` provenant du source historique gé
 
 ## 2. Identités du duo canonique
 
-### Identités réellement portées par le moteur
-
 Le main généré ne contient pas de chaîne d’affichage dédiée `Stegosaurus`, `Steg`, `T-Rex` ou `Tyrannosaurus`. Les camps sont identifiés fonctionnellement par :
 - gauche : `ST`, énergie `stamg`, slots `1..3` ;
 - droite : `TR`, énergie `stamd`, slots `4..6`.
@@ -125,8 +123,6 @@ Aucun texte de bouton contenant les noms des pouvoirs n’est trouvé dans le ma
 
 ## 5. Empreintes des médias canoniques
 
-Ces valeurs sont issues du run diagnostic frais et concordent avec `android-preparation.json`/les gardes de préparation.
-
 | Ressource | Taille | SHA-256 |
 | --- | ---: | --- |
 | `assets/intro/JTrexintro1.mp4` | 3278089 | `3f072bbaa2dcd961d5bf756168b40bd187ac06f61f133cbacb3fe114131e6bc0` |
@@ -180,3 +176,107 @@ La suite complète fraîche contient et valide explicitement :
 - `test_orb_media_manifest.OrbMediaManifestCanon.test_legacy_wait_media_is_retired_from_active_candidate` — PASS.
 
 Les six slots, leurs camps, états, coûts, vidéos et identités visuelles sont donc inventoriés sans ambiguïté. Aucune règle de gameplay n’a été modifiée.
+
+## 9. Mécanismes réels des six pouvoirs
+
+### Jalons historiques
+
+Les métadonnées du main généré sont :
+
+| État | `longanim1` | `namea` | `genrea` | `deg[state]` | `sona` |
+| ---: | ---: | --- | --- | ---: | --- |
+| 21 | 242 | `stsf/stsf_` | `1x` | 181 | `stsf.wav` |
+| 22 | 213 | `stls/stls_` | `1x` | 182 | `stls.wav` |
+| 23 | 238 | `stta/stta_` | `1x` | 183 | `stta.wav` |
+| 24 | 232 | `trfs/trfs_` | `1x` | 184 | `trfs.wav` |
+| 25 | 230 | `trph/trph_` | `1x` | 185 | `trph.wav` |
+| 26 | 239 | `trma/trma_` | `1x` | 186 | `trma.wav` |
+
+Dans `anim_1`, l’effet est déclenché par l’égalité exacte `anim1 == deg[indexa]`. Pour les états 21..26, `deg` est donc un **numéro de jalon d’animation**, pas une quantité de dégâts.
+
+### Effet brut par slot
+
+Vie historique : `pvg=pvd=500000000`.
+
+| Slot | État | Cible | Écriture brute au jalon | Base canonique | Sémantique |
+| ---: | ---: | --- | --- | --- | --- |
+| 1 / STSF | 21 | TR/droite | `degd += pvd/4` | 25 % de la vie max droite | dégâts bruts droite |
+| 2 / STLS | 22 | ST/gauche | `degg -= pvg/4` | 25 % de la vie max gauche | soin gauche via réduction des dégâts cumulés |
+| 3 / STTA | 23 | TR/droite | `degd += pvd/4` | 25 % de la vie max droite | dégâts bruts droite |
+| 4 / TRFS | 24 | ST/gauche | `degg += pvg/4` | 25 % de la vie max gauche | dégâts bruts gauche |
+| 5 / TRPH | 25 | ST/gauche | `degg += pvg/4` | 25 % de la vie max gauche | dégâts bruts gauche |
+| 6 / TRMA | 26 | ST/gauche | `degg += pvg/3` | 33,333… % de la vie max gauche | dégâts bruts gauche |
+
+Avec les vies canoniques actuelles, une base `1/4` représente 125 000 000 avant le traitement partagé et `1/3` environ 166 666 666,67.
+
+### Traitement partagé dégâts / énergie
+
+Après une variation de `degg` ou `degd`, le moteur historique exécute un traitement commun :
+- pour tous les jalons sauf `182`, il calcule des gains d’énergie à partir des nouveaux deltas de dégâts (`/4000000` et bonus conditionnel `/10000000`) ;
+- pour tous les jalons sauf `182`, il retire ensuite un quart du nouveau delta aux accumulateurs de dégâts, puis synchronise `degg0/degd0` ;
+- l’énergie est ensuite bornée à `0..100`.
+
+Conséquence : modifier une fraction de dégâts d’un pouvoir modifie **à la fois** les PV effectifs et la quantité d’énergie redistribuée. Ce n’est pas un paramètre purement cosmétique.
+
+En l’absence d’un autre delta simultané, le passage partagé conserve 3/4 du delta brut dans l’accumulateur de dégâts après son lissage historique. Cette observation décrit le code actuel ; le contrat v1 n’expose pas cette formule au pack.
+
+### Cas particulier Lifestream / état 22
+
+Le jalon 182 est explicitement exclu du calcul de gain d’énergie et du lissage `/4`. Le main applique `degg -= pvg/4`, puis `affpv` borne `degg` à zéro si le soin ferait passer les dégâts cumulés sous zéro. Le pouvoir ne peut donc pas donner plus que la vie maximale : il soigne jusqu’à 25 % de la vie max, limité par les dégâts réellement subis.
+
+### Unicité et réarmement
+
+Chaque activation marque `selected[slot]=True`. La disponibilité canonique exige `not selected[slot]`; le slot ne peut donc pas être réactivé pendant le même vrai round/combat d’usage. Le runtime de phases réarme ces usages uniquement lors du vrai reset de round déjà canonique.
+
+Les six scènes historiques sont `genrea='1x'`; leur effet est attaché au jalon numérique de l’animation historique. La vidéo MP4 ne définit pas ce jalon.
+
+## 10. Séparation impact historique / EOS média
+
+`jtrex_media_runtime.py` annonce et applique la règle suivante : l’EOS vidéo ne modifie pas la machine d’états historique. Pour les scènes `play_to_end` :
+- le runtime média vérifie l’identité du lecteur et la génération de callback ;
+- à EOS il appelle seulement `JTPhaseController.video_complete(state)` puis libère la scène ;
+- `video_complete` marque `media_done/media_failed` ;
+- aucun code EOS n’ajoute de dégâts, soin ou énergie.
+
+`jtrex_phase_runtime.py` précise que le moteur legacy reste l’autorité des dégâts, énergie et jalons d’animation. Un pouvoir peut rendre un camp KO avant la fin du MP4 ; la phase POWER reste alors verrouillée jusqu’à EOS, puis le KO déjà observé est résolu sans réappliquer l’effet.
+
+Conclusion contractuelle : **durée vidéo, EOS et position du lecteur ne sont jamais des paramètres d’impact**. Une vidéo plus longue ou plus courte ne déplace pas automatiquement le jalon historique.
+
+## 11. Candidats de personnalisation — fermés en v1 tant que Fab ne valide pas
+
+Chaque valeur ci-dessous est techniquement prouvée, mais reste `NON ÉDITABLE v1` jusqu’à validation explicite des champs et bornes par Fab.
+
+| Candidat | Source prouvée | Type/unité | Valeur canonique | Conséquence d’un changement | Test d’équivalence canonique requis |
+| --- | --- | --- | --- | --- | --- |
+| `left_1.raw_damage_fraction` | état 21, `degd += pvd/4` | fraction vie max cible | `1/4` | dégâts TR + énergie dérivée + lissage partagé | état 21, mêmes PV/énergie avant/après avec profil canonique |
+| `left_2.heal_fraction` | état 22, `degg -= pvg/4` | fraction vie max propre | `1/4` | soin ST, plafonné par `degg>=0`; pas de gain énergie au jalon 182 | cas dégâts suffisants + cas soin plafonné, mêmes PV/énergie |
+| `left_3.raw_damage_fraction` | état 23, `degd += pvd/4` | fraction vie max cible | `1/4` | dégâts TR + énergie dérivée + lissage partagé | état 23, mêmes PV/énergie |
+| `right_1.raw_damage_fraction` | état 24, `degg += pvg/4` | fraction vie max cible | `1/4` | dégâts ST + énergie dérivée + lissage partagé | état 24, mêmes PV/énergie |
+| `right_2.raw_damage_fraction` | état 25, `degg += pvg/4` | fraction vie max cible | `1/4` | dégâts ST + énergie dérivée + lissage partagé | état 25, mêmes PV/énergie |
+| `right_3.raw_damage_fraction` | état 26, `degg += pvg/3` | fraction vie max cible | `1/3` | dégâts ST + énergie dérivée + lissage partagé | état 26, mêmes PV/énergie |
+
+Les coûts d’énergie ne font **pas** partie des paramètres éditables de cette première version : `60/40/60/60/60/80` reste moteur-owned.
+
+## 12. Non-paramètres obligatoires
+
+| Valeur historique | Signification prouvée | Statut format v1 |
+| --- | --- | --- |
+| `deg[21..26] = 181..186` | jalon/indice d’animation auquel le moteur applique l’effet | jamais paramètre d’équilibrage du pack |
+| `longanim1[21..26]` | longueur historique de séquence d’animation | engine-owned ; ne suit pas la durée MP4 |
+| `anim1` | curseur/compteur de frame historique | engine-owned |
+| `indexa` | état de la machine historique | engine-owned |
+| `21..26` | identifiants d’états des six mécanismes | engine-owned |
+| durée MP4 | durée de présentation audiovisuelle | ressource validée, jamais base de calcul gameplay |
+| EOS | événement de fin de présentation | verrou/libération uniquement ; aucun effet gameplay |
+| `play_to_end`, `loop` | politiques de lecture du moteur | engine-owned |
+| `selected`, réarmement | unicité d’usage du slot et cycle de round | engine-owned |
+
+## 13. Vérification Task 3
+
+La preuve fraîche `python3 -m unittest discover -s tests -v` contient :
+- 19 tests `test_phase_integration` — PASS ;
+- 7 tests `test_round_ko_contract` — PASS ;
+- 5 tests `test_round_model` — PASS ;
+- 4 tests `test_orb_presentation` — PASS.
+
+Le sous-ensemble demandé par le plan est donc inclus intégralement dans la suite fraîche GREEN. Aucun changement de phase, KO, chrono ou gameplay n’a été nécessaire pour produire cet inventaire.
