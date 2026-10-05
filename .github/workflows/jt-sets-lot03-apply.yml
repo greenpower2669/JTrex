@@ -1,0 +1,94 @@
+name: Apply JT-SETS-001 Lot03
+
+on:
+  push:
+    branches:
+      - tmp-jt-sets-lot03-fixture-run
+    paths:
+      - '.github/workflows/jt-sets-lot03-apply.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - name: Checkout mission branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/dinosaur-sets-v1
+          fetch-depth: 0
+
+      - name: Apply verified Lot03 patch blob
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64, json, os, urllib.request
+          sha='bd028476559a2f9fbe85d168660dcfd46fda081e'
+          req=urllib.request.Request(
+              f'https://api.github.com/repos/{os.environ["GITHUB_REPOSITORY"]}/git/blobs/{sha}',
+              headers={'Authorization': f'Bearer {os.environ["GH_TOKEN"]}', 'Accept':'application/vnd.github+json'},
+          )
+          with urllib.request.urlopen(req) as response:
+              obj=json.load(response)
+          open('/tmp/lot03.patch.gz','wb').write(base64.b64decode(obj['content']))
+          PY
+          echo '129aa9ea00516e3a19d74c5bceeb71c8efcdce7d4f4d618335bf549fbd551d34  /tmp/lot03.patch.gz' | sha256sum -c -
+          gzip -dc /tmp/lot03.patch.gz > /tmp/lot03.patch
+          echo 'c44fb521075ce7266a4473aa220b6f8530a91f1eeb197ecaf1a480efc6c8d953  /tmp/lot03.patch' | sha256sum -c -
+          test "$(grep -c '^diff --git ' /tmp/lot03.patch)" = 9
+          git apply --check /tmp/lot03.patch
+          git apply /tmp/lot03.patch
+          git diff --check
+          expected="docs/superpowers/plans/2026-10-05-jtrex-sets-lot03.md
+tests/test_sets_media_session.py
+tests/test_sets_power_identity.py
+tests/test_sets_selection.py
+tests/test_sets_session_isolation.py
+tools/jtrex_media_runtime.py
+tools/jtrex_phase_runtime.py
+tools/jtrex_sets_runtime.py
+tools/prepare_android.py"
+          test "$(git diff --name-only | sort)" = "$(printf '%s\n' "$expected" | sort)"
+
+      - name: Prepare canonical app and run full suite
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --output JuneTrex.zip \
+            'https://github.com/greenpower2669/JTrex/releases/download/JTrex/JuneTrex.zip'
+          test "$(stat -c%s JuneTrex.zip)" = 327992765
+          echo 'f73ca1fd5e96ca6e11df5987bda8b2e59ebac26b1beb23fe34883b15bee66647  JuneTrex.zip' | sha256sum -c -
+          rm -rf app
+          python3 tools/prepare_android.py --archive JuneTrex.zip --output app --spec buildozer.spec
+          PYTHONPATH=tools:tests JT_GENERATED_MAIN="$PWD/app/main.py" python3 -m unittest discover -s tests -v
+          python3 -m py_compile tools/jtrex_sets_runtime.py tools/jtrex_media_runtime.py tools/jtrex_phase_runtime.py tools/prepare_android.py
+          grep -q 'def jt_apply_power_paths(paths):' app/main.py
+          test "$(grep -c 'source=JT_POWER_PATHS' app/main.py)" = 12
+          rm -rf app JuneTrex.zip jt-set-selection.json jt-set-selection.json.tmp
+
+      - name: Commit Lot03 product changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'greenpower2669'
+          git config user.email '80179295+greenpower2669@users.noreply.github.com'
+          git add \
+            docs/superpowers/plans/2026-10-05-jtrex-sets-lot03.md \
+            tests/test_sets_media_session.py \
+            tests/test_sets_power_identity.py \
+            tests/test_sets_selection.py \
+            tests/test_sets_session_isolation.py \
+            tools/jtrex_media_runtime.py \
+            tools/jtrex_phase_runtime.py \
+            tools/jtrex_sets_runtime.py \
+            tools/prepare_android.py
+          git diff --cached --check
+          test "$(git diff --cached --name-only | wc -l)" = 9
+          git commit -m 'feat: select and freeze official dinosaur sets'
+          git push origin HEAD:feature/dinosaur-sets-v1
