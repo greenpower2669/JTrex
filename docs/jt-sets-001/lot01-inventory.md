@@ -60,6 +60,123 @@ Les tests comprennent notamment les gardes de taille des médias, le média d’
 
 Deux `SyntaxWarning: invalid decimal literal` provenant du source historique généré sont visibles dans le harness ; ils n’ont provoqué aucun échec de test et ne sont pas modifiés dans ce lot d’audit.
 
-## 2. Statut après Task 1
+## 2. Identités du duo canonique
 
-Baseline générée et tests prouvés. Aucun runtime de sets, manifeste actif, menu, import/export, atelier, gameplay ou asset n’a été modifié par Task 1.
+### Identités réellement portées par le moteur
+
+Le main généré ne contient pas de chaîne d’affichage dédiée `Stegosaurus`, `Steg`, `T-Rex` ou `Tyrannosaurus`. Les camps sont identifiés fonctionnellement par :
+- gauche : `ST`, énergie `stamg`, slots `1..3` ;
+- droite : `TR`, énergie `stamd`, slots `4..6`.
+
+La nomenclature visible du duo vient actuellement des noms de médias et de l’identité générale June T-Rex (`Steg...Trex...`). Conséquence pour le format v1 : les `display_name` des dinosaures doivent être des données explicites du set ; le moteur ne doit pas essayer de les reconstruire à partir des noms de fichiers ou des variables historiques.
+
+Aucun portrait autonome de dinosaure exploité comme portrait de catalogue n’a été trouvé dans le main généré. Les anciennes séquences d’images des scènes (`dinos1`, `stsf`, `stls`, etc.) sont aujourd’hui des séquences legacy MP4-only/prunées et ne doivent pas être détournées en portraits. Le portrait reste donc optionnel dans le format v1.
+
+L’icône Android `assets/icon/JtrexIcon.png` reste une ressource de l’application, pas l’icône d’un set.
+
+## 3. Rôles média canoniques
+
+Les politiques `loop`, `play_to_end`, verrouillage, première frame, audio et EOS sont des propriétés du moteur. Le set choisit uniquement la ressource correspondant au rôle logique.
+
+| Rôle logique | États moteur | Fichier canonique | Politique moteur |
+| --- | --- | --- | --- |
+| `intros[]` | lancement | `assets/intro/JTrexintro1.mp4`, `JTrexintro2.mp4`, `JTrexintro3.mp4` | choix aléatoire, aspect-fit |
+| `orbs_background` | 1 | `assets/combat/StegTrexPlageVideoenboucledesorbes.mp4` | boucle |
+| `charge_red_blue` | 2,3,4 | `assets/combat/Chargestegtrexchargerougebleucorrected.mp4` | non boucle |
+| `charge_yellow` | 5,6,7 | `assets/combat/Stegtrexegalitechargeboutonjaune.mp4` | non boucle |
+| `verdict_draw` | présentation `-7` | `assets/combat/Zerowinstegtrexsurleschargedejaugejauneetbleuetrouge.mp4` | non boucle ; injecté actuellement par le runtime phase |
+| `verdict_left` | 8 / ST | `assets/combat/Stegtrexresultstegwin.mp4` | non boucle |
+| `verdict_right` | 9 / TR | `assets/combat/Stegtrexresulttrexwin.mp4` | non boucle |
+| `finishing_left` | 10 / ST | `assets/finishing/steg-finishing-trex.mp4` | `play_to_end=True` |
+| `finishing_right` | 11 / TR | `assets/finishing/trex-finishing-steg.mp4` | `play_to_end=True` |
+
+Point d’architecture confirmé : `jtrex_phase_runtime.py::_install_zero_win_scene()` modifie actuellement le dictionnaire global `SCENES` pour ajouter `zero-win`. Cette mutation globale est un point à supprimer au Lot 02 afin qu’un set, un aperçu ou une session ne puisse pas polluer le catalogue d’une autre session.
+
+## 4. Matrice des six pouvoirs
+
+`POWER_COSTS={1:60,2:40,3:60,4:60,5:60,6:80}` est commun au moteur. L’activation reste strictement `énergie > coût`.
+
+| Slot | Camp | État | Identité interne prouvée | Coût | MP4 canonique | Icônes historiques | Son d’activation | Audio legacy de scène |
+| ---: | --- | ---: | --- | ---: | --- | --- | --- | --- |
+| 1 | ST/gauche | 21 | `stsf` | 60 | `assets/powers/stsf-sanctuary-force.mp4` | `stsf1.png` / `stsf0.png` | `sf.wav` | `stsf.wav` |
+| 2 | ST/gauche | 22 | `stls` | 40 | `assets/powers/stls-lifestream.mp4` | `sth1.png` / `sth0.png` | `ls.wav` | `stls.wav` |
+| 3 | ST/gauche | 23 | `stta` | 60 | `assets/powers/stta-tornado-attack.mp4` | `stta1.png` / `stta0.png` | `ta.wav` | `stta.wav` |
+| 4 | TR/droite | 24 | `trfs` | 60 | `assets/powers/trfs-fire-storm.mp4` | `trfs1.png` / `trfs0.png` | `fs.wav` | `trfs.wav` |
+| 5 | TR/droite | 25 | `trph` | 60 | `assets/powers/trph-phoenix-attack.mp4` | `trph1.png` / `trph0.png` | `ph.wav` | `trph.wav` |
+| 6 | TR/droite | 26 | `trma` | 80 | `assets/powers/trma-meteor-attack.mp4` | `trma1.png` / `trma0.png` | `ma.wav` (objet historique `maa`) | `trma.wav` |
+
+Le mapping de lancement humain est directement visible dans le main généré : slots `1..3` débitent `stamg` puis passent respectivement en `21..23`; slots `4..6` débitent `stamd` puis passent en `24..26`. Le chemin IA utilise la même table de coûts et `indexa=20+i`.
+
+### Sens des images de pouvoir
+
+Les paires `*1.png` / `*0.png` ne sont pas des variantes « appui » et « disponibilité » :
+- `*1.png` est affichée quand le slot n’a pas encore été utilisé ;
+- `*0.png` est affichée quand `selected[slot]` est vrai, donc après utilisation.
+
+La disponibilité réelle est un overlay séparé `b1s..b6s`, utilisant les images animées `select/select0.png` à `select/select15.png`; sa taille n’est non nulle que si `jt_power_available(slot)` est vrai.
+
+Le slot 2 conserve un nom de fichier historique atypique `sth0.png` / `sth1.png` alors que son identité moteur/média est `stls`. Le format de set ne doit pas déduire l’identité d’un pouvoir depuis ce nom historique.
+
+Le préparateur contient en outre une correction explicite de l’identité visuelle droite : slot 4 = `TRFS`, slot 6 = `TRMA`. Le main généré vérifié reflète bien cette correction.
+
+### Libellés humains
+
+Aucun texte de bouton contenant les noms des pouvoirs n’est trouvé dans le main généré. Les noms lisibles `Sanctuary Force`, `Lifestream`, `Tornado Attack`, `Fire Storm`, `Phoenix Attack`, `Meteor Attack` sont cohérents avec les noms des MP4 canoniques mais doivent devenir des champs explicites de manifeste ; ils ne seront pas reconstruits depuis le chemin du média.
+
+## 5. Empreintes des médias canoniques
+
+Ces valeurs sont issues du run diagnostic frais et concordent avec `android-preparation.json`/les gardes de préparation.
+
+| Ressource | Taille | SHA-256 |
+| --- | ---: | --- |
+| `assets/intro/JTrexintro1.mp4` | 3278089 | `3f072bbaa2dcd961d5bf756168b40bd187ac06f61f133cbacb3fe114131e6bc0` |
+| `assets/intro/JTrexintro2.mp4` | 2584105 | `c152f33e5b5c4773cdac69ce1be84ad99d05d54d51f735532a4d128fb0a7d310` |
+| `assets/intro/JTrexintro3.mp4` | 3349412 | `4ba0dd3a14b00cf3f03a4a2a64e0e5cec1056e37ce41ed62d1e4b15acb007d28` |
+| `assets/combat/StegTrexPlageVideoenboucledesorbes.mp4` | 9848376 | `71b1abe5498d7e9f5dfd61cccede099759c49ec0a82324e8dd76b8c054dccd9d` |
+| `assets/combat/Chargestegtrexchargerougebleucorrected.mp4` | 833378 | `a7e379505123460803f5d2b244ffa8f24c2aa2a7380dee0f0b2e8adde8467862` |
+| `assets/combat/Stegtrexegalitechargeboutonjaune.mp4` | 1432415 | `9f66ca15e0e3e376e029e8002a1588e379b0c6f3557f7118d00d729a2d04fedf` |
+| `assets/combat/Zerowinstegtrexsurleschargedejaugejauneetbleuetrouge.mp4` | 1147683 | `798b4ac8605a599e29e7cdd1449741b25537d9654e529c687d825bf1f933ccfa` |
+| `assets/combat/Stegtrexresultstegwin.mp4` | 1521350 | `e4399e90eaf5a698e5284335704202e01851141b57ab54a859c471a869e469a5` |
+| `assets/combat/Stegtrexresulttrexwin.mp4` | 760242 | `3a786dd13f12aace72efe4be457d5dcc0272094024bfd5b1f80460452e273a57` |
+| `assets/powers/stsf-sanctuary-force.mp4` | 2525411 | `c2e287425f9f2343c3a50c23428662b33db9afd77ff3380d933deec9e8f74cc4` |
+| `assets/powers/stls-lifestream.mp4` | 2243703 | `f7d0ad630162ecf4135ec51541971b10da38ed62ac485d9770c063f555d876b7` |
+| `assets/powers/stta-tornado-attack.mp4` | 2928334 | `cea65b5b2a8705101bef5b982032972e384f96024e5d01b5e5b752c6d3f682b9` |
+| `assets/powers/trfs-fire-storm.mp4` | 2431111 | `632d661fc1ee7dbe3bd5768de6f1dd7dfd7504da3f001dbb8af13867a96b6c48` |
+| `assets/powers/trph-phoenix-attack.mp4` | 1945922 | `d099068f109d00116031442dc472c1e3300795e1df83296b6cf28b94140e3b2c` |
+| `assets/powers/trma-meteor-attack.mp4` | 2544535 | `11c5f05af8840b4f9f5d0fc0cf9ba45d80ce3af84d8acaacc77c08f96c102cf1` |
+| `assets/finishing/steg-finishing-trex.mp4` | 2184229 | `ae9e28330da5db03c0ff68059794d4d070e643d08d2b3a1989946b7c5834be5a` |
+| `assets/finishing/trex-finishing-steg.mp4` | 1834787 | `7f6e532092f5914854b61a97b329060edd23f2f40e2f041a2f4633c5ad19ee66` |
+
+## 6. Empreintes des images de pouvoir historiques générées
+
+| Image | Taille | SHA-256 |
+| --- | ---: | --- |
+| `stsf0.png` | 26201 | `66f940dacf991453c04c7d555257c0b40b0d0cdaab6182a5a6838f36cc386958` |
+| `stsf1.png` | 34821 | `91e4f20b5b363e78ddf8701d8a139ec138564a07719612aa6689896afd7ee837` |
+| `sth0.png` | 24704 | `1942a01a775233d7441715ec93eb2aab08fd53596309a5a8225ad247907ad2a7` |
+| `sth1.png` | 34826 | `9b8f8ea93907b9f6b9fd03928ffdb01bf5d0e7cde9515632d41796345afa3fc5` |
+| `stta0.png` | 21713 | `7b73d84d4e65a832686e34a5233b784065a8fc20332714013ee4bd0c3889a286` |
+| `stta1.png` | 30457 | `93c589b6056a828464618e4fbcdd811072a774342dc6a59c02e79ac5a02e9a3f` |
+| `trfs0.png` | 23568 | `323e546d252a649c96d1c39797380c696c93ddebf6fe911b36c91fb93a99f4f7` |
+| `trfs1.png` | 32854 | `bd62802f334b1d4eccec6492cee9e8db21a0c6548b5daf1b20c16278d98266dd` |
+| `trph0.png` | 26263 | `8b3e4a4be0c38e0acb2b8106e53a6f79fa3ec457be0a5ff2f0c4676721093380` |
+| `trph1.png` | 36674 | `dc5b89d115ec5fdb418c344b344d9101d73143d4f1e1e63b0ddd9d8c2af49238` |
+| `trma0.png` | 26139 | `124e45202c317af15f7d6a1f1ffa1c0a37dde08a0e45ad6dcac0fc74fcd5af64` |
+| `trma1.png` | 37948 | `27a0a4a96a0f17120b5978d380266d92ccbbee91b82afdbf076942c9a626747b` |
+
+## 7. Audio de pouvoirs
+
+Deux niveaux audio existent aujourd’hui :
+1. son court d’activation au clic/lancement (`sf.wav`, `ls.wav`, `ta.wav`, `fs.wav`, `ph.wav`, `ma.wav`) ;
+2. audio legacy de scène référencé par `sona[21..26]` (`stsf.wav`, `stls.wav`, `stta.wav`, `trfs.wav`, `trph.wav`, `trma.wav`).
+
+Le runtime MP4 démarre avec le volume natif à 0 puis active l’audio MP4 après la première vraie frame ; l’audio historique sert de fallback tant que la vidéo native n’est pas effectivement active.
+
+## 8. Vérification Task 2
+
+La suite complète fraîche contient et valide explicitement :
+- `test_media_asset_size_guards.MediaAssetSizeGuardTests.test_declared_media_sizes_match_repository_assets` — PASS ;
+- `test_orb_media_manifest.OrbMediaManifestCanon.test_beach_loop_is_guarded_by_android_media_manifest` — PASS ;
+- `test_orb_media_manifest.OrbMediaManifestCanon.test_legacy_wait_media_is_retired_from_active_candidate` — PASS.
+
+Les six slots, leurs camps, états, coûts, vidéos et identités visuelles sont donc inventoriés sans ambiguïté. Aucune règle de gameplay n’a été modifiée.
