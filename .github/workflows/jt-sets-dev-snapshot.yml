@@ -1,0 +1,35 @@
+name: JT-SETS Development Snapshot
+
+on:
+  push:
+    branches:
+      - feature/dinosaur-sets-v1
+    paths:
+      - '.github/workflows/jt-sets-dev-snapshot.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Upload source snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: JT-SETS-Source-Snapshot
+          retention-days: 2
+          path: |
+            tools/**
+            tests/**
+            assets/**
+            buildozer.spec
+            .github/workflows/android.yml
+            docs/**
+            ordres-de-mission.md
+            brain.md
+            brainmap.md
+            debughistorical.md
+            todo.md
