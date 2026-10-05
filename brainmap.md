@@ -5,6 +5,8 @@ Dernière consolidation : 2026-10-05
 ## Git
 - Canon : `main` @ `ce858fe57b395c2a52967dc0e8acdd92ff6aa81e` au démarrage JT-SETS-001.
 - Travail : `feature/dinosaur-sets-v1`.
+- Design : `docs/superpowers/specs/2026-10-05-jtrex-dinosaur-sets-design.md`.
+- Plan Lot 01 : `docs/superpowers/plans/2026-10-05-jtrex-sets-lot01.md` ; attente validation Fab.
 - Dernière Release : `v1.0.15-main`.
 - Build #78 / `37245309424` : CI verte ; validation téléphone complète non enregistrée.
 
@@ -17,7 +19,10 @@ Dernière consolidation : 2026-10-05
 - `tools/jtrex_media_runtime.py` : `INTRO_FILES`, `SCENES`, résolution, lecteurs, EOS, reprise wait, admin 20 touches.
 - `tests/runtime_harness.py` + tests phase/KO/orbes/média : canon de non-régression.
 
-## Couches JT-SETS-001 prévues
+## Lot 01
+`JuneTrex.zip` prouvé -> `app/main.py` généré -> inventaire identité/média/slots -> inventaire mécanismes/paramètres -> contrat format v1. Aucun code produit de sets dans ce lot.
+
+## Couches JT-SETS-001 prévues après Lot 01
 - `jtrex_sets_runtime` : contrat + catalogue + validation + résolution + sélection figée.
 - `jtrex_sets_io` : stockage officiel/utilisateur/brouillon + import/export transactionnel.
 - `jtrex_sets_admin` : atelier 20 touches + aperçu indépendant + test brouillon.
