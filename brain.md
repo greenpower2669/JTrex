@@ -3,52 +3,38 @@
 Dernière consolidation : 2026-10-05
 
 ## Mission active
-JT-SETS-001 est autorisée par Fab.
-Branche : `feature/dinosaur-sets-v1`.
-Base : `ce858fe57b395c2a52967dc0e8acdd92ff6aa81e`.
-Design approuvé : `docs/superpowers/specs/2026-10-05-jtrex-dinosaur-sets-design.md`.
-Plan Lot 01 prêt : `docs/superpowers/plans/2026-10-05-jtrex-sets-lot01.md`.
-Statut : attente validation Fab du plan avant exécution native Sol.
+JT-SETS-001 sur `feature/dinosaur-sets-v1` ; base `main@ce858fe57b395c2a52967dc0e8acdd92ff6aa81e`.
 
-But : plusieurs sets de confrontations DATA + MEDIA, un seul moteur de gameplay, set canonique inchangé.
+But : plusieurs sets DATA + MEDIA, un seul moteur, set canonique équivalent.
+
+## Lot 01 — acquis
+- Inventaire : `docs/jt-sets-001/lot01-inventory.md`.
+- Contrat v1 : `docs/jt-sets-001/format-v1-contract.md`.
+- Vérification : `docs/jt-sets-001/lot01-verification.md`.
+- Run frais `37339853652` : GREEN, 38 tests OK.
+- Archive : 327992765 octets, SHA `f73ca1fd5e96ca6e11df5987bda8b2e59ebac26b1beb23fe34883b15bee66647`.
+- Main préparé SHA `5e1a25b3d149bc82a7bad7361760c3f53574d4898c43479456a389b83b84c68f`.
+- Aucun code produit/asset/workflow ne diffère de la base après retrait du diagnostic temporaire.
 
 ## Canon gameplay
-- 3 orbes par camp ; nouvel échange = 10 s.
-- Retour de pouvoir = temps restant.
-- KO réel seul = victoire de round ; 2 rounds = match.
-- Nouveau vrai round : énergie gauche/droite = 0.
-- Vie : 500000000 par camp.
-- Score : `max(0,150000000-Σe³)` ; égalité si différence < 20000.
-- Coûts slots 1..6 : 60/40/60/60/60/80.
-- Activation : énergie strictement > coût ; énergie fractionnaire.
-- Effets appliqués une seule fois, jamais à EOS.
+- 3 orbes/camp ; nouvel échange 10 s ; retour pouvoir conserve le temps.
+- KO réel seul ; 2 rounds = match ; vrai nouveau round énergie 0/0.
+- Vie 500000000/camp ; score historique inchangé.
+- Coûts 60/40/60/60/60/80 ; disponibilité `energy > cost`.
 
-## Architecture actuelle vérifiée
-- `JuneTrex.zip` -> `tools/prepare_android.py` -> `app/main.py` généré.
-- `tools/jtrex_phase_runtime.py` : phases, rounds, KO, chrono.
-- `tools/jtrex_media_runtime.py` : intros/scènes, EOS, boucle attente, admin 20 touches.
-- `app/main.py` n’est pas versionné.
-- `prepare_android.py` centralise actuellement les coûts et `MEDIA_ASSETS`.
-- `jtrex_phase_runtime.py` injecte aujourd’hui ZeroWin dans le catalogue global : point à découpler pendant JT-SETS-001.
+## Pouvoirs prouvés
+- ST gauche : slot1 état21 STSF cible droite 1/4 ; slot2 état22 STLS soin gauche 1/4 ; slot3 état23 STTA cible droite 1/4.
+- TR droite : slot4 état24 TRFS cible gauche 1/4 ; slot5 état25 TRPH cible gauche 1/4 ; slot6 état26 TRMA cible gauche 1/3.
+- `deg[21..26]=181..186` = jalons d’animation.
+- Les dégâts alimentent aussi l’énergie et passent par le traitement partagé ; STLS/182 est le cas soin exclu de ce calcul/lissage.
+- EOS vidéo ne réapplique aucun effet ; il libère la présentation/KO.
 
-## Lot 01 prévu
-Audit seulement : reproduire le main généré canonique, inventorier identités/médias/images/sons et les six mécanismes de pouvoir, puis écrire le contrat v1. Aucun runtime set, manifeste actif, menu ou import/export pendant ce lot.
+## Format v1 initial
+- manifeste fermé/versionné, DATA-ONLY ;
+- 2 dinos explicites left/right ; 9 rôles média ; 6 pouvoirs ; assets id/path/type/size/SHA-256 ;
+- aucun Python/KV/script/formule ;
+- paramètres d’équilibrage `parameters:{}` jusqu’au Lot 06 ;
+- coûts, états, jalons, EOS, phases et mécanismes restent moteur-owned.
 
-## Cible finale JT-SETS-001
-- manifeste fermé/versionné ;
-- catalogue officiel + sets utilisateur ;
-- résolveur logique central ;
-- sélection figée pendant un match ;
-- import/export ZIP transactionnel et DATA-ONLY ;
-- atelier derrière les 20 touches ;
-- aperçus sans callbacks gameplay ;
-- paramètres de pouvoirs seulement après inventaire et validation Fab.
-
-## État Android publié/candidat
-- Dernière Release : `v1.0.15-main`.
-- Build #78 / `37245309424` : CI verte.
-- APK candidat SHA-256 : `2fe8016dc3dd98d1c6303fd88c02c04e497490407489636789e291ae20fa0f23`.
-- Validation téléphone complète non enregistrée au démarrage de JT-SETS-001.
-
-## Méthode
-Relire code/tests/preuves ; synchroniser les cinq mémoires à chaque changement utile ; pas de merge `main` ni Release sans Fab.
+## Prochain geste
+Lot 02 : créer manifeste canonique/catalogue/résolveur, faire passer le runtime média par la résolution centrale, sortir ZeroWin de la mutation globale, et prouver l’équivalence canonique. Pas de merge `main` ni Release sans Fab.

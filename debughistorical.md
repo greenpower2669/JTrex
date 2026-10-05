@@ -3,42 +3,29 @@
 Dernière consolidation : 2026-10-05
 
 ## Rôle
-Conserver uniquement les faits de diagnostic encore utiles à JT-SETS-001 et les protections canoniques. Historique intégral : `archive/memories/2026-10-04-pre-main-merge/debughistorical.md`.
+Faits de diagnostic utiles à JT-SETS-001. Historique ancien : `archive/memories/2026-10-04-pre-main-merge/`.
 
-## Baseline vérifiée
-- `main` au démarrage JT-SETS-001 : `ce858fe57b395c2a52967dc0e8acdd92ff6aa81e`.
-- Parent fonctionnel : `976344c39dec9bb88ef8f7e18e703f2ed2659d07`.
-- Build #78 / `37245309424` : CI verte.
-- Validation téléphone complète non enregistrée dans les mémoires.
-- Dernière Release : `v1.0.15-main`.
+## Baseline JT-SETS-001
+- Base : `main@ce858fe57b395c2a52967dc0e8acdd92ff6aa81e`.
+- Archive canonique SHA `f73ca1fd5e96ca6e11df5987bda8b2e59ebac26b1beb23fe34883b15bee66647`.
+- Main préparé SHA `5e1a25b3d149bc82a7bad7361760c3f53574d4898c43479456a389b83b84c68f`.
+- Run Lot 01 `37339853652` GREEN ; 38 tests OK.
+- Diagnostic temporaire supprimé ; final tree sans diff produit par rapport à la base.
 
-## Plan Lot 01
-`docs/superpowers/plans/2026-10-05-jtrex-sets-lot01.md` est prêt et attend validation Fab. Il impose une reproduction par archive/SHA avant inventaire et interdit toute déduction d’équilibrage depuis `deg`, `longanim1`, `indexa`, frames, durée vidéo ou EOS sans preuve du main généré.
+## Lot 01 — faits structurants
+1. `app/main.py` n’est pas versionné : toute analyse gameplay doit repartir de l’archive prouvée + préparateur.
+2. `deg[21..26]=181..186` sont des jalons de frame, pas des montants de dégâts.
+3. Effets bruts actuels : 21 `degd+=pvd/4`; 22 `degg-=pvg/4`; 23 `degd+=pvd/4`; 24 `degg+=pvg/4`; 25 `degg+=pvg/4`; 26 `degg+=pvg/3`.
+4. Hors jalon 182, le traitement partagé convertit les deltas en énergie puis lisse les nouveaux dégâts de 1/4 ; modifier les dégâts modifie donc aussi l’énergie.
+5. Jalon 182 = soin : pas de calcul/lissage énergie correspondant ; `affpv` borne `degg` à zéro.
+6. L’EOS MP4 ne produit aucun nouvel impact ; génération/player guards rejettent les callbacks périmés. `video_complete` ne fait que libérer la phase.
+7. ZeroWin est encore installé en mutant le `SCENES` global ; dette ciblée Lot 02.
 
-## Résolus — ne pas rouvrir sans preuve
-### Bootstrap Android / zlib
-Ancien crash natif résolu ; préserver la chaîne Python 3.12.14 / FFmpeg 6.1.2 / ffpyplayer 4.5.1.
-
-### KO / rounds / chrono / énergie
-- verdict de jauge != victoire de round ;
-- KO réel seul incrémente un round ;
-- deux rounds terminent le match ;
-- nouvel échange = `car2=10` + stops nettoyés ;
-- retour pouvoir = temps restant ;
-- vrai nouveau round = énergie 0/0.
-
-### Média
-- wait canonique : `assets/combat/StegTrexPlageVideoenboucledesorbes.mp4` ;
-- EOS wait sans gameplay ;
-- pouvoirs/finishings protégés jusqu’à EOS réel si requis.
-
-## Points de risque JT-SETS-001
-1. `app/main.py` n’est pas versionné : l’inventaire doit porter sur le fichier généré depuis l’archive canonique prouvée.
-2. `jtrex_phase_runtime.py` ajoute actuellement ZeroWin dans le dictionnaire global `SCENES` : éviter toute mutation globale entre sessions/aperçus.
-3. `MEDIA_ASSETS` est une garde réelle testée par taille : la migration vers manifests ne doit pas supprimer cette preuve.
-4. Changer de set devra invalider lecteurs/callbacks/générations sans ancien EOS actif.
-5. Les aperçus admin ne devront jamais réutiliser les callbacks combat.
-6. Paramètres de dégâts/soins peuvent modifier indirectement l’énergie ; aucun champ d’équilibrage exposé sans inventaire et validation Fab.
+## Risques suivants
+- Lot 02 : équivalence stricte du mapping canonique via résolveur ; aucune fuite globale ZeroWin.
+- Futur changement de set : invalider lecteurs, callbacks, textures et reprise vidéo.
+- Import : garder les gardes taille/SHA et refuser code/chemins hors racine.
+- Lot 06 : aucune valeur d’équilibrage ouverte sans validation Fab et tests PV+énergie.
 
 ## Règle
-Aucune régression déclarée ou corrigée sans reproduction/preuve fraîche. Tests CI != validation téléphone.
+Tests CI != validation téléphone. Aucun bug ou correctif annoncé sans preuve fraîche.

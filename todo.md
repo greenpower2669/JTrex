@@ -4,40 +4,46 @@ Dernière consolidation : 2026-10-05
 
 ## JT-SETS-001 — ACTIF
 - [x] Feu vert Fab reçu.
-- [x] Vérifier `main` : `ce858fe57b395c2a52967dc0e8acdd92ff6aa81e`.
-- [x] Lire `ordres-de-mission.md`, `brain.md`, `brainmap.md`, `debughistorical.md`, `todo.md`.
-- [x] Créer `feature/dinosaur-sets-v1` depuis le HEAD vérifié.
-- [x] Formaliser le design versionné.
-- [x] Validation Fab de la spec.
-- [x] Écrire le plan Lot 01 : `docs/superpowers/plans/2026-10-05-jtrex-sets-lot01.md`.
-- [ ] Validation Fab du plan Lot 01.
-- [ ] Lot 01 / Task 1 : reproduire le vrai `app/main.py` depuis `JuneTrex.zip` prouvé par taille + SHA.
-- [ ] Lot 01 / Task 2 : inventorier identités, médias, images/variantes, sons et mapping six slots.
-- [ ] Lot 01 / Task 3 : inventorier six mécanismes, bases/cibles/réductions/plafonds/jalons et classer les vrais paramètres.
-- [ ] Lot 01 / Task 4 : produire `docs/jt-sets-001/format-v1-contract.md`.
-- [ ] Lot 01 / Task 5 : non-régression complète + synchronisation mémoires + retour Fab.
-- [ ] Lot 02 : manifeste canonique + résolution centrale + équivalence du set actuel.
+- [x] Base `main@ce858fe57b395c2a52967dc0e8acdd92ff6aa81e` vérifiée.
+- [x] Branche `feature/dinosaur-sets-v1` créée.
+- [x] Design approuvé.
+- [x] Plan Lot 01 approuvé.
+
+## Lot 01 — TERMINÉ
+- [x] Reproduire le vrai `app/main.py` depuis `JuneTrex.zip` prouvé taille + SHA.
+- [x] Baseline fraîche : run `37339853652`, 38 tests OK.
+- [x] Inventorier identités, médias, images, sons et mapping six slots.
+- [x] Inventorier mécanismes, cibles, bases, traitement énergie/lissage et jalons.
+- [x] Classer `deg`, `longanim1`, `anim1`, `indexa`, durée MP4 et EOS comme non-paramètres.
+- [x] Produire `docs/jt-sets-001/format-v1-contract.md`.
+- [x] Retirer le workflow diagnostic temporaire.
+- [x] Vérifier le diff final : aucun changement produit/assets/workflows par rapport à la base.
+- [x] Synchroniser les cinq mémoires.
+
+## Lot 02 — PROCHAIN
+- [ ] Écrire le plan Lot 02 à partir du contrat v1.
+- [ ] Introduire le runtime minimal contrat/catalogue/résolution.
+- [ ] Créer catalogue officiel + manifeste canonique sans déplacement massif d’assets.
+- [ ] Faire résoudre intros/scènes/pouvoirs/finishings/ZeroWin par rôle logique.
+- [ ] Supprimer la mutation globale de `SCENES` pour ZeroWin.
+- [ ] Prouver que le set canonique garde mapping/policies/coûts/effets/chrono/KO/EOS identiques.
+
+## Lots suivants
 - [ ] Lot 03 : catalogue/menu + sélection persistante figée par match.
 - [ ] Lot 04 : stockage officiel/utilisateur/brouillon + import/export ZIP sûr.
 - [ ] Lot 05 : atelier 20 touches + aperçu indépendant + test brouillon.
 - [ ] Lot 06 : exposer uniquement les paramètres validés par Fab avec bornes approuvées.
 
-## Non-régression obligatoire
-- [ ] Tous les tests historiques chrono/KO/EOS/HUD/pouvoirs restent verts.
+## Non-régression globale JT-SETS-001
+- [x] Lot 01 : tests historiques restent verts, sans code produit modifié.
 - [ ] Deux sets successifs sans lecteur/texture/callback résiduel.
 - [ ] Un vieux EOS ne peut pas agir sur une nouvelle session.
 - [ ] Import/export round-trip avec empreintes et installation sans set source.
-- [ ] Aucun code exécutable dans un pack.
-- [ ] Set canonique strictement équivalent à la référence.
-
-## Baseline Android
-- Build #78 / `37245309424` : CI verte.
-- APK candidat SHA-256 : `2fe8016dc3dd98d1c6303fd88c02c04e497490407489636789e291ae20fa0f23`.
-- Validation téléphone complète non enregistrée au démarrage JT-SETS-001.
-- Dernière Release : `v1.0.15-main`.
+- [ ] Aucun code exécutable accepté dans un pack.
+- [ ] Set canonique strictement équivalent via le nouveau résolveur.
 
 ## Interdictions
 - Pas de merge `main`.
 - Pas de Release automatique.
 - Pas d’AAB sauf demande/nécessité de livraison.
-- Pas de refonte générale ni de gameplay dupliqué par set.
+- Pas de gameplay dupliqué par set.
