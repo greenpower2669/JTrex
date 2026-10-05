@@ -25,7 +25,9 @@ Objectif : sets complets de confrontations de dinosaures DATA + MEDIA autour d�
 
 Branche dédiée : `feature/dinosaur-sets-v1` issue du `main` vérifié `ce858fe57b395c2a52967dc0e8acdd92ff6aa81e`.
 
-Design versionné : `docs/superpowers/specs/2026-10-05-jtrex-dinosaur-sets-design.md`.
+Design approuvé : `docs/superpowers/specs/2026-10-05-jtrex-dinosaur-sets-design.md`.
+Plan Lot 01 prêt : `docs/superpowers/plans/2026-10-05-jtrex-sets-lot01.md`.
+Statut : plan en attente de validation Fab avant exécution. Exécution prévue native par Sol, sans sous-agent imposé.
 
 Ordre des lots :
 1. inventaire du vrai `app/main.py` généré + contrat de format v1 ;
@@ -44,7 +46,7 @@ Règles :
 
 Le précédent verrou « attendre le retour téléphone du build #78 » est levé uniquement pour démarrer JT-SETS-001 par ordre explicite de Fab. Le build #78 reste CI-vert mais ne doit pas être présenté rétroactivement comme totalement validé téléphone.
 
-## JT-ASSETS-LIGHT-001 — CLOS CÔTÉ PRÉPARATION
+## Baseline précédente
 - Base fonctionnelle : `976344c39dec9bb88ef8f7e18e703f2ed2659d07`.
 - Build #78 / `37245309424` : CI verte.
 - APK candidat : `JuneT-Rex-1.0.15-debug.apk`, SHA-256 `2fe8016dc3dd98d1c6303fd88c02c04e497490407489636789e291ae20fa0f23`.
