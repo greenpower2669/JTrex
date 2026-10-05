@@ -46,16 +46,18 @@ class OrbPresentationCanon(unittest.TestCase):
 
     def test_orb_wait_scene_uses_new_beach_loop_exclusively(self):
         h = Harness()
-        scene = h.runtime.SCENES['wait']
-        self.assertTrue(scene['loop'])
+        spec = h.runtime.SCENE_SPECS['wait']
+        scene = h.media._scene_config('wait')
+        self.assertTrue(spec['loop'])
+        self.assertNotIn('file', spec)
         self.assertEqual(
             scene['file'],
             'assets/combat/StegTrexPlageVideoenboucledesorbes.mp4',
         )
         self.assertFalse(hasattr(h.runtime, 'LEGACY_WAIT_FILE'))
         self.assertTrue(all(
-            'StegVsTrexvaetviensremolace' not in item['file']
-            for item in h.runtime.SCENES.values()
+            'StegVsTrexvaetviensremolace' not in h.media._scene_config(key)['file']
+            for key in h.runtime.SCENE_SPECS
         ))
 
     def test_new_round_resets_both_energy_bars_to_zero(self):

@@ -1,0 +1,9 @@
+{
+  "format_version": 1,
+  "sets": [
+    {
+      "set_id": "trex_vs_steg",
+      "manifest": "assets/sets/trex_vs_steg/manifest.json"
+    }
+  ]
+}

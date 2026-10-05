@@ -4,7 +4,7 @@ package.name = junetrex
 package.domain = com.junedady
 
 source.dir = .
-source.include_exts = py,kv,png,jpg,jpeg,gif,wav,mp4
+source.include_exts = py,kv,png,jpg,jpeg,gif,wav,mp4,json
 source.exclude_dirs = .kivy,bin,.buildozer,__pycache__
 
 version = 1.0.15

@@ -22,89 +22,26 @@ from kivy.uix.popup import Popup
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.widget import Widget
 from jtrex_phase_runtime import JTPhaseController
+from jtrex_sets_runtime import load_official_set
 
 
-INTRO_FILES = (
-    "assets/intro/JTrexintro1.mp4",
-    "assets/intro/JTrexintro2.mp4",
-    "assets/intro/JTrexintro3.mp4",
-)
-
-SCENES = {
-    "wait": {
-        "states": frozenset((1,)),
-        "file": "assets/combat/StegTrexPlageVideoenboucledesorbes.mp4",
-        "loop": True,
-    },
-    "charge": {
-        "states": frozenset((2, 3, 4)),
-        "file": "assets/combat/Chargestegtrexchargerougebleucorrected.mp4",
-        "loop": False,
-    },
-    "yellow": {
-        "states": frozenset((5, 6, 7)),
-        "file": "assets/combat/Stegtrexegalitechargeboutonjaune.mp4",
-        "loop": False,
-    },
-    "st-win": {
-        "states": frozenset((8,)),
-        "file": "assets/combat/Stegtrexresultstegwin.mp4",
-        "loop": False,
-    },
-    "tr-win": {
-        "states": frozenset((9,)),
-        "file": "assets/combat/Stegtrexresulttrexwin.mp4",
-        "loop": False,
-    },
-    "power-stsf": {
-        "states": frozenset((21,)),
-        "file": "assets/powers/stsf-sanctuary-force.mp4",
-        "loop": False,
-        "play_to_end": True,
-    },
-    "power-stls": {
-        "states": frozenset((22,)),
-        "file": "assets/powers/stls-lifestream.mp4",
-        "loop": False,
-        "play_to_end": True,
-    },
-    "power-stta": {
-        "states": frozenset((23,)),
-        "file": "assets/powers/stta-tornado-attack.mp4",
-        "loop": False,
-        "play_to_end": True,
-    },
-    "power-trfs": {
-        "states": frozenset((24,)),
-        "file": "assets/powers/trfs-fire-storm.mp4",
-        "loop": False,
-        "play_to_end": True,
-    },
-    "power-trph": {
-        "states": frozenset((25,)),
-        "file": "assets/powers/trph-phoenix-attack.mp4",
-        "loop": False,
-        "play_to_end": True,
-    },
-    "power-trma": {
-        "states": frozenset((26,)),
-        "file": "assets/powers/trma-meteor-attack.mp4",
-        "loop": False,
-        "play_to_end": True,
-    },
-    "finish-st": {
-        "states": frozenset((10,)),
-        "file": "assets/finishing/steg-finishing-trex.mp4",
-        "loop": False,
-        "play_to_end": True,
-    },
-    "finish-tr": {
-        "states": frozenset((11,)),
-        "file": "assets/finishing/trex-finishing-steg.mp4",
-        "loop": False,
-        "play_to_end": True,
-    },
+SCENE_SPECS = {
+    "wait": {"states": frozenset((1,)), "media_role": "orbs_background", "loop": True},
+    "charge": {"states": frozenset((2, 3, 4)), "media_role": "charge_red_blue", "loop": False},
+    "yellow": {"states": frozenset((5, 6, 7)), "media_role": "charge_yellow", "loop": False},
+    "zero-win": {"states": frozenset((-7,)), "media_role": "verdict_draw", "loop": False},
+    "st-win": {"states": frozenset((8,)), "media_role": "verdict_left", "loop": False},
+    "tr-win": {"states": frozenset((9,)), "media_role": "verdict_right", "loop": False},
+    "power-stsf": {"states": frozenset((21,)), "power_key": "left_1", "loop": False, "play_to_end": True},
+    "power-stls": {"states": frozenset((22,)), "power_key": "left_2", "loop": False, "play_to_end": True},
+    "power-stta": {"states": frozenset((23,)), "power_key": "left_3", "loop": False, "play_to_end": True},
+    "power-trfs": {"states": frozenset((24,)), "power_key": "right_1", "loop": False, "play_to_end": True},
+    "power-trph": {"states": frozenset((25,)), "power_key": "right_2", "loop": False, "play_to_end": True},
+    "power-trma": {"states": frozenset((26,)), "power_key": "right_3", "loop": False, "play_to_end": True},
+    "finish-st": {"states": frozenset((10,)), "media_role": "finishing_left", "loop": False, "play_to_end": True},
+    "finish-tr": {"states": frozenset((11,)), "media_role": "finishing_right", "loop": False, "play_to_end": True},
 }
+
 
 POWER_SCENE_KEYS = frozenset((
     "power-stsf", "power-stls", "power-stta",
@@ -216,6 +153,7 @@ class JTMediaController:
     def __init__(self, app):
         self.app = app
         self.root = app.root
+        self.selection = load_official_set(self._resolve)
         self._intro_player = None
         self._intro_overlay = None
         self._intro_timeout = None
@@ -411,7 +349,7 @@ class JTMediaController:
                 self.phases.name, self.phases.round_number,
                 self._engine['car'], self._engine['car2'], self._scene_generation))
         catalog_states = set(self._legacy_names)
-        for scene in SCENES.values():
+        for scene in SCENE_SPECS.values():
             catalog_states.update(scene["states"])
         for state in sorted(catalog_states):
             key = self._key_for_state(state)
@@ -433,7 +371,7 @@ class JTMediaController:
                     )
                 )
                 continue
-            scene = SCENES[key]
+            scene = self._scene_config(key)
             video_file = scene["file"]
             video_present = bool(self._resolve(video_file))
             if state == current:
@@ -554,17 +492,27 @@ class JTMediaController:
 
     @staticmethod
     def _key_for_state(indexa):
-        for key, scene in SCENES.items():
+        for key, scene in SCENE_SPECS.items():
             if indexa in scene["states"]:
                 return key
         return None
+
+    def _scene_config(self, key):
+        spec = dict(SCENE_SPECS[key])
+        if "media_role" in spec:
+            spec["file"] = self.selection.media_path(spec["media_role"])
+        elif "power_key" in spec:
+            spec["file"] = self.selection.power_media_path(spec["power_key"])
+        else:
+            raise KeyError("scene without media selector: {}".format(key))
+        return spec
 
     def start_intro(self, done_callback):
         if self._intro_done:
             Clock.schedule_once(lambda dt: done_callback(), 0)
             return
         self._intro_done_callback = done_callback
-        chosen = random.choice(INTRO_FILES)
+        chosen = random.choice(self.selection.intro_paths())
         path = self._resolve(chosen)
         print("[JT-INTRO] chosen={}".format(chosen), flush=True)
         if not path or CoreVideo is None:
@@ -645,7 +593,7 @@ class JTMediaController:
             self._scene_completed_key = None
 
         if self._scene_player is not None and self._scene_key is not None:
-            current_scene = SCENES[self._scene_key]
+            current_scene = self._scene_config(self._scene_key)
             if (
                 current_scene.get("play_to_end", False)
                 and not self._scene_eos_reached
@@ -686,7 +634,7 @@ class JTMediaController:
         self.sync_scene_state(indexa)
 
     def _start_scene(self, key, indexa):
-        scene = SCENES[key]
+        scene = self._scene_config(key)
         path = self._resolve(scene["file"])
         self._scene_key = key
         self._scene_generation += 1
@@ -872,7 +820,7 @@ class JTMediaController:
             return
         self._scene_eos_reached = True
         key = self._scene_key
-        scene = SCENES.get(key, {})
+        scene = self._scene_config(key) if key in SCENE_SPECS else {}
         print(
             "[JT-SCENE] eos key={} generation={} play_to_end={} file={} position={} duration={} engine={} state-machine=unchanged".format(
                 key, generation, scene.get("play_to_end", False), scene.get("file"),

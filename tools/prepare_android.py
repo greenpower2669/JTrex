@@ -10,6 +10,8 @@ import tempfile
 import zipfile
 from pathlib import Path, PurePosixPath
 
+from jtrex_sets_runtime import CATALOG_PATH, load_official_set
+
 
 VERSION = "1.0.15"
 NUMERIC_VERSION = "115"
@@ -22,7 +24,7 @@ MAIN_SHA256 = (
     "3673fb85d12bea18276e485c5956530b4b8"
     "c0dda283cacb022e784bfe8c35231"
 )
-EXTENSIONS = {"py", "kv", "png", "jpg", "jpeg", "gif", "wav", "mp4"}
+EXTENSIONS = {"py", "kv", "png", "jpg", "jpeg", "gif", "wav", "mp4", "json"}
 EXCLUDED_DIRS = {".kivy", ".buildozer", "__pycache__", "bin"}
 LEGACY_IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif"}
 MP4_ONLY_LEGACY_SEQUENCES = {
@@ -45,26 +47,10 @@ MP4_ONLY_LEGACY_SEQUENCES = {
 }
 MP4_ONLY_LEGACY_DIRS = frozenset(MP4_ONLY_LEGACY_SEQUENCES)
 MP4_ONLY_STATES = (1,2,3,4,5,6,7,8,9,10,11,21,22,23,24,25,26)
-MEDIA_ASSETS = {
+APP_ASSETS = {
     "assets/icon/JtrexIcon.png": 2283569,
-    "assets/intro/JTrexintro1.mp4": 3278089,
-    "assets/intro/JTrexintro2.mp4": 2584105,
-    "assets/intro/JTrexintro3.mp4": 3349412,
-    "assets/combat/Chargestegtrexchargerougebleucorrected.mp4": 833378,
-    "assets/powers/stsf-sanctuary-force.mp4": 2525411,
-    "assets/powers/stls-lifestream.mp4": 2243703,
-    "assets/powers/stta-tornado-attack.mp4": 2928334,
-    "assets/powers/trfs-fire-storm.mp4": 2431111,
-    "assets/powers/trph-phoenix-attack.mp4": 1945922,
-    "assets/powers/trma-meteor-attack.mp4": 2544535,
-    "assets/finishing/steg-finishing-trex.mp4": 2184229,
-    "assets/finishing/trex-finishing-steg.mp4": 1834787,
-    "assets/combat/Stegtrexegalitechargeboutonjaune.mp4": 1432415,
-    "assets/combat/StegTrexPlageVideoenboucledesorbes.mp4": 9848376,
-    "assets/combat/Stegtrexresultstegwin.mp4": 1521350,
-    "assets/combat/Stegtrexresulttrexwin.mp4": 760242,
-    "assets/combat/Zerowinstegtrexsurleschargedejaugejauneetbleuetrouge.mp4": 1147683,
 }
+
 
 
 def digest(path):
@@ -871,6 +857,18 @@ def prepare(archive, destination, spec, media_root, runtime):
     require(spec.is_file(), "buildozer.spec absent.")
     require(media_root.is_dir(), "Dossier assets absent.")
     require(runtime.is_file(), "Runtime vidéo absent.")
+    sets_runtime = runtime.with_name("jtrex_sets_runtime.py")
+    require(sets_runtime.is_file(), "Runtime de sets absent.")
+    repo_root = media_root.parent
+    def resolve_repo(relative_path):
+        path = repo_root.joinpath(*PurePosixPath(relative_path).parts)
+        return str(path) if path.is_file() else None
+    selection = load_official_set(resolve_repo)
+    manifest_source = repo_root.joinpath(*PurePosixPath(selection.manifest_path).parts)
+    catalog_source = repo_root.joinpath(*PurePosixPath(CATALOG_PATH).parts)
+    require(catalog_source.is_file(), "Catalogue de sets absent.")
+    require(manifest_source.is_file(), "Manifeste canonique absent.")
+    canonical_manifest_sha256 = digest(manifest_source)
     require(
         not destination.exists(),
         "Le dossier de sortie existe déjà : aucun écrasement effectué.",
@@ -891,13 +889,12 @@ def prepare(archive, destination, spec, media_root, runtime):
         and config.get("app", "package.domain") == "com.junedady",
         "Identité du paquet différente de la référence.",
     )
-    require(
-        "mp4" in {
-            item.strip().lower()
-            for item in config.get("app", "source.include_exts").split(",")
-        },
-        "MP4 absent de source.include_exts.",
-    )
+    include_exts = {
+        item.strip().lower()
+        for item in config.get("app", "source.include_exts").split(",")
+    }
+    require("mp4" in include_exts, "MP4 absent de source.include_exts.")
+    require("json" in include_exts, "JSON absent de source.include_exts.")
     requirements = config.get("app", "requirements")
     require(
         "ffpyplayer" in requirements,
@@ -997,24 +994,35 @@ def prepare(archive, destination, spec, media_root, runtime):
         adapted = adapt_main(original)
         main.write_bytes(adapted.encode("utf-8"))
 
-        asset_report = {}
-        for target_name, expected_size in MEDIA_ASSETS.items():
+        app_asset_report = {}
+        for target_name, expected_size in APP_ASSETS.items():
             rel = PurePosixPath(target_name)
-            source = media_root.joinpath(*rel.parts[1:])
-            require(source.is_file(), f"Ressource fournie absente : {target_name}")
-            require(
-                source.stat().st_size == expected_size,
-                f"Taille inattendue pour {target_name}",
-            )
+            source = repo_root.joinpath(*rel.parts)
+            require(source.is_file(), f"Ressource application absente : {target_name}")
+            require(source.stat().st_size == expected_size, f"Taille inattendue pour {target_name}")
             target = stage.joinpath(*rel.parts)
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(source, target)
-            asset_report[target_name] = {
-                "size": target.stat().st_size,
-                "sha256": digest(target),
-            }
+            app_asset_report[target_name] = {"size": target.stat().st_size, "sha256": digest(target)}
+
+        canonical_set_assets = {}
+        for asset in selection.assets():
+            target_name = asset["path"]
+            rel = PurePosixPath(target_name)
+            target = stage.joinpath(*rel.parts)
+            if rel.parts and rel.parts[0] == "assets":
+                source = repo_root.joinpath(*rel.parts)
+                require(source.is_file(), f"Ressource set fournie absente : {target_name}")
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(source, target)
+            require(target.is_file(), f"Ressource set absente après préparation : {target_name}")
+            require(target.stat().st_size == asset["size"], f"Taille set inattendue pour {target_name}")
+            actual_sha = digest(target)
+            require(actual_sha == asset["sha256"], f"SHA-256 set inattendu pour {target_name}")
+            canonical_set_assets[target_name] = {"size": target.stat().st_size, "sha256": actual_sha}
 
         shutil.copyfile(runtime, stage / "jtrex_media_runtime.py")
+        shutil.copyfile(sets_runtime, stage / "jtrex_sets_runtime.py")
         phase_runtime = runtime.with_name("jtrex_phase_runtime.py")
         require(phase_runtime.is_file(), "Runtime de phases absent.")
         shutil.copyfile(phase_runtime, stage / "jtrex_phase_runtime.py")
@@ -1024,6 +1032,15 @@ def prepare(archive, destination, spec, media_root, runtime):
             "jtrex_media_runtime.py",
             "exec",
         )
+        compile(
+            (stage / "jtrex_sets_runtime.py").read_text(encoding="utf-8"),
+            "jtrex_sets_runtime.py",
+            "exec",
+        )
+        for source_file, relative_name in ((catalog_source, CATALOG_PATH), (manifest_source, selection.manifest_path)):
+            target = stage.joinpath(*PurePosixPath(relative_name).parts)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(source_file, target)
 
         for resource in (
             "main.kv",
@@ -1031,22 +1048,9 @@ def prepare(archive, destination, spec, media_root, runtime):
             "boutBleu0.png",
             "pter/pter0.png",
             "assets/icon/JtrexIcon.png",
-            "assets/intro/JTrexintro1.mp4",
-            "assets/intro/JTrexintro2.mp4",
-            "assets/intro/JTrexintro3.mp4",
-            "assets/combat/Chargestegtrexchargerougebleucorrected.mp4",
-            "assets/powers/stsf-sanctuary-force.mp4",
-            "assets/powers/stls-lifestream.mp4",
-            "assets/powers/stta-tornado-attack.mp4",
-            "assets/powers/trfs-fire-storm.mp4",
-            "assets/powers/trph-phoenix-attack.mp4",
-            "assets/powers/trma-meteor-attack.mp4",
-            "assets/finishing/steg-finishing-trex.mp4",
-            "assets/finishing/trex-finishing-steg.mp4",
-            "assets/combat/Stegtrexegalitechargeboutonjaune.mp4",
-            "assets/combat/StegTrexPlageVideoenboucledesorbes.mp4",
-            "assets/combat/Stegtrexresultstegwin.mp4",
-            "assets/combat/Stegtrexresulttrexwin.mp4",
+            "jtrex_sets_runtime.py",
+            CATALOG_PATH,
+            selection.manifest_path,
         ):
             require(
                 (stage / resource).is_file(),
@@ -1106,7 +1110,12 @@ def prepare(archive, destination, spec, media_root, runtime):
             "prepared_main_sha256": digest(main),
             "runtime_sha256": digest(stage / "jtrex_media_runtime.py"),
             "phase_runtime_sha256": digest(stage / "jtrex_phase_runtime.py"),
+            "sets_runtime_sha256": digest(stage / "jtrex_sets_runtime.py"),
             "buildozer_spec_sha256": digest(stage / "buildozer.spec"),
+            "canonical_set_id": selection.set_id,
+            "canonical_manifest_sha256": canonical_manifest_sha256,
+            "canonical_set_asset_count": len(selection.assets()),
+            "canonical_set_assets": canonical_set_assets,
             "extracted_historical_files": len(extracted),
             "pruned_legacy_image_files": pruned_legacy_image_files,
             "pruned_legacy_image_bytes": pruned_legacy_image_bytes,
@@ -1115,7 +1124,7 @@ def prepare(archive, destination, spec, media_root, runtime):
             "preserved_legacy_nonframe_bytes": preserved_legacy_nonframe_bytes,
             "mp4_only_states": list(MP4_ONLY_STATES),
             "icon_source": "assets/icon/JtrexIcon.png",
-            "media_assets": asset_report,
+            "app_assets": app_asset_report,
             "known_missing_resources": known_missing,
             "changes": [
                 "a.png -> A.png: 4 références",

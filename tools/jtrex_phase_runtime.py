@@ -53,21 +53,12 @@ class JTPhaseController:
             if isinstance(obj, label_type)
         }
         self._saved_opacity = {name: obj.opacity for name, obj in self._labels.items()}
-        self._install_zero_win_scene()
         self._install_gauge_media_hooks()
         self._install_round_markers()
 
     @property
     def round_active(self):
         return self.name == "ROUND_ACTIVE" and not self.paused
-
-    def _install_zero_win_scene(self):
-        scenes = self.media._key_for_state.__globals__["SCENES"]
-        scenes["zero-win"] = {
-            "states": frozenset((self.ZERO_WIN_STATE,)),
-            "file": "assets/combat/Zerowinstegtrexsurleschargedejaugejauneetbleuetrouge.mp4",
-            "loop": False,
-        }
 
     def _install_round_markers(self):
         """Exactly one visible match-round lamp per camp; second win stays internal."""

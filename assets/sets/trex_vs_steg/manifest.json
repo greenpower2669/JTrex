@@ -1,0 +1,400 @@
+{
+  "format_version": 1,
+  "set_id": "trex_vs_steg",
+  "revision": 1,
+  "display_name": "Steg vs T-Rex",
+  "engine_contract": "jtrex-combat-v1",
+  "catalog": {
+    "thumbnail": null
+  },
+  "dinosaurs": {
+    "left": {
+      "id": "st",
+      "display_name": "Steg",
+      "portrait": null
+    },
+    "right": {
+      "id": "tr",
+      "display_name": "T-Rex",
+      "portrait": null
+    }
+  },
+  "media": {
+    "intros": [
+      "intro_1",
+      "intro_2",
+      "intro_3"
+    ],
+    "orbs_background": "orbs_background",
+    "charge_red_blue": "charge_red_blue",
+    "charge_yellow": "charge_yellow",
+    "verdict_draw": "verdict_draw",
+    "verdict_left": "verdict_left",
+    "verdict_right": "verdict_right",
+    "finishing_left": "finishing_left",
+    "finishing_right": "finishing_right"
+  },
+  "powers": {
+    "left_1": {
+      "label": "Sanctuary Force",
+      "media": "left_1_media",
+      "images": {
+        "ready": "stsf1",
+        "used": "stsf0"
+      },
+      "activation_audio": "sf",
+      "legacy_fallback_audio": "stsf",
+      "mechanism": "left_slot_1_target_damage",
+      "parameters": {}
+    },
+    "left_2": {
+      "label": "Lifestream",
+      "media": "left_2_media",
+      "images": {
+        "ready": "sth1",
+        "used": "sth0"
+      },
+      "activation_audio": "ls",
+      "legacy_fallback_audio": "stls",
+      "mechanism": "left_slot_2_self_heal",
+      "parameters": {}
+    },
+    "left_3": {
+      "label": "Tornado Attack",
+      "media": "left_3_media",
+      "images": {
+        "ready": "stta1",
+        "used": "stta0"
+      },
+      "activation_audio": "ta",
+      "legacy_fallback_audio": "stta",
+      "mechanism": "left_slot_3_target_damage",
+      "parameters": {}
+    },
+    "right_1": {
+      "label": "Fire Storm",
+      "media": "right_1_media",
+      "images": {
+        "ready": "trfs1",
+        "used": "trfs0"
+      },
+      "activation_audio": "fs",
+      "legacy_fallback_audio": "trfs",
+      "mechanism": "right_slot_1_target_damage",
+      "parameters": {}
+    },
+    "right_2": {
+      "label": "Phoenix Attack",
+      "media": "right_2_media",
+      "images": {
+        "ready": "trph1",
+        "used": "trph0"
+      },
+      "activation_audio": "ph",
+      "legacy_fallback_audio": "trph",
+      "mechanism": "right_slot_2_target_damage",
+      "parameters": {}
+    },
+    "right_3": {
+      "label": "Meteor Attack",
+      "media": "right_3_media",
+      "images": {
+        "ready": "trma1",
+        "used": "trma0"
+      },
+      "activation_audio": "ma",
+      "legacy_fallback_audio": "trma",
+      "mechanism": "right_slot_3_target_damage",
+      "parameters": {}
+    }
+  },
+  "assets": [
+    {
+      "id": "intro_1",
+      "path": "assets/intro/JTrexintro1.mp4",
+      "type": "video",
+      "size": 3278089,
+      "sha256": "3f072bbaa2dcd961d5bf756168b40bd187ac06f61f133cbacb3fe114131e6bc0"
+    },
+    {
+      "id": "intro_2",
+      "path": "assets/intro/JTrexintro2.mp4",
+      "type": "video",
+      "size": 2584105,
+      "sha256": "c152f33e5b5c4773cdac69ce1be84ad99d05d54d51f735532a4d128fb0a7d310"
+    },
+    {
+      "id": "intro_3",
+      "path": "assets/intro/JTrexintro3.mp4",
+      "type": "video",
+      "size": 3349412,
+      "sha256": "4ba0dd3a14b00cf3f03a4a2a64e0e5cec1056e37ce41ed62d1e4b15acb007d28"
+    },
+    {
+      "id": "orbs_background",
+      "path": "assets/combat/StegTrexPlageVideoenboucledesorbes.mp4",
+      "type": "video",
+      "size": 9848376,
+      "sha256": "71b1abe5498d7e9f5dfd61cccede099759c49ec0a82324e8dd76b8c054dccd9d"
+    },
+    {
+      "id": "charge_red_blue",
+      "path": "assets/combat/Chargestegtrexchargerougebleucorrected.mp4",
+      "type": "video",
+      "size": 833378,
+      "sha256": "a7e379505123460803f5d2b244ffa8f24c2aa2a7380dee0f0b2e8adde8467862"
+    },
+    {
+      "id": "charge_yellow",
+      "path": "assets/combat/Stegtrexegalitechargeboutonjaune.mp4",
+      "type": "video",
+      "size": 1432415,
+      "sha256": "9f66ca15e0e3e376e029e8002a1588e379b0c6f3557f7118d00d729a2d04fedf"
+    },
+    {
+      "id": "verdict_draw",
+      "path": "assets/combat/Zerowinstegtrexsurleschargedejaugejauneetbleuetrouge.mp4",
+      "type": "video",
+      "size": 1147683,
+      "sha256": "798b4ac8605a599e29e7cdd1449741b25537d9654e529c687d825bf1f933ccfa"
+    },
+    {
+      "id": "verdict_left",
+      "path": "assets/combat/Stegtrexresultstegwin.mp4",
+      "type": "video",
+      "size": 1521350,
+      "sha256": "e4399e90eaf5a698e5284335704202e01851141b57ab54a859c471a869e469a5"
+    },
+    {
+      "id": "verdict_right",
+      "path": "assets/combat/Stegtrexresulttrexwin.mp4",
+      "type": "video",
+      "size": 760242,
+      "sha256": "3a786dd13f12aace72efe4be457d5dcc0272094024bfd5b1f80460452e273a57"
+    },
+    {
+      "id": "left_1_media",
+      "path": "assets/powers/stsf-sanctuary-force.mp4",
+      "type": "video",
+      "size": 2525411,
+      "sha256": "c2e287425f9f2343c3a50c23428662b33db9afd77ff3380d933deec9e8f74cc4"
+    },
+    {
+      "id": "left_2_media",
+      "path": "assets/powers/stls-lifestream.mp4",
+      "type": "video",
+      "size": 2243703,
+      "sha256": "f7d0ad630162ecf4135ec51541971b10da38ed62ac485d9770c063f555d876b7"
+    },
+    {
+      "id": "left_3_media",
+      "path": "assets/powers/stta-tornado-attack.mp4",
+      "type": "video",
+      "size": 2928334,
+      "sha256": "cea65b5b2a8705101bef5b982032972e384f96024e5d01b5e5b752c6d3f682b9"
+    },
+    {
+      "id": "right_1_media",
+      "path": "assets/powers/trfs-fire-storm.mp4",
+      "type": "video",
+      "size": 2431111,
+      "sha256": "632d661fc1ee7dbe3bd5768de6f1dd7dfd7504da3f001dbb8af13867a96b6c48"
+    },
+    {
+      "id": "right_2_media",
+      "path": "assets/powers/trph-phoenix-attack.mp4",
+      "type": "video",
+      "size": 1945922,
+      "sha256": "d099068f109d00116031442dc472c1e3300795e1df83296b6cf28b94140e3b2c"
+    },
+    {
+      "id": "right_3_media",
+      "path": "assets/powers/trma-meteor-attack.mp4",
+      "type": "video",
+      "size": 2544535,
+      "sha256": "11c5f05af8840b4f9f5d0fc0cf9ba45d80ce3af84d8acaacc77c08f96c102cf1"
+    },
+    {
+      "id": "finishing_left",
+      "path": "assets/finishing/steg-finishing-trex.mp4",
+      "type": "video",
+      "size": 2184229,
+      "sha256": "ae9e28330da5db03c0ff68059794d4d070e643d08d2b3a1989946b7c5834be5a"
+    },
+    {
+      "id": "finishing_right",
+      "path": "assets/finishing/trex-finishing-steg.mp4",
+      "type": "video",
+      "size": 1834787,
+      "sha256": "7f6e532092f5914854b61a97b329060edd23f2f40e2f041a2f4633c5ad19ee66"
+    },
+    {
+      "id": "stsf0",
+      "path": "stsf0.png",
+      "type": "image",
+      "size": 26201,
+      "sha256": "66f940dacf991453c04c7d555257c0b40b0d0cdaab6182a5a6838f36cc386958"
+    },
+    {
+      "id": "stsf1",
+      "path": "stsf1.png",
+      "type": "image",
+      "size": 34821,
+      "sha256": "91e4f20b5b363e78ddf8701d8a139ec138564a07719612aa6689896afd7ee837"
+    },
+    {
+      "id": "sth0",
+      "path": "sth0.png",
+      "type": "image",
+      "size": 24704,
+      "sha256": "1942a01a775233d7441715ec93eb2aab08fd53596309a5a8225ad247907ad2a7"
+    },
+    {
+      "id": "sth1",
+      "path": "sth1.png",
+      "type": "image",
+      "size": 34826,
+      "sha256": "9b8f8ea93907b9f6b9fd03928ffdb01bf5d0e7cde9515632d41796345afa3fc5"
+    },
+    {
+      "id": "stta0",
+      "path": "stta0.png",
+      "type": "image",
+      "size": 21713,
+      "sha256": "7b73d84d4e65a832686e34a5233b784065a8fc20332714013ee4bd0c3889a286"
+    },
+    {
+      "id": "stta1",
+      "path": "stta1.png",
+      "type": "image",
+      "size": 30457,
+      "sha256": "93c589b6056a828464618e4fbcdd811072a774342dc6a59c02e79ac5a02e9a3f"
+    },
+    {
+      "id": "trfs0",
+      "path": "trfs0.png",
+      "type": "image",
+      "size": 23568,
+      "sha256": "323e546d252a649c96d1c39797380c696c93ddebf6fe911b36c91fb93a99f4f7"
+    },
+    {
+      "id": "trfs1",
+      "path": "trfs1.png",
+      "type": "image",
+      "size": 32854,
+      "sha256": "bd62802f334b1d4eccec6492cee9e8db21a0c6548b5daf1b20c16278d98266dd"
+    },
+    {
+      "id": "trph0",
+      "path": "trph0.png",
+      "type": "image",
+      "size": 26263,
+      "sha256": "8b3e4a4be0c38e0acb2b8106e53a6f79fa3ec457be0a5ff2f0c4676721093380"
+    },
+    {
+      "id": "trph1",
+      "path": "trph1.png",
+      "type": "image",
+      "size": 36674,
+      "sha256": "dc5b89d115ec5fdb418c344b344d9101d73143d4f1e1e63b0ddd9d8c2af49238"
+    },
+    {
+      "id": "trma0",
+      "path": "trma0.png",
+      "type": "image",
+      "size": 26139,
+      "sha256": "124e45202c317af15f7d6a1f1ffa1c0a37dde08a0e45ad6dcac0fc74fcd5af64"
+    },
+    {
+      "id": "trma1",
+      "path": "trma1.png",
+      "type": "image",
+      "size": 37948,
+      "sha256": "27a0a4a96a0f17120b5978d380266d92ccbbee91b82afdbf076942c9a626747b"
+    },
+    {
+      "id": "sf",
+      "path": "sf.wav",
+      "type": "audio",
+      "size": 300312,
+      "sha256": "da38c5bcf326c41cb64ac3c465384de5b775fefe2f047b816c7c513664b5d981"
+    },
+    {
+      "id": "ls",
+      "path": "ls.wav",
+      "type": "audio",
+      "size": 211232,
+      "sha256": "f1ade3fad4bead87b4047ff68779387d46cd3c66ef5fd29aad362386a9a915e1"
+    },
+    {
+      "id": "ta",
+      "path": "ta.wav",
+      "type": "audio",
+      "size": 338062,
+      "sha256": "d61b9ca04c0ec07f6f38d0e0582b429ec1b19516e07f17f4a909212802353efc"
+    },
+    {
+      "id": "fs",
+      "path": "fs.wav",
+      "type": "audio",
+      "size": 306840,
+      "sha256": "d77e49e00dd960dfc058a60242906efe7b76742927bbeac68e993f401eaae8a3"
+    },
+    {
+      "id": "ph",
+      "path": "ph.wav",
+      "type": "audio",
+      "size": 209272,
+      "sha256": "418a9e560ebfc7dc640a1fc2e3060e6fe9a430eff39fb052d921450a122ee620"
+    },
+    {
+      "id": "ma",
+      "path": "ma.wav",
+      "type": "audio",
+      "size": 268736,
+      "sha256": "cb828f15c59ca631051ca2a7e69219e12db29114a06686502e0a17ba664535b7"
+    },
+    {
+      "id": "stsf",
+      "path": "stsf.wav",
+      "type": "audio",
+      "size": 2140516,
+      "sha256": "0b5fe1e2778e46636d0e915a6f11e44e7fb05ae4cc6e22f55a7802069af7a634"
+    },
+    {
+      "id": "stls",
+      "path": "stls.wav",
+      "type": "audio",
+      "size": 1814532,
+      "sha256": "c32875ce0405d4fb5b0575fd13a4a5e12d7e9e8e8e98c7648a1b66e97d28f1ae"
+    },
+    {
+      "id": "stta",
+      "path": "stta.wav",
+      "type": "audio",
+      "size": 2072956,
+      "sha256": "fbcfff295911ed13ff3cabd6761f1b5022afbe358bde40b1d9e47a8bbe315ff8"
+    },
+    {
+      "id": "trfs",
+      "path": "trfs.wav",
+      "type": "audio",
+      "size": 2007160,
+      "sha256": "ab2c1d7285e09d72046402d4fcadf5bd29ed70792831f0bfcb2f38169ce480bf"
+    },
+    {
+      "id": "trph",
+      "path": "trph.wav",
+      "type": "audio",
+      "size": 2034952,
+      "sha256": "8356134f2ee25e09385e13b45a38d2114ffa43e657568f5beea85fff8e01ce3b"
+    },
+    {
+      "id": "trma",
+      "path": "trma.wav",
+      "type": "audio",
+      "size": 2154276,
+      "sha256": "c8e8cb076e550037ef528fa76d56bec6b718b9e59690f910e9e0581eeec75fb5"
+    }
+  ]
+}
