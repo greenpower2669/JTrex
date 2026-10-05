@@ -22,14 +22,24 @@ jobs:
           ref: feature/dinosaur-sets-v1
           fetch-depth: 0
 
-      - name: Apply integrated Lot02 patch
+      - name: Apply integrated Lot02 patches
         shell: bash
         run: |
           set -euo pipefail
           base64 -d docs/jt-sets-001/lot02-integrated.patch.gz.b64 | gzip -d > /tmp/lot02.patch
+          base64 -d docs/jt-sets-001/lot02-newfiles.patch.gz.b64 | gzip -d > /tmp/lot02-newfiles.patch
           git apply --check /tmp/lot02.patch
           git apply /tmp/lot02.patch
+          git apply --check /tmp/lot02-newfiles.patch
+          git apply /tmp/lot02-newfiles.patch
+          test -f tools/jtrex_sets_runtime.py
+          test -f assets/sets/catalog.json
+          test -f assets/sets/trex_vs_steg/manifest.json
+          test -f tests/test_sets_runtime.py
+          test -f tests/test_sets_packaging.py
+          test -f tests/test_sets_media_resolution.py
           rm -f docs/jt-sets-001/lot02-integrated.patch.gz.b64
+          rm -f docs/jt-sets-001/lot02-newfiles.patch.gz.b64
           rm -f .github/workflows/jt-sets-lot02-apply.yml
           rm -f .github/workflows/jt-sets-dev-snapshot.yml
           git diff --check
