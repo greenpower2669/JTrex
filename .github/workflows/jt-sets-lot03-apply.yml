@@ -45,16 +45,7 @@ jobs:
           git apply --check /tmp/lot03.patch
           git apply /tmp/lot03.patch
           git diff --check
-          expected="docs/superpowers/plans/2026-10-05-jtrex-sets-lot03.md
-tests/test_sets_media_session.py
-tests/test_sets_power_identity.py
-tests/test_sets_selection.py
-tests/test_sets_session_isolation.py
-tools/jtrex_media_runtime.py
-tools/jtrex_phase_runtime.py
-tools/jtrex_sets_runtime.py
-tools/prepare_android.py"
-          test "$(git diff --name-only | sort)" = "$(printf '%s\n' "$expected" | sort)"
+          test "$(git diff --name-only | sort | sha256sum | cut -d' ' -f1)" = '651e1c49274504228343826b9048da70284be0d90d94b56c173c9a2a73489652'
 
       - name: Prepare canonical app and run full suite
         shell: bash
