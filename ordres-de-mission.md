@@ -10,10 +10,8 @@ Dernière consolidation : 2026-10-05
 5. Avant toute annonce de succès : preuve fraîche adaptée.
 
 ## Canon gameplay protégé
-- 3 orbes par camp ; nouvel échange = 10 s complets.
-- Retour pouvoir = temps restant.
-- KO réel seul = victoire de round ; deux rounds = match.
-- Nouveau vrai round = énergie ST/TR remise à 0.
+- 3 orbes par camp ; nouvel échange = 10 s complets ; retour pouvoir = temps restant.
+- KO réel seul = victoire de round ; deux rounds = match ; vrai nouveau round = énergie ST/TR à 0.
 - Vie = 500000000 par camp.
 - Coûts slots 1..6 = 60/40/60/60/60/80 ; activation stricte `énergie > coût`.
 - Effets historiques au jalon moteur ; EOS média sans nouvel effet gameplay.
@@ -23,24 +21,20 @@ Branche : `feature/dinosaur-sets-v1`, issue de `main@ce858fe57b395c2a52967dc0e8a
 
 Design : `docs/superpowers/specs/2026-10-05-jtrex-dinosaur-sets-design.md`.
 
-### Lot 01 — TERMINÉ CÔTÉ CODE/AUDIT
-Livrables :
-- `docs/jt-sets-001/lot01-inventory.md` ;
-- `docs/jt-sets-001/format-v1-contract.md` ;
-- `docs/jt-sets-001/lot01-verification.md`.
+### Lots 01 et 02 — TERMINÉS
+Lot 01 : inventaire + contrat DATA-only v1.
+Lot 02 : runtime/catalogue/manifeste canonique + packaging et résolution média centrale, sans sélection joueur.
 
-Preuve fraîche : run diagnostic `37339853652` GREEN ; archive canonique et main généré vérifiés ; 38 tests / 38 OK. Le workflow diagnostic temporaire a été supprimé. Comparaison finale : aucun changement `tools/`, `assets/`, `.github/` ou `buildozer.spec` par rapport à la base.
-
-Constats canoniques utiles :
-- gauche = ST, slots 1..3 / états 21..23 ; droite = TR, slots 4..6 / états 24..26 ;
-- `deg[21..26]=181..186` = jalons d’animation, pas dégâts ;
-- effets bruts : STSF 1/4 cible, STLS soin 1/4 propre, STTA 1/4 cible, TRFS 1/4 cible, TRPH 1/4 cible, TRMA 1/3 cible ;
-- dégâts influencent aussi l’énergie via le traitement partagé ;
-- durée MP4/EOS ne déplace jamais le jalon d’impact ;
-- paramètres d’équilibrage fermés dans v1 initial (`parameters:{}`) jusqu’à validation Fab au Lot 06.
+Preuves Lot 02 :
+- commit produit `017d611cf798d4713af8039ee6962d1fe6729fd2` ;
+- runtime `tools/jtrex_sets_runtime.py`, catalogue officiel et manifeste `trex_vs_steg` à 41 assets vérifiés ;
+- ZeroWin est une scène moteur normale, sans mutation globale de `SCENES` ;
+- run intégration `37378554085` : 56/56 tests OK ;
+- workflow Android exact : blob `c22bcf40038889318a3cab7c25d6c8c78dd87c49`, SHA-256 `3f4a83e9a0c35f7f361917fdbacfe6cadf3c41369519e0dcfc6a2a764bf00b13`, commit `ee8cf297830e1f40d984ab6b1706733eff22e5d7` ;
+- preuve APK finale : run #80 `37379193862` GREEN ; artefact APK `11375685200` ; `JuneT-Rex-1.0.15-debug.apk` = 156461520 octets, SHA-256 `182e1b8f72f269a7e3f3f24895e37fe23a1b3ade9e77949d14500827c13c320c`.
 
 ### Prochain lot contractuel
-Lot 02 : manifeste canonique + résolution centrale + équivalence du set actuel ; supprimer la mutation globale ZeroWin. Aucun merge `main`, aucune Release sans ordre explicite de Fab.
+Lot 03 : catalogue/menu joueur, sélection persistante du set, gel du set pendant un match et fallback canonique sûr. Aucun import ZIP, atelier admin ou paramètre d'équilibrage avant leurs lots dédiés. Aucun merge `main`, aucune Release sans ordre explicite de Fab.
 
 ## Baseline publiée précédente
 - Build #78 / `37245309424` : CI verte ; validation téléphone complète non enregistrée.
