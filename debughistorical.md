@@ -12,6 +12,9 @@ Conserver uniquement les faits de diagnostic encore utiles à JT-SETS-001 et les
 - Validation téléphone complète non enregistrée dans les mémoires.
 - Dernière Release : `v1.0.15-main`.
 
+## Plan Lot 01
+`docs/superpowers/plans/2026-10-05-jtrex-sets-lot01.md` est prêt et attend validation Fab. Il impose une reproduction par archive/SHA avant inventaire et interdit toute déduction d’équilibrage depuis `deg`, `longanim1`, `indexa`, frames, durée vidéo ou EOS sans preuve du main généré.
+
 ## Résolus — ne pas rouvrir sans preuve
 ### Bootstrap Android / zlib
 Ancien crash natif résolu ; préserver la chaîne Python 3.12.14 / FFmpeg 6.1.2 / ffpyplayer 4.5.1.
@@ -30,12 +33,12 @@ Ancien crash natif résolu ; préserver la chaîne Python 3.12.14 / FFmpeg 6.1.2
 - pouvoirs/finishings protégés jusqu’à EOS réel si requis.
 
 ## Points de risque JT-SETS-001
-1. `app/main.py` n’est pas versionné : l’inventaire doit porter sur le fichier généré depuis `JuneTrex.zip`.
-2. `jtrex_phase_runtime.py` ajoute actuellement ZeroWin dans le dictionnaire global `SCENES` : avec plusieurs sets, éviter toute mutation globale susceptible de fuir entre sessions/aperçus.
+1. `app/main.py` n’est pas versionné : l’inventaire doit porter sur le fichier généré depuis l’archive canonique prouvée.
+2. `jtrex_phase_runtime.py` ajoute actuellement ZeroWin dans le dictionnaire global `SCENES` : éviter toute mutation globale entre sessions/aperçus.
 3. `MEDIA_ASSETS` est une garde réelle testée par taille : la migration vers manifests ne doit pas supprimer cette preuve.
-4. Changer de set doit invalider lecteurs/callbacks/générations sans permettre à un ancien EOS d’agir sur une nouvelle session.
-5. Les aperçus admin ne doivent jamais réutiliser les callbacks combat.
-6. Paramètres de dégâts/soins peuvent modifier indirectement l’énergie ; aucun champ d’équilibrage ne sera exposé sans inventaire et validation Fab.
+4. Changer de set devra invalider lecteurs/callbacks/générations sans ancien EOS actif.
+5. Les aperçus admin ne devront jamais réutiliser les callbacks combat.
+6. Paramètres de dégâts/soins peuvent modifier indirectement l’énergie ; aucun champ d’équilibrage exposé sans inventaire et validation Fab.
 
 ## Règle
 Aucune régression déclarée ou corrigée sans reproduction/preuve fraîche. Tests CI != validation téléphone.
