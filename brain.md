@@ -6,7 +6,9 @@ Dernière consolidation : 2026-10-05
 JT-SETS-001 est autorisée par Fab.
 Branche : `feature/dinosaur-sets-v1`.
 Base : `ce858fe57b395c2a52967dc0e8acdd92ff6aa81e`.
-Design : `docs/superpowers/specs/2026-10-05-jtrex-dinosaur-sets-design.md`.
+Design approuvé : `docs/superpowers/specs/2026-10-05-jtrex-dinosaur-sets-design.md`.
+Plan Lot 01 prêt : `docs/superpowers/plans/2026-10-05-jtrex-sets-lot01.md`.
+Statut : attente validation Fab du plan avant exécution native Sol.
 
 But : plusieurs sets de confrontations DATA + MEDIA, un seul moteur de gameplay, set canonique inchangé.
 
@@ -29,7 +31,10 @@ But : plusieurs sets de confrontations DATA + MEDIA, un seul moteur de gameplay,
 - `prepare_android.py` centralise actuellement les coûts et `MEDIA_ASSETS`.
 - `jtrex_phase_runtime.py` injecte aujourd’hui ZeroWin dans le catalogue global : point à découpler pendant JT-SETS-001.
 
-## Cible JT-SETS-001
+## Lot 01 prévu
+Audit seulement : reproduire le main généré canonique, inventorier identités/médias/images/sons et les six mécanismes de pouvoir, puis écrire le contrat v1. Aucun runtime set, manifeste actif, menu ou import/export pendant ce lot.
+
+## Cible finale JT-SETS-001
 - manifeste fermé/versionné ;
 - catalogue officiel + sets utilisateur ;
 - résolveur logique central ;
