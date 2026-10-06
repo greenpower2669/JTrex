@@ -13,30 +13,26 @@ Dernière consolidation : 2026-10-06
 3. Hors soin 182, le traitement partagé relie aussi dégâts et énergie ; ne pas exposer ces valeurs sans Lot 06.
 4. EOS MP4 ne produit aucun nouvel impact ; les guards de génération rejettent les callbacks périmés.
 
-## Lot 02 — dette supprimée
-- ZeroWin est une scène moteur normale ; chemins média résolus depuis le manifeste ; policies hors manifeste.
-- Packaging vérifie catalogue, manifeste et 41 assets taille+SHA.
+## Lots 02 à 04 — dettes supprimées
+- Lot 02 : manifeste/résolution centrale ; ZeroWin sans mutation globale.
+- Lot 03 : sélection/session figée et identités de pouvoirs set-aware.
+- Lot 04 : ZIP confiné/transactionnel, octets réels + taille/SHA, `content://` copié vers brouillon.
 
-## Lot 03 — dette supprimée
-- Sélection officielle persistée hors match ; état invalide => réparation vers `trex_vs_steg`.
-- Set gelé pendant la session ; changement au menu invalide lecteur/reprise/génération.
-- Six identités de pouvoirs résolues depuis le set figé ; règles gameplay historiques conservées.
-- Non-régression : 77/77 tests ; run Android #83 GREEN.
+## Lot 05 — dettes supprimées
+- Les sets utilisateur ne dépendent pas d'un chemin officiel homonyme : leur résolveur reste attaché à la révision installée.
+- Promotions persistées séparément ; import seul ne rend jamais le set visible au joueur.
+- Brouillon auto-contenu : source supprimée après clonage n'invalide pas le brouillon.
+- Preview isolée : aucun engine/phase/KO/energy callback ; remplacement/close libère le player ; stale frame/EOS ignorés.
+- SAF : picker/annulation/stale result, ingress worker et egress async couverts.
+- Session test temporaire : aucune persistance, restauration au MENU, stale callbacks neutralisés, decoder failure borné.
+- Atelier : 20 touches/diagnostic conservés, gros contrôles, création/reprise/modification/import/export/test/promotion.
+- Gameplay v1 reste fermé : pas d'édition coûts/mécanismes/parameters/impacts/chrono/KO/EOS.
+- CI : 152/152 tests verts.
+- Run Android #85 `37515396288` SUCCESS sur `dd598f6bc6c92be818bc7af227d7eb6cd13d2a17`.
+- APK : 156521694 octets ; SHA-256 `fd08bc534da84fc8753cbc30bb7e8200eda2fcd3a3cbe0a6ea98147867673cc2`.
 
-## Lot 04 — dette supprimée
-- Import/export ne dépend plus de chemins externes après installation : une révision utilisateur est auto-contenue.
-- Archive prévalidée avant écriture ; zip-slip, chemins Windows/absolus, doublons casefold, symlink, chiffrement, extra non référencé et exécutable refusés.
-- Limites v1 centralisées ; total annoncé ET octets réellement extraits contrôlés.
-- Taille/SHA de chaque asset vérifiés après extraction.
-- Staging sur le même filesystem ; exception/collision avant renommage final laisse l'ancienne révision intacte et nettoie le staging.
-- `content://` est copié vers brouillon avec limite réelle et nettoyage partiel ; jamais utilisé directement comme chemin CoreVideo.
-- Non-régression : 106/106 tests verts après préparation canonique.
-- Run Android #84 `37477862014` SUCCESS sur `d0a56cf364f88a677f22f986d04eac5bcbe33054`.
-- APK : 156478186 octets, SHA-256 `759b574f49abd7f08e4607de6117fa856e005a39a0c0c72909432ac17509fedb`.
-
-## Risques suivants
-- Lot 05 : l'aperçu admin ne doit posséder aucun callback gameplay ; un brouillon ne doit jamais muter une session officielle active ; le mode TEST doit restaurer la sélection normale.
-- Lot 06 : aucun équilibrage ouvert sans validation Fab + tests PV/énergie.
+## Risque suivant
+Lot 06 ne doit exposer aucun paramètre d'équilibrage sans validation explicite Fab + bornes approuvées + tests PV/énergie.
 
 ## Règle
 CI verte != validation téléphone. Aucun bug ou correctif annoncé sans preuve fraîche adaptée.

@@ -17,25 +17,28 @@ Dernière consolidation : 2026-10-06
 - Effets historiques au jalon moteur ; EOS média sans nouvel effet gameplay.
 
 ## JT-SETS-001 — ACTIF
-Branche : `feature/dinosaur-sets-v1`, issue de `main@ce858fe57b395c2a52967dc0e8acdd92ff6aa81e`.
+Branche : `feature/dinosaur-sets-v1`, issue de `main@ce858fe57b395c2a52967dc0e8acdd92ff6aa81e`.  
 Design : `docs/superpowers/specs/2026-10-05-jtrex-dinosaur-sets-design.md`.
 
-### Lots 01 à 04 — TERMINÉS
+### Lots 01 à 05 — TERMINÉS
 - Lot 01 : inventaire + contrat DATA-only v1.
-- Lot 02 : runtime/catalogue/manifeste canonique + packaging et résolution média centrale.
-- Lot 03 : catalogue joueur, sélection persistante au menu, fallback canonique sûr, set figé pendant le match et identités de pouvoirs résolues depuis le set de session.
-- Lot 04 : stockage officiel/utilisateur/brouillon, import/export ZIP auto-contenu sûr et transactionnel, contrôle taille/SHA et copie `content://` vers brouillon.
+- Lot 02 : runtime/catalogue/manifeste canonique + résolution média centrale.
+- Lot 03 : sélection joueur persistante + session figée + identités de pouvoirs set-aware.
+- Lot 04 : stockage officiel/utilisateur/brouillon + ZIP sûr/transactionnel + ingress `content://`.
+- Lot 05 : catalogue utilisateur promu, brouillons autonomes, atelier admin 20 touches, assistant par rôle, aperçu indépendant, SAF asynchrone, export, promotion explicite et `TESTER CE SET`.
 
-Preuves Lot 04 :
-- plan `docs/superpowers/plans/2026-10-06-jtrex-sets-lot04.md` ;
-- commit produit `156ee830155bc34c840a83666de20fca43fb72d8` ;
-- HEAD validation Android `d0a56cf364f88a677f22f986d04eac5bcbe33054` ;
-- préparation canonique + suite complète : 106/106 tests verts ;
-- run Android #84 `37477862014`, job `112317924340` : SUCCESS jusqu'à upload APK ;
-- artefact `11421465099` ; APK extrait `JuneT-Rex-1.0.15-debug.apk` = 156478186 octets, SHA-256 `759b574f49abd7f08e4607de6117fa856e005a39a0c0c72909432ac17509fedb`.
+Preuves Lot 05 :
+- plan `docs/superpowers/plans/2026-10-06-jtrex-sets-lot05.md` ;
+- HEAD produit `dd598f6bc6c92be818bc7af227d7eb6cd13d2a17` ;
+- run inspection `37515396279` : SUCCESS ;
+- run Android #85 `37515396288`, job `112446897658` : SUCCESS ;
+- 152/152 tests CI verts sur l'app générée ;
+- APK artefact `11437986330` : 156521694 octets, SHA-256 `fd08bc534da84fc8753cbc30bb7e8200eda2fcd3a3cbe0a6ea98147867673cc2`.
 
-### Lot actif suivant
-Lot 05 : atelier admin caché derrière les 20 touches existantes, assistant par rôle, aperçu indépendant sans callback gameplay et `TESTER CE SET` sur une révision de brouillon figée. Les paramètres de pouvoirs restent non éditables avant Lot 06. Aucun merge `main`, aucune Release ni AAB sans ordre explicite de Fab.
+### Prochain lot contractuel
+Lot 06 : paramètres de pouvoirs. **Ne rien coder tant que Fab n'a pas validé explicitement la liste des champs éditables et leurs bornes.** Les mécanismes, coûts, impacts, chrono, KO et EOS restent moteur-owned par défaut.
+
+Aucun merge `main`, aucune Release ni AAB sans ordre explicite de Fab.
 
 ## Baseline publiée précédente
 - Build #78 / `37245309424` : CI verte ; validation téléphone complète non enregistrée.

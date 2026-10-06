@@ -8,59 +8,43 @@ Dernière consolidation : 2026-10-06
 - [x] Branche `feature/dinosaur-sets-v1` créée.
 - [x] Design approuvé.
 
-## Lot 01 — TERMINÉ
-- [x] Inventaire identité/médias/pouvoirs/mécanismes.
-- [x] Contrat format v1 DATA-only fermé.
+## Lots 01 à 04 — TERMINÉS
+- [x] Lot 01 : inventaire + contrat DATA-only.
+- [x] Lot 02 : manifeste/runtime/résolution centrale.
+- [x] Lot 03 : catalogue joueur + sélection/session figée.
+- [x] Lot 04 : stockage + ZIP sûr/transactionnel + `content://`.
 
-## Lot 02 — TERMINÉ
-- [x] Runtime contrat/catalogue/résolution.
-- [x] Catalogue officiel + manifeste `trex_vs_steg` à 41 assets vérifiés.
-- [x] Packaging Android dérivé du manifeste.
-- [x] Run Android #80 GREEN et APK vérifié.
-
-## Lot 03 — TERMINÉ
-- [x] Catalogue officiel exposé au joueur au MENU.
-- [x] Sélection persistante + fallback canonique.
-- [x] Intro du dernier set valide.
-- [x] Set figé pendant le match ; retour MENU autorise le set suivant.
-- [x] Identités des six pouvoirs alimentées par le set figé.
-- [x] Isolation de sessions + vieux EOS/frame neutralisés.
-- [x] 77/77 tests ; run Android #83 GREEN ; APK vérifié.
+## Lot 05 — TERMINÉ
+- [x] Résolution physique propre aux sets utilisateur + promotions persistantes.
+- [x] Brouillons autonomes, reprenables et DATA/MEDIA-only.
+- [x] Assistant par rôle + six libellés de pouvoirs ; aucun paramètre gameplay ouvert.
+- [x] Preview indépendante, un seul lecteur, stale callbacks neutralisés.
+- [x] Android SAF picker + ingress/egress asynchrones.
+- [x] 20 touches historiques conservées ; diagnostic toujours accessible.
+- [x] Atelier : créer, reprendre, modifier utilisateur, importer, exporter, tester, promouvoir.
+- [x] Import sans promotion automatique ; promotion explicite rafraîchit le menu joueur.
+- [x] Menu distingue OFFICIEL / UTILISATEUR.
+- [x] `TESTER CE SET` temporaire sans persistance + restauration MENU.
+- [x] Média obligatoire absent refusé ; décodeur en erreur borné.
+- [x] Packaging des runtimes admin/preview/Android + SHA de préparation.
+- [x] 152/152 tests CI verts.
+- [x] Run inspection `37515396279` SUCCESS.
+- [x] Run Android #85 `37515396288` SUCCESS sur `dd598f6bc6c92be818bc7af227d7eb6cd13d2a17`.
+- [x] APK 156521694 octets ; SHA-256 `fd08bc534da84fc8753cbc30bb7e8200eda2fcd3a3cbe0a6ea98147867673cc2`.
 - [ ] Validation téléphone du candidat si Fab souhaite tester ce jalon.
 
-## Lot 04 — TERMINÉ
-- [x] Trois racines séparées officiel/utilisateur/brouillon.
-- [x] Limites v1 centralisées : ZIP 512 MiB, extrait 1 GiB, 512 fichiers, 512 MiB/fichier, manifeste 1 MiB, chemin 240 caractères.
-- [x] Copie `content://` bornée vers brouillon + nettoyage sur erreur.
-- [x] Export auto-contenu : exactement manifeste + assets référencés.
-- [x] Import prévalidé : chemins interdits/doublons/symlink/chiffrement/fichier extra/exécutable refusés.
-- [x] Taille/SHA + octets réellement extraits vérifiés.
-- [x] Installation transactionnelle sans écrasement de révision et rollback/cleanup sur interruption.
-- [x] Packaging Android de `jtrex_sets_io.py` + SHA de préparation.
-- [x] Préparation canonique + 106/106 tests verts.
-- [x] Run Android #84 `37477862014` SUCCESS sur `d0a56cf364f88a677f22f986d04eac5bcbe33054`.
-- [x] APK 156478186 octets ; SHA-256 `759b574f49abd7f08e4607de6117fa856e005a39a0c0c72909432ac17509fedb`.
-- [ ] Validation téléphone du candidat si Fab souhaite tester ce jalon.
-
-## Lot 05 — À FAIRE MAINTENANT
-- [ ] Conserver les 20 touches existantes comme porte cachée et garder le diagnostic actuel accessible.
-- [ ] Atelier : créer depuis un set, modifier utilisateur, importer, exporter, tester, promouvoir une révision complète.
-- [ ] Assistant par rôle : ressource actuelle, remplacement, conserver, valider/continuer, retour, progression et reprise du brouillon.
-- [ ] Aperçu indépendant : aucun callback gameplay ; un seul lecteur actif ; fermeture/remplacement libère tout.
-- [ ] Validation légère média : type réel, ouverture, première frame, dimensions/orientation/proportions, pistes/durée + avertissements utiles.
-- [ ] `TESTER CE SET` : brouillon figé, moteur commun, restauration de la sélection normale au retour atelier.
-- [ ] Média obligatoire absent => lancement test refusé ; erreur de lecture => sortie bornée sans double impact ni verrou permanent.
-- [ ] Packaging/tests Android + non-régression complète + APK jalon.
-
-## Lot 06 — PLUS TARD
-- [ ] Exposer uniquement les paramètres explicitement validés par Fab avec bornes approuvées.
+## Lot 06 — BLOQUÉ AVANT VALIDATION FAB
+- [ ] Présenter la liste auditée des paramètres de pouvoirs candidats et les bornes proposées.
+- [ ] Obtenir validation explicite de Fab.
+- [ ] Ensuite seulement : exposer les champs approuvés avec tests PV/énergie et non-régression.
 
 ## Non-régression globale JT-SETS-001
-- [x] Set canonique strictement équivalent sur tests/intégration.
-- [x] Deux sets successifs sans lecteur/texture/callback résiduel.
-- [x] Un vieux EOS ne peut pas agir sur une nouvelle session.
-- [x] Import/export round-trip avec empreintes et installation sans set source.
+- [x] Set canonique équivalent sur tests/intégration.
+- [x] Deux sessions successives sans lecteur/texture/callback résiduel.
+- [x] Vieux EOS/frame neutralisés.
+- [x] Import/export round-trip avec empreintes.
 - [x] Aucun code exécutable accepté dans un pack.
+- [x] Brouillon testable sans modifier la préférence joueur.
 
 ## Interdictions
 - Pas de merge `main`.
