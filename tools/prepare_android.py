@@ -927,6 +927,8 @@ def prepare(archive, destination, spec, media_root, runtime):
     require(runtime.is_file(), "Runtime vidéo absent.")
     sets_runtime = runtime.with_name("jtrex_sets_runtime.py")
     require(sets_runtime.is_file(), "Runtime de sets absent.")
+    sets_io_runtime = runtime.with_name("jtrex_sets_io.py")
+    require(sets_io_runtime.is_file(), "Runtime I/O de sets absent.")
     repo_root = media_root.parent
     def resolve_repo(relative_path):
         path = repo_root.joinpath(*PurePosixPath(relative_path).parts)
@@ -1091,6 +1093,7 @@ def prepare(archive, destination, spec, media_root, runtime):
 
         shutil.copyfile(runtime, stage / "jtrex_media_runtime.py")
         shutil.copyfile(sets_runtime, stage / "jtrex_sets_runtime.py")
+        shutil.copyfile(sets_io_runtime, stage / "jtrex_sets_io.py")
         phase_runtime = runtime.with_name("jtrex_phase_runtime.py")
         require(phase_runtime.is_file(), "Runtime de phases absent.")
         shutil.copyfile(phase_runtime, stage / "jtrex_phase_runtime.py")
@@ -1105,6 +1108,11 @@ def prepare(archive, destination, spec, media_root, runtime):
             "jtrex_sets_runtime.py",
             "exec",
         )
+        compile(
+            (stage / "jtrex_sets_io.py").read_text(encoding="utf-8"),
+            "jtrex_sets_io.py",
+            "exec",
+        )
         for source_file, relative_name in ((catalog_source, CATALOG_PATH), (manifest_source, selection.manifest_path)):
             target = stage.joinpath(*PurePosixPath(relative_name).parts)
             target.parent.mkdir(parents=True, exist_ok=True)
@@ -1117,6 +1125,7 @@ def prepare(archive, destination, spec, media_root, runtime):
             "pter/pter0.png",
             "assets/icon/JtrexIcon.png",
             "jtrex_sets_runtime.py",
+            "jtrex_sets_io.py",
             CATALOG_PATH,
             selection.manifest_path,
         ):
@@ -1179,6 +1188,7 @@ def prepare(archive, destination, spec, media_root, runtime):
             "runtime_sha256": digest(stage / "jtrex_media_runtime.py"),
             "phase_runtime_sha256": digest(stage / "jtrex_phase_runtime.py"),
             "sets_runtime_sha256": digest(stage / "jtrex_sets_runtime.py"),
+            "sets_io_runtime_sha256": digest(stage / "jtrex_sets_io.py"),
             "buildozer_spec_sha256": digest(stage / "buildozer.spec"),
             "canonical_set_id": selection.set_id,
             "canonical_manifest_sha256": canonical_manifest_sha256,

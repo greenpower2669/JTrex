@@ -4,6 +4,7 @@ This module resolves official set metadata only. Gameplay states, timings, EOS
 policies and power formulas remain owned by the engine/runtime modules.
 """
 from copy import deepcopy
+import hashlib
 import json
 import os
 import re
@@ -83,6 +84,9 @@ class JTSetSelection:
         self.engine_contract = manifest["engine_contract"]
         self.revision = manifest["revision"]
         self.display_name = manifest["display_name"]
+
+    def manifest(self):
+        return deepcopy(self._manifest)
 
     def dinosaurs(self):
         return deepcopy(self._manifest["dinosaurs"])
@@ -220,6 +224,44 @@ def _validate_manifest(manifest):
     missing = sorted(set(refs) - asset_ids)
     if missing:
         _fail(f"referenced asset ids missing: {missing}")
+
+
+def load_set_manifest(resolve_path, manifest_path="manifest.json"):
+    manifest_path = _safe_path(manifest_path, "manifest_path")
+    manifest = _read_json(resolve_path, manifest_path, "manifest")
+    _validate_manifest(manifest)
+    return JTSetSelection(manifest, manifest_path)
+
+
+def verify_selection_assets(selection, resolve_path, chunk_size=1024 * 1024):
+    if not isinstance(selection, JTSetSelection):
+        _fail("selection: JTSetSelection expected")
+    if not isinstance(chunk_size, int) or chunk_size < 1:
+        _fail("chunk_size must be >= 1")
+    verified = []
+    for asset in selection.assets():
+        relative = asset["path"]
+        physical = resolve_path(relative)
+        if not physical:
+            _fail(f"asset unavailable: {relative}")
+        digest = hashlib.sha256()
+        actual_size = 0
+        try:
+            with Path(physical).open("rb") as handle:
+                while True:
+                    block = handle.read(chunk_size)
+                    if not block:
+                        break
+                    actual_size += len(block)
+                    digest.update(block)
+        except OSError as exc:
+            _fail(f"asset unavailable: {relative}: {exc}")
+        if actual_size != asset["size"]:
+            _fail(f"asset size mismatch: {relative}")
+        if digest.hexdigest() != asset["sha256"]:
+            _fail(f"asset sha256 mismatch: {relative}")
+        verified.append(deepcopy(asset))
+    return tuple(verified)
 
 
 def load_official_catalog(resolve_path):
