@@ -20,21 +20,22 @@ Dernière consolidation : 2026-10-06
 Branche : `feature/dinosaur-sets-v1`, issue de `main@ce858fe57b395c2a52967dc0e8acdd92ff6aa81e`.
 Design : `docs/superpowers/specs/2026-10-05-jtrex-dinosaur-sets-design.md`.
 
-### Lots 01 à 03 — TERMINÉS
+### Lots 01 à 04 — TERMINÉS
 - Lot 01 : inventaire + contrat DATA-only v1.
 - Lot 02 : runtime/catalogue/manifeste canonique + packaging et résolution média centrale.
 - Lot 03 : catalogue joueur, sélection persistante au menu, fallback canonique sûr, set figé pendant le match et identités de pouvoirs résolues depuis le set de session.
+- Lot 04 : stockage officiel/utilisateur/brouillon, import/export ZIP auto-contenu sûr et transactionnel, contrôle taille/SHA et copie `content://` vers brouillon.
 
-Preuves Lot 03 :
-- base `9efad3d0dfaf480aa46e715442d104357969abef` ;
-- commit produit `dfad8fbc5ae4678fb5bd704ea38a858116966a5b` ;
-- HEAD validation Android `c5330f29814430944500839aa3bcd29afbc3ff8b` ;
-- TDD/suite complète : 77/77 tests verts ; deux sessions synthétiques successives et vieux EOS/callback A→B couverts ;
-- run Android #83 `37417205571` : GREEN jusqu'au build et upload APK ;
-- artefact APK `11391049002` ; `JuneT-Rex-1.0.15-debug.apk` = 156468471 octets, SHA-256 `612af2912050c392c63ec2054b03fc875b3a7a4c8f915c3a40d074cb077dec20`.
+Preuves Lot 04 :
+- plan `docs/superpowers/plans/2026-10-06-jtrex-sets-lot04.md` ;
+- commit produit `156ee830155bc34c840a83666de20fca43fb72d8` ;
+- HEAD validation Android `d0a56cf364f88a677f22f986d04eac5bcbe33054` ;
+- préparation canonique + suite complète : 106/106 tests verts ;
+- run Android #84 `37477862014`, job `112317924340` : SUCCESS jusqu'à upload APK ;
+- artefact `11421465099` ; APK extrait `JuneT-Rex-1.0.15-debug.apk` = 156478186 octets, SHA-256 `759b574f49abd7f08e4607de6117fa856e005a39a0c0c72909432ac17509fedb`.
 
-### Prochain lot contractuel
-Lot 04 : stockage officiel/utilisateur/brouillon + import/export ZIP sûr et transactionnel. Aucun atelier 20 touches avant Lot 05 ; aucun paramètre d'équilibrage avant Lot 06. Aucun merge `main`, aucune Release ni AAB sans ordre explicite de Fab.
+### Lot actif suivant
+Lot 05 : atelier admin caché derrière les 20 touches existantes, assistant par rôle, aperçu indépendant sans callback gameplay et `TESTER CE SET` sur une révision de brouillon figée. Les paramètres de pouvoirs restent non éditables avant Lot 06. Aucun merge `main`, aucune Release ni AAB sans ordre explicite de Fab.
 
 ## Baseline publiée précédente
 - Build #78 / `37245309424` : CI verte ; validation téléphone complète non enregistrée.

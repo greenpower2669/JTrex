@@ -22,11 +22,19 @@ But : plusieurs sets DATA + MEDIA, un seul moteur de combat, set canonique équi
 - Le menu peut changer de set uniquement hors session ; le set est figé du premier vrai round jusqu'au retour MENU.
 - Intro de lancement = dernier set persisté valide ; un changement au menu ne rejoue pas l'intro.
 - Changement de set invalide lecteur/reprise/génération ; vieux frame/EOS d'une session A ne peut pas muter une session B.
-- Médias et identités des 6 pouvoirs utilisent le même set figé ; 12 icônes ready/used du main généré sont data-driven.
-- Coûts, mécanismes, jalons, dégâts, soin, chrono, KO et score restent moteur-owned et inchangés.
-- Produit `dfad8fbc5ae4678fb5bd704ea38a858116966a5b` ; validation `c5330f29814430944500839aa3bcd29afbc3ff8b`.
-- Suite : 77/77 tests verts. Run Android #83 `37417205571` GREEN.
-- APK : 156468471 octets, SHA-256 `612af2912050c392c63ec2054b03fc875b3a7a4c8f915c3a40d074cb077dec20`.
+- Médias et identités des 6 pouvoirs utilisent le même set figé ; coûts/mécanismes/jalons restent moteur-owned.
+- 77/77 tests verts ; run #83 GREEN.
+
+### Lot 04
+- `tools/jtrex_sets_io.py` porte trois racines séparées : officiel lecture seule, utilisateur persistant, brouillon.
+- Pack portable v1 = exactement `manifest.json` + assets référencés ; aucun code exécutable ni ressource extra.
+- Import : prévalidation archive, confinement des chemins, refus symlink/chiffrement/doublons, limites centralisées, comptage des octets réels, validation taille/SHA, staging même filesystem puis renommage atomique final.
+- Export : validation des assets source, ZIP temporaire frère puis `os.replace` ; collision de révision jamais écrasée.
+- `content://` Android est copié vers brouillon avec limite réelle et nettoyage partiel sur erreur.
+- Limites v1 : ZIP 512 MiB ; extrait 1 GiB ; 512 fichiers ; 512 MiB/fichier ; manifeste 1 MiB ; chemin 240 caractères.
+- Produit `156ee830155bc34c840a83666de20fca43fb72d8` ; validation Android `d0a56cf364f88a677f22f986d04eac5bcbe33054`.
+- Préparation canonique + suite : 106/106 tests verts. Run #84 `37477862014` SUCCESS.
+- APK : 156478186 octets, SHA-256 `759b574f49abd7f08e4607de6117fa856e005a39a0c0c72909432ac17509fedb`.
 
 ## Canon gameplay
 - 3 orbes/camp ; nouvel échange 10 s ; retour pouvoir conserve le temps.
@@ -36,4 +44,4 @@ But : plusieurs sets DATA + MEDIA, un seul moteur de combat, set canonique équi
 - Impacts au jalon historique ; EOS n'applique aucun effet supplémentaire.
 
 ## Prochain geste
-Lot 04 : stockage officiel/utilisateur/brouillon + import/export ZIP sûr et transactionnel. Pas de merge `main` ni Release sans Fab.
+Lot 05 : atelier admin 20 touches + assistant par rôle + aperçu indépendant + test d'un brouillon figé. Paramètres gameplay non éditables avant Lot 06. Pas de merge `main` ni Release sans Fab.

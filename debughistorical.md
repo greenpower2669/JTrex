@@ -18,17 +18,24 @@ Dernière consolidation : 2026-10-06
 - Packaging vérifie catalogue, manifeste et 41 assets taille+SHA.
 
 ## Lot 03 — dette supprimée
-- La sélection officielle est persistée hors match ; JSON/ID invalide => réparation vers `trex_vs_steg`.
-- Le set est gelé pendant une session et ne peut pas changer avant le retour MENU.
-- Un changement au menu stoppe/invalide l'ancien lecteur, la reprise et la génération ; vieux EOS/frame d'une session A ignorés après session B.
-- Les six couples d'images ready/used, sons d'activation et fallbacks audio sont résolus depuis le set figé ; les règles de pouvoirs restent historiques.
-- Non-régression : 77/77 tests verts.
-- Run Android #83 `37417205571` GREEN sur `c5330f29814430944500839aa3bcd29afbc3ff8b`.
-- APK : artefact `11391049002`, 156468471 octets, SHA-256 `612af2912050c392c63ec2054b03fc875b3a7a4c8f915c3a40d074cb077dec20`.
+- Sélection officielle persistée hors match ; état invalide => réparation vers `trex_vs_steg`.
+- Set gelé pendant la session ; changement au menu invalide lecteur/reprise/génération.
+- Six identités de pouvoirs résolues depuis le set figé ; règles gameplay historiques conservées.
+- Non-régression : 77/77 tests ; run Android #83 GREEN.
+
+## Lot 04 — dette supprimée
+- Import/export ne dépend plus de chemins externes après installation : une révision utilisateur est auto-contenue.
+- Archive prévalidée avant écriture ; zip-slip, chemins Windows/absolus, doublons casefold, symlink, chiffrement, extra non référencé et exécutable refusés.
+- Limites v1 centralisées ; total annoncé ET octets réellement extraits contrôlés.
+- Taille/SHA de chaque asset vérifiés après extraction.
+- Staging sur le même filesystem ; exception/collision avant renommage final laisse l'ancienne révision intacte et nettoie le staging.
+- `content://` est copié vers brouillon avec limite réelle et nettoyage partiel ; jamais utilisé directement comme chemin CoreVideo.
+- Non-régression : 106/106 tests verts après préparation canonique.
+- Run Android #84 `37477862014` SUCCESS sur `d0a56cf364f88a677f22f986d04eac5bcbe33054`.
+- APK : 156478186 octets, SHA-256 `759b574f49abd7f08e4607de6117fa856e005a39a0c0c72909432ac17509fedb`.
 
 ## Risques suivants
-- Lot 04 : import transactionnel, confinement des chemins, limites taille/nombre, empreintes obligatoires, aucun exécutable, rollback complet si erreur.
-- Lot 05 : ne jamais laisser un brouillon modifier une session officielle active.
+- Lot 05 : l'aperçu admin ne doit posséder aucun callback gameplay ; un brouillon ne doit jamais muter une session officielle active ; le mode TEST doit restaurer la sélection normale.
 - Lot 06 : aucun équilibrage ouvert sans validation Fab + tests PV/énergie.
 
 ## Règle
