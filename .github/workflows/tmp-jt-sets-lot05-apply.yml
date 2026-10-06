@@ -1,0 +1,152 @@
+name: JT-SETS Lot05 verify and stage blobs
+
+on:
+  push:
+    branches:
+      - tmp-jt-sets-lot05-apply
+    paths:
+      - '.github/workflows/tmp-jt-sets-lot05-apply.yml'
+      - 'temp/lot05.patch.gz.b64.part*'
+
+permissions:
+  contents: write
+
+jobs:
+  verify-stage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout transport branch
+        uses: actions/checkout@v4
+
+      - name: Reconstruct and verify Lot05 patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat temp/lot05.patch.gz.b64.part* > /tmp/lot05.patch.gz.b64
+          echo 'a1f4879fd68b6fa03cb323795d88db64428d683b9d7028d4c51167af59155d06  /tmp/lot05.patch.gz.b64' | sha256sum -c -
+          base64 -d /tmp/lot05.patch.gz.b64 > /tmp/lot05.patch.gz
+          gzip -dc /tmp/lot05.patch.gz > /tmp/lot05.patch
+          echo 'eee009368349042ed5d66c1fd7dfc6db9f313c9f6c6d889d4fddd2efcfdaa829  /tmp/lot05.patch' | sha256sum -c -
+
+      - name: Apply to exact product base
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout --detach c2460a7e0eba31922ba2a7c39646accb2514aa11
+          git apply --index /tmp/lot05.patch
+          cat > /tmp/expected-files <<'EOF'
+          .github/workflows/android.yml
+          tests/test_sets_admin_drafts.py
+          tests/test_sets_admin_packaging.py
+          tests/test_sets_admin_roles.py
+          tests/test_sets_admin_ui_contract.py
+          tests/test_sets_android_picker.py
+          tests/test_sets_async_copy.py
+          tests/test_sets_draft_test_session.py
+          tests/test_sets_player_catalog.py
+          tests/test_sets_preview.py
+          tests/test_sets_selection.py
+          tests/test_sets_user_resolution.py
+          tools/jtrex_media_runtime.py
+          tools/jtrex_sets_admin.py
+          tools/jtrex_sets_android.py
+          tools/jtrex_sets_io.py
+          tools/jtrex_sets_preview.py
+          tools/jtrex_sets_runtime.py
+          tools/prepare_android.py
+          EOF
+          git diff --cached --name-only | sort > /tmp/actual-files
+          sort -o /tmp/expected-files /tmp/expected-files
+          diff -u /tmp/expected-files /tmp/actual-files
+          git diff --cached --check
+
+      - name: Download fixed historical archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --output JuneTrex.zip \
+            'https://github.com/greenpower2669/JTrex/releases/download/JTrex/JuneTrex.zip'
+          test "$(stat -c %s JuneTrex.zip)" = '327992765'
+          echo 'f73ca1fd5e96ca6e11df5987bda8b2e59ebac26b1beb23fe34883b15bee66647  JuneTrex.zip' | sha256sum -c -
+
+      - name: Prepare canonical app
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/prepare_android.py --archive JuneTrex.zip --output app --spec buildozer.spec
+
+      - name: Run complete Lot05 suite
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s tests -p 'test*.py'
+
+      - name: Run gameplay focused guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=tests:. python3 -m unittest \
+            test_phase_integration \
+            test_round_ko_contract \
+            test_round_model \
+            tests.test_sets_session_isolation \
+            tests.test_sets_media_resolution \
+            tests.test_sets_power_identity
+
+      - name: Compile Lot05 runtimes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile \
+            tools/jtrex_sets_runtime.py \
+            tools/jtrex_sets_io.py \
+            tools/jtrex_sets_admin.py \
+            tools/jtrex_sets_preview.py \
+            tools/jtrex_sets_android.py \
+            tools/jtrex_media_runtime.py \
+            tools/prepare_android.py
+
+      - name: Stage verified product files as Git blobs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64, json, os, urllib.request
+          from pathlib import Path
+
+          paths = Path('/tmp/expected-files').read_text().splitlines()
+          repo = os.environ['GITHUB_REPOSITORY']
+          token = os.environ['GH_TOKEN']
+          result = {}
+          for path in paths:
+              raw = Path(path).read_bytes()
+              payload = json.dumps({
+                  'content': base64.b64encode(raw).decode('ascii'),
+                  'encoding': 'base64',
+              }).encode('utf-8')
+              req = urllib.request.Request(
+                  f'https://api.github.com/repos/{repo}/git/blobs',
+                  data=payload,
+                  method='POST',
+                  headers={
+                      'Authorization': f'Bearer {token}',
+                      'Accept': 'application/vnd.github+json',
+                      'X-GitHub-Api-Version': '2022-11-28',
+                      'Content-Type': 'application/json',
+                  },
+              )
+              with urllib.request.urlopen(req) as response:
+                  data = json.load(response)
+              result[path] = data['sha']
+          Path('/tmp/blob-map.json').write_text(json.dumps(result, indent=2, sort_keys=True) + '\n')
+          print(json.dumps(result, indent=2, sort_keys=True))
+          PY
+
+      - name: Upload verified blob map
+        uses: actions/upload-artifact@v4
+        with:
+          name: JT-SETS-Lot05-BlobMap
+          path: /tmp/blob-map.json
+          retention-days: 7
