@@ -1,4 +1,4 @@
-name: Apply JT-SETS Lot04
+name: Stage JT-SETS Lot04 Android Workflow Blob
 
 on:
   push:
@@ -11,96 +11,44 @@ permissions:
   contents: write
 
 jobs:
-  apply:
+  stage:
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 15
     steps:
       - name: Checkout control branch
         uses: actions/checkout@v4
         with:
           path: control
 
-      - name: Checkout product branch
+      - name: Checkout exact Lot04 base
         uses: actions/checkout@v4
         with:
-          ref: feature/dinosaur-sets-v1
-          path: product
+          ref: e5c443df685060bec57d2d2f7b25ec9cff74e553
+          path: base
 
-      - name: Reconstruct and verify Lot04 patch
+      - name: Reconstruct exact Lot04 Android workflow
         shell: bash
         run: |
           set -euo pipefail
           cat control/temp/lot04/chunk-00.b64 control/temp/lot04/chunk-01.b64 control/temp/lot04/chunk-02.b64 control/temp/lot04/chunk-03.b64 > /tmp/jt-sets-lot04.patch.gz.b64
           echo 'b8871c45378d49bc2e78d31a351b5285ce389d53d271d33c1ce6f4848ca0176c  /tmp/jt-sets-lot04.patch.gz.b64' | sha256sum -c -
-          base64 -d /tmp/jt-sets-lot04.patch.gz.b64 > /tmp/jt-sets-lot04.patch.gz
-          echo '6c499e78f9f4fef552ca7861904ac6a477031650162e1ecac9ff248b936196ea  /tmp/jt-sets-lot04.patch.gz' | sha256sum -c -
-          gzip -dc /tmp/jt-sets-lot04.patch.gz > /tmp/jt-sets-lot04.patch
+          base64 -d /tmp/jt-sets-lot04.patch.gz.b64 | gzip -dc > /tmp/jt-sets-lot04.patch
           echo '9030ed594c2081af614cc7001ad50621ed2bd0c358e84059680ccceb98b6426e  /tmp/jt-sets-lot04.patch' | sha256sum -c -
-
-      - name: Apply patch to exact Lot04 base
-        shell: bash
-        working-directory: product
-        run: |
-          set -euo pipefail
-          test "$(git rev-parse HEAD)" = 'e5c443df685060bec57d2d2f7b25ec9cff74e553'
+          cd base
           git apply --check /tmp/jt-sets-lot04.patch
           git apply /tmp/jt-sets-lot04.patch
-          git diff --check
-          { git diff --name-only; git ls-files --others --exclude-standard; } | sort > /tmp/lot04-files.txt
-          cat > /tmp/lot04-expected.txt <<'EOF'
-          .github/workflows/android.yml
-          tests/test_sets_io.py
-          tests/test_sets_io_packaging.py
-          tests/test_sets_io_security.py
-          tests/test_sets_io_storage.py
-          tests/test_sets_io_zip.py
-          tools/jtrex_sets_io.py
-          tools/jtrex_sets_runtime.py
-          tools/prepare_android.py
-          EOF
-          diff -u /tmp/lot04-expected.txt /tmp/lot04-files.txt
+          test "$(git hash-object .github/workflows/android.yml)" = 'b28f3f0be513dc8bed47c6d748eb7f630c24c3b1'
+          echo '7c1ecf78f7481c463630178c6915ac88a3b0aad7b80c6ee1c3b246caca9b7566  .github/workflows/android.yml' | sha256sum -c -
+          cp .github/workflows/android.yml ../control/temp/lot04/android-lot04.yml
 
-      - name: Verify canonical prepare and complete tests
+      - name: Store exact workflow blob as ordinary temp file
         shell: bash
-        working-directory: product
+        working-directory: control
         run: |
           set -euo pipefail
-          curl --fail --location --retry 3 --output JuneTrex.zip 'https://github.com/greenpower2669/JTrex/releases/download/JTrex/JuneTrex.zip'
-          test "$(stat -c%s JuneTrex.zip)" = '327992765'
-          echo 'f73ca1fd5e96ca6e11df5987bda8b2e59ebac26b1beb23fe34883b15bee66647  JuneTrex.zip' | sha256sum -c -
-          rm -rf app
-          python3 tools/prepare_android.py --archive JuneTrex.zip --output app --spec buildozer.spec
-          JT_GENERATED_MAIN="$PWD/app/main.py" python3 -m unittest discover -s tests -v
-          python3 -m py_compile tools/jtrex_sets_runtime.py tools/jtrex_sets_io.py tools/jtrex_media_runtime.py tools/jtrex_phase_runtime.py tools/prepare_android.py app/jtrex_sets_runtime.py app/jtrex_sets_io.py
-          python3 - <<'PY'
-          import hashlib, json
-          from pathlib import Path
-          report = json.loads(Path('app/android-preparation.json').read_text())
-          actual = hashlib.sha256(Path('app/jtrex_sets_io.py').read_bytes()).hexdigest()
-          assert actual == report['sets_io_runtime_sha256']
-          print('sets_io_runtime_sha256=' + actual)
-          PY
-
-      - name: Commit product files without workflow mutation
-        shell: bash
-        working-directory: product
-        run: |
-          set -euo pipefail
-          rm -rf app JuneTrex.zip tests/__pycache__
-          rm -f jt-set-selection.json tools/__pycache__/*cpython-313.pyc || true
-          git checkout HEAD -- .github/workflows/android.yml
           git config user.name 'greenpower2669'
           git config user.email '80179295+greenpower2669@users.noreply.github.com'
-          git add \
-            tools/jtrex_sets_runtime.py \
-            tools/jtrex_sets_io.py \
-            tools/prepare_android.py \
-            tests/test_sets_io.py \
-            tests/test_sets_io_packaging.py \
-            tests/test_sets_io_security.py \
-            tests/test_sets_io_storage.py \
-            tests/test_sets_io_zip.py
-          git diff --cached --check
-          test "$(git diff --cached --name-only | wc -l)" = '8'
-          git commit -m 'feat: add transactional JTrex set storage and ZIP I/O'
-          git push origin HEAD:feature/dinosaur-sets-v1
+          git add temp/lot04/android-lot04.yml
+          test "$(git hash-object temp/lot04/android-lot04.yml)" = 'b28f3f0be513dc8bed47c6d748eb7f630c24c3b1'
+          git commit -m 'temp: stage exact Lot04 Android workflow blob'
+          git push origin HEAD:tmp-jt-sets-lot04-apply
