@@ -612,6 +612,7 @@ class JTPhaseController:
             return
         previous = self.name
         self.name = name
+        self.media.on_phase_changed(name)
         if previous in ("ROUND_INTRO", "FIGHT_INTRO") and name != previous:
             self.media.cancel_round_presentation()
         self._reset_timer()

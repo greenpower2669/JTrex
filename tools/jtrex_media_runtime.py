@@ -22,7 +22,7 @@ from kivy.uix.popup import Popup
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.widget import Widget
 from jtrex_phase_runtime import JTPhaseController
-from jtrex_sets_runtime import load_official_set
+from jtrex_sets_runtime import JTSetSessionManager, POWER_KEYS, SetContractError
 
 
 SCENE_SPECS = {
@@ -153,7 +153,14 @@ class JTMediaController:
     def __init__(self, app):
         self.app = app
         self.root = app.root
-        self.selection = load_official_set(self._resolve)
+        state_root = Path(getattr(app, "user_data_dir", "."))
+        self.sets = JTSetSessionManager(
+            self._resolve, state_root / "jt-set-selection.json"
+        )
+        self.selection = self.sets.runtime_set
+        self._phase_name = "INTRO"
+        self._set_popup = None
+        self._set_option_buttons = []
         self._intro_player = None
         self._intro_overlay = None
         self._intro_timeout = None
@@ -225,6 +232,19 @@ class JTMediaController:
         )
         self._status_label.text_size = self._status_label.size
         self.root.add_widget(self._status_label)
+        self._set_button = Button(
+            text="",
+            size_hint=(None, None),
+            size=(dp(520), dp(68)),
+            font_size=dp(21),
+            opacity=0,
+            disabled=True,
+        )
+        self._set_button.bind(on_release=lambda *args: self._open_set_selector())
+        self.root.add_widget(self._set_button)
+        self.root.bind(size=self._layout_set_button, pos=self._layout_set_button)
+        self._layout_set_button()
+        self._refresh_set_button()
         self._indicator_event = Clock.schedule_interval(
             self._update_status_indicator, 0.35
         )
@@ -237,7 +257,129 @@ class JTMediaController:
         self._engine = engine
         self.phases = JTPhaseController(self, engine, Clock, Rectangle, Label)
         engine['_JT_PHASES'] = self.phases
+        if self.sets.session_active:
+            self._apply_session_power_identity()
         self.phases.sync()
+
+    def _session_power_path_table(self):
+        selection = self.sets.session_set
+        return {
+            slot: selection.power_paths(power_key)
+            for slot, power_key in enumerate(POWER_KEYS, 1)
+        }
+
+    def _apply_session_power_identity(self):
+        if self._engine is None or not self.sets.session_active:
+            return
+        callback = self._engine.get('jt_apply_power_paths')
+        if callback is None:
+            return
+        callback(self._session_power_path_table())
+        print(
+            "[JT-SET] power identity session={}".format(self.sets.session_set.set_id),
+            flush=True,
+        )
+
+    def _layout_set_button(self, *args):
+        width = min(dp(520), max(dp(280), float(getattr(self.root, "width", dp(520))) * 0.62))
+        self._set_button.size = (width, dp(68))
+        self._set_button.pos = (dp(18), max(dp(18), float(getattr(self.root, "height", dp(100))) - dp(86)))
+
+    def _refresh_set_button(self):
+        selected = self.sets.selected_set
+        self._set_button.text = "DINOSAURES : {}".format(selected.display_name)
+
+    def _set_selector_visible(self, visible):
+        self._set_button.opacity = 1 if visible else 0
+        self._set_button.disabled = not visible
+        if not visible and self._set_popup is not None:
+            try:
+                self._set_popup.dismiss()
+            except Exception:
+                pass
+            self._set_popup = None
+            self._set_option_buttons = []
+
+    def _invalidate_set_media(self):
+        self._stop_scene("set-change", preserve_failure=False)
+        self._wait_resume_fraction = 0.0
+        self._wait_seek_pending = False
+        self._scene_completed_key = None
+        self._scene_failed_key = None
+        self._paused_player = None
+        self.root._jt_finishing_complete_pending = None
+
+    def on_phase_changed(self, name):
+        self._phase_name = name
+        if name == "MENU":
+            if self.sets.session_active:
+                self.sets.end_session()
+            self.selection = self.sets.selected_set
+            self._refresh_set_button()
+            self._set_selector_visible(True)
+            return
+        self._set_selector_visible(False)
+        if name != "INTRO" and not self.sets.session_active:
+            self.selection = self.sets.begin_session()
+            self._apply_session_power_identity()
+
+    def select_official_set(self, set_id):
+        if self.sets.session_active:
+            # Keep the session manager as the authority for the rejection reason.
+            return self.sets.select(set_id)
+        if self._phase_name != "MENU":
+            raise SetContractError("set selection only available in menu")
+        selection = self.sets.select(set_id)
+        self._invalidate_set_media()
+        self.selection = selection
+        self._refresh_set_button()
+        print("[JT-SET] menu selection={}".format(selection.set_id), flush=True)
+        return selection
+
+    def _choose_set_from_popup(self, set_id, popup):
+        self.select_official_set(set_id)
+        try:
+            popup.dismiss()
+        except Exception:
+            pass
+        self._set_popup = None
+        self._set_option_buttons = []
+
+    def _open_set_selector(self):
+        if self._phase_name != "MENU" or self.sets.session_active or self._set_popup is not None:
+            return
+        content = BoxLayout(orientation="vertical", spacing=dp(8), padding=dp(10))
+        entries = self.sets.official_catalog()
+        self._set_option_buttons = []
+        for selection in entries:
+            dinosaurs = selection.dinosaurs()
+            button = Button(
+                text="{}\n{}  VS  {}".format(
+                    selection.display_name,
+                    dinosaurs["left"]["display_name"],
+                    dinosaurs["right"]["display_name"],
+                ),
+                size_hint=(1, None),
+                height=dp(76),
+                font_size=dp(20),
+            )
+            self._set_option_buttons.append(button)
+            content.add_widget(button)
+        close_button = Button(text="FERMER", size_hint=(1, None), height=dp(58), font_size=dp(20))
+        content.add_widget(close_button)
+        popup = Popup(
+            title="CHOISIR LES DINOSAURES",
+            content=content,
+            size_hint=(0.92, 0.86),
+            auto_dismiss=True,
+        )
+        for button, selection in zip(self._set_option_buttons, entries):
+            button.bind(
+                on_release=lambda instance, sid=selection.set_id: self._choose_set_from_popup(sid, popup)
+            )
+        close_button.bind(on_release=lambda *args: popup.dismiss())
+        self._set_popup = popup
+        popup.open()
 
     def present_round(self, number, token):
         self.cancel_round_presentation()
@@ -499,10 +641,11 @@ class JTMediaController:
 
     def _scene_config(self, key):
         spec = dict(SCENE_SPECS[key])
+        selection = self.sets.runtime_set
         if "media_role" in spec:
-            spec["file"] = self.selection.media_path(spec["media_role"])
+            spec["file"] = selection.media_path(spec["media_role"])
         elif "power_key" in spec:
-            spec["file"] = self.selection.power_media_path(spec["power_key"])
+            spec["file"] = selection.power_media_path(spec["power_key"])
         else:
             raise KeyError("scene without media selector: {}".format(key))
         return spec
@@ -512,7 +655,7 @@ class JTMediaController:
             Clock.schedule_once(lambda dt: done_callback(), 0)
             return
         self._intro_done_callback = done_callback
-        chosen = random.choice(self.selection.intro_paths())
+        chosen = random.choice(self.sets.startup_intro_set.intro_paths())
         path = self._resolve(chosen)
         print("[JT-INTRO] chosen={}".format(chosen), flush=True)
         if not path or CoreVideo is None:
@@ -1037,6 +1180,18 @@ class JTMediaController:
             except Exception:
                 pass
             self._status_label = None
+        if self._set_popup is not None:
+            try:
+                self._set_popup.dismiss()
+            except Exception:
+                pass
+            self._set_popup = None
+        if self._set_button is not None:
+            try:
+                self.root.remove_widget(self._set_button)
+            except Exception:
+                pass
+            self._set_button = None
         if not self._intro_done:
             self._finish_intro("shutdown")
         self._stop_scene("shutdown", preserve_failure=False)

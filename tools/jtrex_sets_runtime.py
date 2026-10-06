@@ -5,10 +5,12 @@ policies and power formulas remain owned by the engine/runtime modules.
 """
 from copy import deepcopy
 import json
+import os
 import re
 from pathlib import Path, PurePosixPath
 
 CATALOG_PATH = "assets/sets/catalog.json"
+CANONICAL_SET_ID = "trex_vs_steg"
 FORMAT_VERSION = 1
 ENGINE_CONTRACT = "jtrex-combat-v1"
 MEDIA_KEYS = frozenset((
@@ -109,6 +111,21 @@ class JTSetSelection:
     def power_media_path(self, power_key):
         return self.asset_path(self.power(power_key)["media"])
 
+    def power_paths(self, power_key):
+        power = self.power(power_key)
+        return {
+            "ready": self.asset_path(power["images"]["ready"]),
+            "used": self.asset_path(power["images"]["used"]),
+            "activation_audio": (
+                self.asset_path(power["activation_audio"])
+                if power["activation_audio"] is not None else None
+            ),
+            "legacy_fallback_audio": (
+                self.asset_path(power["legacy_fallback_audio"])
+                if power["legacy_fallback_audio"] is not None else None
+            ),
+        }
+
     def assets(self):
         return tuple(deepcopy(entry) for entry in self._manifest["assets"])
 
@@ -205,23 +222,127 @@ def _validate_manifest(manifest):
         _fail(f"referenced asset ids missing: {missing}")
 
 
-def load_official_set(resolve_path, set_id="trex_vs_steg"):
+def load_official_catalog(resolve_path):
     catalog = _read_json(resolve_path, CATALOG_PATH, "catalog")
     _expect_keys(catalog, ("format_version", "sets"), "catalog")
-    if catalog["format_version"] != FORMAT_VERSION or not isinstance(catalog["sets"], list):
+    if catalog["format_version"] != FORMAT_VERSION or not isinstance(catalog["sets"], list) or not catalog["sets"]:
         _fail("invalid catalog format")
-    matches = []
+
+    seen = set()
+    selections = []
     for index, entry in enumerate(catalog["sets"]):
         _expect_keys(entry, ("set_id", "manifest"), f"catalog.sets[{index}]")
-        _nonempty_string(entry["set_id"], f"catalog.sets[{index}].set_id")
-        _safe_path(entry["manifest"], f"catalog.sets[{index}].manifest")
-        if entry["set_id"] == set_id:
-            matches.append(entry)
+        set_id = _nonempty_string(entry["set_id"], f"catalog.sets[{index}].set_id")
+        if not _SIMPLE_ID.fullmatch(set_id):
+            _fail(f"catalog.sets[{index}].set_id invalid")
+        if set_id in seen:
+            _fail(f"duplicate official set_id: {set_id}")
+        seen.add(set_id)
+        manifest_path = _safe_path(entry["manifest"], f"catalog.sets[{index}].manifest")
+        manifest = _read_json(resolve_path, manifest_path, "manifest")
+        _validate_manifest(manifest)
+        if manifest["set_id"] != set_id:
+            _fail("catalog/manifest set_id mismatch")
+        selections.append(JTSetSelection(manifest, manifest_path))
+    return tuple(selections)
+
+
+def load_official_set(resolve_path, set_id=CANONICAL_SET_ID):
+    matches = [selection for selection in load_official_catalog(resolve_path) if selection.set_id == set_id]
     if len(matches) != 1:
         _fail(f"official set not found uniquely: {set_id}")
-    manifest_path = matches[0]["manifest"]
-    manifest = _read_json(resolve_path, manifest_path, "manifest")
-    _validate_manifest(manifest)
-    if manifest["set_id"] != set_id:
-        _fail("catalog/manifest set_id mismatch")
-    return JTSetSelection(manifest, manifest_path)
+    return matches[0]
+
+
+class JTSetSessionManager:
+    """Persist menu selection and freeze one validated set for a combat session."""
+
+    def __init__(self, resolve_path, state_path, canonical_id=CANONICAL_SET_ID):
+        self._catalog = load_official_catalog(resolve_path)
+        self._by_id = {selection.set_id: selection for selection in self._catalog}
+        if canonical_id not in self._by_id:
+            _fail(f"canonical set missing from official catalog: {canonical_id}")
+        self._canonical_id = canonical_id
+        self._state_path = Path(state_path)
+        self._replace = os.replace
+        self._session = None
+        selected_id = self._load_persisted_id()
+        if selected_id not in self._by_id:
+            selected_id = canonical_id
+            self._persist(selected_id)
+        self._selected = deepcopy(self._by_id[selected_id])
+        self._startup_intro = deepcopy(self._selected)
+
+    def _load_persisted_id(self):
+        try:
+            payload = json.loads(self._state_path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError):
+            return None
+        if not isinstance(payload, dict) or set(payload) != {"format_version", "set_id"}:
+            return None
+        if payload.get("format_version") != FORMAT_VERSION:
+            return None
+        set_id = payload.get("set_id")
+        if not isinstance(set_id, str) or not _SIMPLE_ID.fullmatch(set_id):
+            return None
+        return set_id
+
+    def _persist(self, set_id):
+        self._state_path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = self._state_path.with_name(self._state_path.name + ".tmp")
+        payload = {"format_version": FORMAT_VERSION, "set_id": set_id}
+        try:
+            with tmp.open("w", encoding="utf-8") as handle:
+                json.dump(payload, handle, ensure_ascii=False, separators=(",", ":"))
+                handle.write("\n")
+                handle.flush()
+                os.fsync(handle.fileno())
+            self._replace(tmp, self._state_path)
+        finally:
+            try:
+                tmp.unlink()
+            except FileNotFoundError:
+                pass
+
+    def official_catalog(self):
+        return tuple(deepcopy(selection) for selection in self._catalog)
+
+    @property
+    def selected_set(self):
+        return deepcopy(self._selected)
+
+    @property
+    def startup_intro_set(self):
+        return deepcopy(self._startup_intro)
+
+    @property
+    def session_set(self):
+        return None if self._session is None else deepcopy(self._session)
+
+    @property
+    def runtime_set(self):
+        return deepcopy(self._session if self._session is not None else self._selected)
+
+    @property
+    def session_active(self):
+        return self._session is not None
+
+    def select(self, set_id):
+        if self._session is not None:
+            _fail("cannot change set during active session")
+        try:
+            selection = self._by_id[set_id]
+        except KeyError:
+            _fail(f"unknown official set: {set_id}")
+        self._selected = deepcopy(selection)
+        self._persist(set_id)
+        return deepcopy(self._selected)
+
+    def begin_session(self):
+        if self._session is not None:
+            return deepcopy(self._session)
+        self._session = deepcopy(self._selected)
+        return deepcopy(self._session)
+
+    def end_session(self):
+        self._session = None

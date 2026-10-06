@@ -10,7 +10,7 @@ import tempfile
 import zipfile
 from pathlib import Path, PurePosixPath
 
-from jtrex_sets_runtime import CATALOG_PATH, load_official_set
+from jtrex_sets_runtime import CATALOG_PATH, POWER_KEYS, load_official_set
 
 
 VERSION = "1.0.15"
@@ -76,6 +76,47 @@ def replace_exact(text, old, new, expected):
     return text.replace(old, new)
 
 
+def build_power_path_table(selection):
+    return {
+        slot: selection.power_paths(power_key)
+        for slot, power_key in enumerate(POWER_KEYS, 1)
+    }
+
+
+def rewrite_power_icon_sources(lines, start, end, newline):
+    replacements = 0
+    for index in range(start, end):
+        stripped = lines[index].strip()
+        for slot in range(1, 7):
+            prefix = f"self.b{slot}.source="
+            if not stripped.startswith(prefix):
+                continue
+            if not (stripped.endswith("1.png'") or stripped.endswith('1.png"')) and not (
+                stripped.endswith("0.png'") or stripped.endswith('0.png"')
+            ):
+                continue
+            state = "ready" if "1.png" in stripped.rsplit("=", 1)[-1] else "used"
+            indent = lines[index][:len(lines[index]) - len(lines[index].lstrip(" \t"))]
+            lines[index] = (
+                indent
+                + f"self.b{slot}.source=JT_POWER_PATHS[{slot}]['{state}']"
+                + newline
+            )
+            replacements += 1
+            break
+    return replacements
+
+
+def _canonical_power_path_table():
+    repo_root = Path(__file__).resolve().parents[1]
+
+    def resolve_repo(relative_path):
+        path = repo_root.joinpath(*PurePosixPath(relative_path).parts)
+        return str(path) if path.is_file() else None
+
+    return build_power_path_table(load_official_set(resolve_repo))
+
+
 def method_bounds(lines, method_name):
     target = f"def {method_name}("
     start = None
@@ -99,8 +140,9 @@ def method_bounds(lines, method_name):
     return start, end
 
 
-def adapt_main(source):
+def adapt_main(source, power_paths=None):
     newline = "\r\n" if "\r\n" in source else "\n"
+    power_paths = power_paths or _canonical_power_path_table()
 
     source = replace_exact(source, "'a.png'", "'A.png'", 4)
     source = replace_exact(
@@ -128,6 +170,40 @@ def adapt_main(source):
         + "POWER_COSTS={1:60,2:40,3:60,4:60,5:60,6:80}"
         + newline
         + "POWER_READY_STATE={1:False,2:False,3:False,4:False,5:False,6:False}"
+        + newline
+        + "JT_POWER_PATHS=" + repr(power_paths)
+        + newline
+        + "def jt_apply_power_paths(paths):"
+        + newline
+        + "\tglobal JT_POWER_PATHS,sf,ls,ta,fs,ph,maa"
+        + newline
+        + "\trequired=set(range(1,7))"
+        + newline
+        + "\tif set(paths)!=required:"
+        + newline
+        + "\t\traise ValueError('six power slots required')"
+        + newline
+        + "\tJT_POWER_PATHS={slot:dict(paths[slot]) for slot in range(1,7)}"
+        + newline
+        + "\taudio_globals={1:'sf',2:'ls',3:'ta',4:'fs',5:'ph',6:'maa'}"
+        + newline
+        + "\tfor slot,name in audio_globals.items():"
+        + newline
+        + "\t\told=globals().get(name)"
+        + newline
+        + "\t\tif old is not None:"
+        + newline
+        + "\t\t\ttry: old.stop()"
+        + newline
+        + "\t\t\texcept Exception: pass"
+        + newline
+        + "\t\tpath=JT_POWER_PATHS[slot].get('activation_audio')"
+        + newline
+        + "\t\tglobals()[name]=SoundLoader.load(path) if path else None"
+        + newline
+        + "\t\tif 'sona' in globals():"
+        + newline
+        + "\t\t\tsona[20+slot]=JT_POWER_PATHS[slot].get('legacy_fallback_audio')"
         + newline
         + "JT_MP4_ONLY_STATES=frozenset((1,2,3,4,5,6,7,8,9,10,11,21,22,23,24,25,26))"
         + newline
@@ -563,23 +639,15 @@ def _jt_log_new_stops(self, observer):
     ]
     lines[first:finish] = power_block
 
-    # Correct the right-side visual identity: slot 4=TRFS, slot 6=TRMA.
+    # Power item identity is data-driven; gameplay availability remains engine-owned.
     start, end = method_bounds(lines, "affbt")
-    tr_identity_swaps = 0
-    for index in range(start, end):
-        if "self.b4.source" in lines[index] and "trma" in lines[index]:
-            lines[index] = lines[index].replace("trma", "trfs")
-            tr_identity_swaps += 1
-        elif "self.b6.source" in lines[index] and "trfs" in lines[index]:
-            lines[index] = lines[index].replace("trfs", "trma")
-            tr_identity_swaps += 1
+    power_icon_rewrites = rewrite_power_icon_sources(lines, start, end, newline)
     require(
-        tr_identity_swaps == 4,
-        f"Identité visuelle TRFS/TRMA: {tr_identity_swaps} remplacement(s), 4 attendus.",
+        power_icon_rewrites == 12,
+        f"Identité visuelle des pouvoirs: {power_icon_rewrites} remplacement(s), 12 attendus.",
     )
 
     # Canonical rotating aura: b1s..b6s are the animated select/select0..15 overlays.
-    # Keep the power item icons historical; only the aura follows actual launchability.
     start, end = method_bounds(lines, "affbt")
     method_indent = len(lines[start]) - len(lines[start].lstrip(" \t"))
     body_indent = None
@@ -991,7 +1059,7 @@ def prepare(archive, destination, spec, media_root, runtime):
         )
 
         original = main.read_bytes().decode("utf-8")
-        adapted = adapt_main(original)
+        adapted = adapt_main(original, build_power_path_table(selection))
         main.write_bytes(adapted.encode("utf-8"))
 
         app_asset_report = {}
