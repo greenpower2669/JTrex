@@ -1,6 +1,6 @@
 # JTREX — TODO VIVANT
 
-Dernière consolidation : 2026-10-05
+Dernière consolidation : 2026-10-06
 
 ## JT-SETS-001 — ACTIF
 - [x] Feu vert Fab reçu.
@@ -14,26 +14,36 @@ Dernière consolidation : 2026-10-05
 - [x] Preuves archive/main/tests et mémoires synchronisées.
 
 ## Lot 02 — TERMINÉ
-- [x] Runtime minimal contrat/catalogue/résolution.
+- [x] Runtime contrat/catalogue/résolution.
 - [x] Catalogue officiel + manifeste `trex_vs_steg` à 41 assets vérifiés.
 - [x] Intros/scènes/pouvoirs/finishings/ZeroWin résolus par rôle logique.
-- [x] Mutation globale `SCENES` de ZeroWin supprimée.
-- [x] Packaging Android dérivé du manifeste ; JSON embarqués.
-- [x] TDD : 18 nouveaux tests ; suite complète 56/56 OK (`37378554085`).
-- [x] Workflow Android exact restauré (`ee8cf297...`, blob `c22bcf400...`).
-- [x] APK final : run #80 `37379193862` GREEN ; artefact APK `11375685200` ; `JuneT-Rex-1.0.15-debug.apk` = 156461520 octets, SHA-256 `182e1b8f72f269a7e3f3f24895e37fe23a1b3ade9e77949d14500827c13c320c`.
-- [ ] Validation téléphone du candidat si Fab souhaite tester ce jalon avant Lot 03.
+- [x] Packaging Android dérivé du manifeste.
+- [x] Run Android #80 GREEN et APK vérifié.
+
+## Lot 03 — TERMINÉ
+- [x] Catalogue officiel exposé au joueur au MENU.
+- [x] Sélection persistante avec écriture atomique et fallback canonique sûr.
+- [x] Intro de démarrage sur le dernier set valide.
+- [x] Set figé pendant tout le match ; sélection refusée en session active.
+- [x] Retour MENU termine la session et autorise le set du match suivant.
+- [x] Changement au menu invalide lecteur/reprise/génération de l'ancien set.
+- [x] Identités des six pouvoirs (images + sons + fallbacks) alimentées par le set figé.
+- [x] Deux sessions synthétiques successives sans identité/callback résiduel.
+- [x] Vieux EOS/frame de session A sans effet sur session B.
+- [x] Suite complète 77/77 verte.
+- [x] Run Android #83 `37417205571` GREEN sur `c5330f29814430944500839aa3bcd29afbc3ff8b`.
+- [x] APK `JuneT-Rex-1.0.15-debug.apk` = 156468471 octets ; SHA-256 `612af2912050c392c63ec2054b03fc875b3a7a4c8f915c3a40d074cb077dec20`.
+- [ ] Validation téléphone du candidat si Fab souhaite tester ce jalon.
 
 ## Lots suivants
-- [ ] Lot 03 : catalogue/menu + sélection persistante figée par match + fallback canonique sûr.
-- [ ] Lot 04 : stockage officiel/utilisateur/brouillon + import/export ZIP sûr.
+- [ ] Lot 04 : stockage officiel/utilisateur/brouillon + import/export ZIP sûr et transactionnel.
 - [ ] Lot 05 : atelier 20 touches + aperçu indépendant + test brouillon.
 - [ ] Lot 06 : exposer uniquement les paramètres validés par Fab avec bornes approuvées.
 
 ## Non-régression globale JT-SETS-001
-- [x] Set canonique strictement équivalent via le résolveur sur tests/intégration.
-- [ ] Deux sets successifs sans lecteur/texture/callback résiduel.
-- [ ] Un vieux EOS ne peut pas agir sur une nouvelle session.
+- [x] Set canonique strictement équivalent sur tests/intégration.
+- [x] Deux sets successifs sans lecteur/texture/callback résiduel.
+- [x] Un vieux EOS ne peut pas agir sur une nouvelle session.
 - [ ] Import/export round-trip avec empreintes et installation sans set source.
 - [ ] Aucun code exécutable accepté dans un pack.
 
