@@ -1,0 +1,26 @@
+name: JT-SETS Lot05 source snapshot
+on:
+  push:
+    branches:
+      - tmp-jt-sets-lot05-source
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Record exact source head
+        run: |
+          set -euo pipefail
+          git rev-parse HEAD
+          git archive --format=tar.gz --output=/tmp/jtrex-lot05-source.tar.gz HEAD
+          sha256sum /tmp/jtrex-lot05-source.tar.gz | tee /tmp/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: JT-SETS-Lot05-Source
+          path: |
+            /tmp/jtrex-lot05-source.tar.gz
+            /tmp/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 7
