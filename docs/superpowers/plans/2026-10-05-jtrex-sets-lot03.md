@@ -52,3 +52,9 @@ Les coûts, mécanismes, états et jalons restent inchangés.
 - collecter APK + SHA-256 ;
 - synchroniser `ordres-de-mission.md`, `brain.md`, `brainmap.md`, `debughistorical.md`, `todo.md` ;
 - documenter `docs/jt-sets-001/lot03-verification.md`.
+
+## État d'exécution
+- commit produit Lot 03 : `dfad8fbc5ae4678fb5bd704ea38a858116966a5b` ;
+- parent direct : `9efad3d0dfaf480aa46e715442d104357969abef` ;
+- intégration contrôlée : patch SHA-256 `c44fb521075ce7266a4473aa220b6f8530a91f1eeb197ecaf1a480efc6c8d953`, 77 tests GREEN, `py_compile` GREEN, 12 références `JT_POWER_PATHS` ;
+- validation Android finale : en cours sur le même code produit.
