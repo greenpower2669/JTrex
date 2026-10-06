@@ -1,0 +1,1250 @@
+diff --git a/docs/superpowers/plans/2026-10-05-jtrex-sets-lot03.md b/docs/superpowers/plans/2026-10-05-jtrex-sets-lot03.md
+new file mode 100644
+index 0000000..e4a8197
+--- /dev/null
++++ b/docs/superpowers/plans/2026-10-05-jtrex-sets-lot03.md
+@@ -0,0 +1,54 @@
++# JTREX — JT-SETS-001 — Plan Lot 03
++
++Date : 2026-10-05
++Branche : `feature/dinosaur-sets-v1`
++Base Lot 03 : `9efad3d0dfaf480aa46e715442d104357969abef`
++
++## Objectif
++Ajouter la sélection joueur des sets officiels, persistante au menu et figée pour toute la durée d'un match, sans modifier les règles de gameplay.
++
++## Invariants
++- le set canonique `trex_vs_steg` reste le fallback sûr ;
++- l'intro de lancement utilise le dernier set persisté valide ;
++- changer le set au menu ne rejoue pas l'intro ;
++- aucun changement de set pendant un match ;
++- tout changement de set invalide lecteurs/callbacks/reprise vidéo de l'ancienne sélection ;
++- médias, images et sons identitaires du set utilisent la même sélection figée ;
++- aucun import/export, brouillon, atelier 20 touches ou équilibrage dans ce lot ;
++- aucun merge `main`, aucune Release, aucun AAB.
++
++## Tâche 1 — catalogue, persistance, session pure Python
++Fichiers : `tools/jtrex_sets_runtime.py`, `tests/test_sets_selection.py`.
++
++RED : tests pour catalogue officiel, doublons, persistance valide, fallback canonique sur ID/JSON invalide, écriture atomique, gel de session, refus de sélection pendant session, nouvelle session après retour menu.
++
++GREEN : ajouter une API fermée de catalogue et un gestionnaire de sélection/session sans dépendance Kivy.
++
++## Tâche 2 — intégration media + menu joueur
++Fichiers : `tools/jtrex_media_runtime.py`, `tools/jtrex_phase_runtime.py`, tests média/session.
++
++RED : prouver intro=dernier set valide, `begin_session` avant premier ROUND, sélection figée pendant le match, `end_session` au MENU, invalidation génération/reprise lors d'un changement au menu, bouton/menu lisible officiel.
++
++GREEN : le contrôleur média possède le gestionnaire de session, expose le catalogue joueur et maintient un bouton/popup visible seulement au menu. Changer au menu stoppe l'ancien lecteur et remet les marqueurs de reprise à zéro sans rejouer l'intro.
++
++## Tâche 3 — identités pouvoirs set-aware
++Fichiers : `tools/prepare_android.py`, `tools/jtrex_media_runtime.py`, tests préparateur/intégration.
++
++RED : le main généré ne doit plus réinjecter les chemins canoniques d'icônes/sons à chaque tick quand un autre set est actif.
++
++GREEN : introduire une table moteur de chemins de pouvoirs initialisée au canon, utilisée par les six icônes ready/used ; au début de session, le contrôleur remplace les six couples d'images, les six sons d'activation et les six fallbacks audio 21..26 depuis la sélection figée.
++
++Les coûts, mécanismes, états et jalons restent inchangés.
++
++## Tâche 4 — non-régression
++- test de deux sessions successives avec deux manifests synthétiques ;
++- vieux EOS/callback de session A sans effet sur session B ;
++- chrono/KO/pouvoirs historiques inchangés ;
++- suite complète verte ;
++- `prepare_android.py` canonique vert.
++
++## Tâche 5 — Android et clôture
++- workflow Android normal sur le HEAD exact ;
++- collecter APK + SHA-256 ;
++- synchroniser `ordres-de-mission.md`, `brain.md`, `brainmap.md`, `debughistorical.md`, `todo.md` ;
++- documenter `docs/jt-sets-001/lot03-verification.md`.
+diff --git a/tests/test_sets_media_session.py b/tests/test_sets_media_session.py
+new file mode 100644
+index 0000000..783e08e
+--- /dev/null
++++ b/tests/test_sets_media_session.py
+@@ -0,0 +1,217 @@
++import ast
++import json
++import tempfile
++import unittest
++from pathlib import Path
++from types import ModuleType, SimpleNamespace
++
++from tests.runtime_harness import Canvas, Clock, Event, Label, Rectangle, Video, Widget
++from jtrex_sets_runtime import CANONICAL_SET_ID, SetContractError
++
++ROOT = Path(__file__).resolve().parents[1]
++
++
++class PopupStub(Widget):
++    def __init__(self, *args, **kwargs):
++        super().__init__(*args, **kwargs)
++        self.opened = False
++        self.content = kwargs.get("content")
++        self.title = kwargs.get("title", "")
++
++    def open(self):
++        self.opened = True
++
++    def dismiss(self):
++        self.opened = False
++
++
++class ButtonStub(Widget):
++    def __init__(self, *args, **kwargs):
++        super().__init__(*args, **kwargs)
++        self.disabled = kwargs.get("disabled", False)
++        self.font_size = kwargs.get("font_size", 0)
++
++
++class Root(Widget):
++    def __init__(self):
++        super().__init__()
++        self.deux = Rectangle()
++
++
++def execute_without_kivy(source, ns):
++    tree = ast.parse(source)
++    tree.body = [n for n in tree.body if not (
++        isinstance(n, ast.ImportFrom) and n.module.startswith("kivy")
++        or isinstance(n, ast.Import) and any(a.name == "kivy" for a in n.names)
++    )]
++    exec(compile(tree, "<jtrex-media-lot03>", "exec"), ns)
++
++
++def make_two_set_root():
++    tmp = tempfile.TemporaryDirectory()
++    root = Path(tmp.name)
++    sets = root / "assets/sets"
++    canon_dir = sets / CANONICAL_SET_ID
++    canon_dir.mkdir(parents=True)
++    canonical = json.loads((ROOT / "assets/sets/trex_vs_steg/manifest.json").read_text(encoding="utf-8"))
++    (canon_dir / "manifest.json").write_text(json.dumps(canonical), encoding="utf-8")
++
++    alt_id = "raptor_vs_trike"
++    alt = json.loads(json.dumps(canonical))
++    alt["set_id"] = alt_id
++    alt["display_name"] = "Raptor vs Trike"
++    alt["dinosaurs"]["left"]["display_name"] = "Raptor"
++    alt["dinosaurs"]["right"]["display_name"] = "Trike"
++    alt["media"]["intros"] = ["alt_intro"]
++    alt["media"]["orbs_background"] = "alt_orbs"
++    alt["assets"].extend([
++        {"id": "alt_intro", "path": "assets/sets/raptor_vs_trike/intro.mp4", "type": "video", "size": 0, "sha256": "0" * 64},
++        {"id": "alt_orbs", "path": "assets/sets/raptor_vs_trike/orbs.mp4", "type": "video", "size": 0, "sha256": "1" * 64},
++    ])
++    alt_dir = sets / alt_id
++    alt_dir.mkdir(parents=True)
++    (alt_dir / "manifest.json").write_text(json.dumps(alt), encoding="utf-8")
++    (alt_dir / "intro.mp4").touch()
++    (alt_dir / "orbs.mp4").touch()
++
++    catalog = {
++        "format_version": 1,
++        "sets": [
++            {"set_id": CANONICAL_SET_ID, "manifest": "assets/sets/trex_vs_steg/manifest.json"},
++            {"set_id": alt_id, "manifest": "assets/sets/raptor_vs_trike/manifest.json"},
++        ],
++    }
++    sets.mkdir(parents=True, exist_ok=True)
++    (sets / "catalog.json").write_text(json.dumps(catalog), encoding="utf-8")
++    return tmp, root, alt_id
++
++
++def load_media_runtime(asset_root):
++    Clock.now, Clock.events, Video.instances = 100.0, [], []
++    window = Widget()
++    ns = {
++        "__name__": "jtrex_media_runtime_lot03",
++        "Widget": Widget,
++        "Label": Label,
++        "Rectangle": Rectangle,
++        "Color": Widget,
++        "Ellipse": Widget,
++        "BoxLayout": Widget,
++        "Button": ButtonStub,
++        "Popup": PopupStub,
++        "ScrollView": Widget,
++        "Clock": Clock,
++        "CoreVideo": Video,
++        "Window": window,
++        "dp": lambda value: value,
++        "resource_find": lambda relative: str(asset_root / relative) if (asset_root / relative).is_file() else None,
++    }
++    runtime = ModuleType("jtrex_media_runtime_lot03")
++    runtime.__dict__.update(ns)
++    execute_without_kivy((ROOT / "tools/jtrex_media_runtime.py").read_text(encoding="utf-8"), runtime.__dict__)
++    return runtime
++
++
++def build_media(asset_root):
++    runtime = load_media_runtime(asset_root)
++    root = Root()
++    app = SimpleNamespace(root=root, user_data_dir=str(asset_root / "userdata"))
++    return runtime.JTMediaController(app), runtime
++
++
++class MediaSetSessionTests(unittest.TestCase):
++    def setUp(self):
++        self.tmp, self.root, self.alt_id = make_two_set_root()
++        self.addCleanup(self.tmp.cleanup)
++        self.state_path = self.root / "userdata/jt-set-selection.json"
++
++    def persist(self, set_id):
++        self.state_path.parent.mkdir(parents=True, exist_ok=True)
++        self.state_path.write_text(json.dumps({"format_version": 1, "set_id": set_id}), encoding="utf-8")
++
++    def test_startup_intro_uses_last_valid_persisted_set(self):
++        self.persist(self.alt_id)
++        media, _ = build_media(self.root)
++
++        media.start_intro(lambda: None)
++
++        self.assertTrue(Video.instances)
++        self.assertTrue(Video.instances[-1].filename.endswith("assets/sets/raptor_vs_trike/intro.mp4"))
++
++    def test_round_intro_begins_frozen_session_and_uses_session_media(self):
++        media, _ = build_media(self.root)
++        media._intro_done = True
++        media.on_phase_changed("MENU")
++        media.select_official_set(self.alt_id)
++
++        media.on_phase_changed("ROUND_INTRO")
++
++        self.assertTrue(media.sets.session_active)
++        self.assertEqual(media.sets.session_set.set_id, self.alt_id)
++        self.assertTrue(media._scene_config("wait")["file"].endswith("assets/sets/raptor_vs_trike/orbs.mp4"))
++        with self.assertRaisesRegex(SetContractError, "active session"):
++            media.select_official_set(CANONICAL_SET_ID)
++
++    def test_return_to_menu_ends_session_and_next_match_uses_new_selection(self):
++        media, _ = build_media(self.root)
++        media._intro_done = True
++        media.on_phase_changed("MENU")
++        media.select_official_set(self.alt_id)
++        media.on_phase_changed("ROUND_INTRO")
++        self.assertEqual(media.sets.runtime_set.set_id, self.alt_id)
++
++        media.on_phase_changed("MENU")
++        media.select_official_set(CANONICAL_SET_ID)
++        media.on_phase_changed("ROUND_INTRO")
++
++        self.assertEqual(media.sets.runtime_set.set_id, CANONICAL_SET_ID)
++
++    def test_menu_change_invalidates_old_player_generation_and_wait_resume(self):
++        media, _ = build_media(self.root)
++        media._intro_done = True
++        media.on_phase_changed("MENU")
++        old_player = Video(filename="old.mp4", eos="loop", autoplay=False)
++        old_player.position = 5.0
++        old_player.duration = 10.0
++        media._scene_player = old_player
++        media._scene_key = "wait"
++        media._scene_state = 1
++        media._scene_generation = 7
++        media._wait_resume_fraction = 0.5
++        media._scene_completed_key = "wait"
++        old_generation = media._scene_generation
++
++        media.select_official_set(self.alt_id)
++
++        self.assertGreater(media._scene_generation, old_generation)
++        self.assertEqual(media._wait_resume_fraction, 0.0)
++        self.assertIsNone(media._scene_completed_key)
++        self.assertIsNone(media._scene_player)
++        self.assertEqual(old_player.state, "unloaded")
++
++    def test_selector_is_readable_official_catalog_and_visible_only_in_menu(self):
++        media, _ = build_media(self.root)
++        media._intro_done = True
++
++        media.on_phase_changed("MENU")
++        media._open_set_selector()
++
++        self.assertEqual(media._set_button.opacity, 1)
++        self.assertFalse(media._set_button.disabled)
++        self.assertIn("Steg vs T-Rex", media._set_button.text)
++        labels = [button.text for button in media._set_option_buttons]
++        self.assertTrue(any("Steg vs T-Rex" in label for label in labels))
++        self.assertTrue(any("Raptor vs Trike" in label for label in labels))
++        self.assertTrue(media._set_popup.opened)
++
++        media.on_phase_changed("ROUND_INTRO")
++        self.assertEqual(media._set_button.opacity, 0)
++        self.assertTrue(media._set_button.disabled)
++
++    def test_phase_controller_notifies_media_on_every_real_phase_change(self):
++        source = (ROOT / "tools/jtrex_phase_runtime.py").read_text(encoding="utf-8")
++        self.assertIn("self.media.on_phase_changed(name)", source)
++
++
++if __name__ == "__main__":
++    unittest.main()
+diff --git a/tests/test_sets_power_identity.py b/tests/test_sets_power_identity.py
+new file mode 100644
+index 0000000..20ee77c
+--- /dev/null
++++ b/tests/test_sets_power_identity.py
+@@ -0,0 +1,123 @@
++import importlib.util
++import json
++import sys
++import unittest
++from pathlib import Path
++
++ROOT = Path(__file__).resolve().parents[1]
++sys.path.insert(0, str(ROOT / "tools"))
++
++from jtrex_sets_runtime import POWER_KEYS, load_official_set
++from tests.test_sets_media_session import build_media, make_two_set_root
++
++
++def load_preparer():
++    spec = importlib.util.spec_from_file_location("prep_lot03", ROOT / "tools/prepare_android.py")
++    module = importlib.util.module_from_spec(spec)
++    spec.loader.exec_module(module)
++    return module
++
++
++def repo_resolve(relative):
++    path = ROOT / relative
++    return str(path) if path.is_file() else None
++
++
++def give_alt_unique_power_identity(root, alt_id):
++    manifest_path = root / f"assets/sets/{alt_id}/manifest.json"
++    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
++    for slot, key in enumerate(POWER_KEYS, 1):
++        power = manifest["powers"][key]
++        replacements = {
++            "ready": (f"alt_{slot}_ready", f"assets/sets/{alt_id}/power{slot}-ready.png", "image"),
++            "used": (f"alt_{slot}_used", f"assets/sets/{alt_id}/power{slot}-used.png", "image"),
++            "activation_audio": (f"alt_{slot}_activation", f"assets/sets/{alt_id}/power{slot}-activate.wav", "audio"),
++            "legacy_fallback_audio": (f"alt_{slot}_fallback", f"assets/sets/{alt_id}/power{slot}-fallback.wav", "audio"),
++        }
++        power["images"]["ready"] = replacements["ready"][0]
++        power["images"]["used"] = replacements["used"][0]
++        power["activation_audio"] = replacements["activation_audio"][0]
++        power["legacy_fallback_audio"] = replacements["legacy_fallback_audio"][0]
++        for asset_id, path, kind in replacements.values():
++            manifest["assets"].append({
++                "id": asset_id,
++                "path": path,
++                "type": kind,
++                "size": 0,
++                "sha256": format(slot, "064x"),
++            })
++    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
++
++
++class SetPowerIdentityTests(unittest.TestCase):
++    def test_selection_resolves_all_power_identity_paths(self):
++        selection = load_official_set(repo_resolve)
++
++        paths = selection.power_paths("left_1")
++
++        self.assertEqual(paths, {
++            "ready": "stsf1.png",
++            "used": "stsf0.png",
++            "activation_audio": "sf.wav",
++            "legacy_fallback_audio": "stsf.wav",
++        })
++
++    def test_preparer_builds_manifest_driven_six_slot_power_table(self):
++        prep = load_preparer()
++        selection = load_official_set(repo_resolve)
++
++        table = prep.build_power_path_table(selection)
++
++        self.assertEqual(tuple(table), (1, 2, 3, 4, 5, 6))
++        self.assertEqual(table[2]["ready"], "sth1.png")
++        self.assertEqual(table[4]["activation_audio"], "fs.wav")
++        self.assertEqual(table[6]["legacy_fallback_audio"], "trma.wav")
++
++    def test_preparer_rewrites_all_power_icon_assignments_to_engine_table(self):
++        prep = load_preparer()
++        lines = []
++        canonical = ["stsf", "sth", "stta", "trfs", "trph", "trma"]
++        for slot, prefix in enumerate(canonical, 1):
++            lines.append(f"\tself.b{slot}.source='{prefix}1.png'\n")
++            lines.append(f"\tself.b{slot}.source='{prefix}0.png'\n")
++
++        count = prep.rewrite_power_icon_sources(lines, 0, len(lines), "\n")
++        text = "".join(lines)
++
++        self.assertEqual(count, 12)
++        for slot in range(1, 7):
++            self.assertIn(f"self.b{slot}.source=JT_POWER_PATHS[{slot}]['ready']", text)
++            self.assertIn(f"self.b{slot}.source=JT_POWER_PATHS[{slot}]['used']", text)
++        for prefix in canonical:
++            self.assertNotIn(f"'{prefix}1.png'", text)
++            self.assertNotIn(f"'{prefix}0.png'", text)
++
++    def test_media_applies_frozen_session_power_table_once_session_begins(self):
++        tmp, root, alt_id = make_two_set_root()
++        self.addCleanup(tmp.cleanup)
++        give_alt_unique_power_identity(root, alt_id)
++        media, _ = build_media(root)
++        media._intro_done = True
++        applied = []
++        media._engine = {"jt_apply_power_paths": lambda table: applied.append(table)}
++        media.on_phase_changed("MENU")
++        media.select_official_set(alt_id)
++
++        media.on_phase_changed("ROUND_INTRO")
++
++        self.assertEqual(len(applied), 1)
++        table = applied[0]
++        self.assertTrue(table[1]["ready"].endswith("power1-ready.png"))
++        self.assertTrue(table[3]["activation_audio"].endswith("power3-activate.wav"))
++        self.assertTrue(table[6]["legacy_fallback_audio"].endswith("power6-fallback.wav"))
++        self.assertEqual(media.sets.session_set.set_id, alt_id)
++
++    def test_preparer_injects_runtime_power_path_api_not_canonical_tick_literals(self):
++        source = (ROOT / "tools/prepare_android.py").read_text(encoding="utf-8")
++        self.assertIn("JT_POWER_PATHS", source)
++        self.assertIn("def jt_apply_power_paths", source)
++        self.assertNotIn("Correct the right-side visual identity: slot 4=TRFS, slot 6=TRMA", source)
++
++
++if __name__ == "__main__":
++    unittest.main()
+diff --git a/tests/test_sets_selection.py b/tests/test_sets_selection.py
+new file mode 100644
+index 0000000..b395125
+--- /dev/null
++++ b/tests/test_sets_selection.py
+@@ -0,0 +1,159 @@
++import json
++import os
++import shutil
++import tempfile
++import unittest
++from pathlib import Path
++
++from tools.jtrex_sets_runtime import (
++    CANONICAL_SET_ID,
++    SetContractError,
++    JTSetSessionManager,
++    load_official_catalog,
++)
++
++ROOT = Path(__file__).resolve().parents[1]
++
++
++def resolver(root):
++    def resolve(relative):
++        path = root / relative
++        return str(path) if path.is_file() else None
++    return resolve
++
++
++def make_fixture_root():
++    tmp = tempfile.TemporaryDirectory()
++    root = Path(tmp.name)
++    source = ROOT / "assets/sets/trex_vs_steg/manifest.json"
++    target = root / "assets/sets/trex_vs_steg/manifest.json"
++    target.parent.mkdir(parents=True, exist_ok=True)
++    shutil.copy2(source, target)
++    catalog = ROOT / "assets/sets/catalog.json"
++    (root / "assets/sets").mkdir(parents=True, exist_ok=True)
++    shutil.copy2(catalog, root / "assets/sets/catalog.json")
++    return tmp, root
++
++
++def add_second_official_set(root, set_id="raptor_vs_trike", display_name="Raptor vs Trike"):
++    manifest_path = root / f"assets/sets/{set_id}/manifest.json"
++    manifest_path.parent.mkdir(parents=True, exist_ok=True)
++    manifest = json.loads((root / "assets/sets/trex_vs_steg/manifest.json").read_text(encoding="utf-8"))
++    manifest["set_id"] = set_id
++    manifest["display_name"] = display_name
++    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
++    catalog_path = root / "assets/sets/catalog.json"
++    catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
++    catalog["sets"].append({"set_id": set_id, "manifest": f"assets/sets/{set_id}/manifest.json"})
++    catalog_path.write_text(json.dumps(catalog), encoding="utf-8")
++
++
++class OfficialCatalogTests(unittest.TestCase):
++    def test_catalog_loads_all_official_sets_in_declared_order(self):
++        tmp, root = make_fixture_root()
++        self.addCleanup(tmp.cleanup)
++        add_second_official_set(root)
++
++        catalog = load_official_catalog(resolver(root))
++
++        self.assertEqual([entry.set_id for entry in catalog], [CANONICAL_SET_ID, "raptor_vs_trike"])
++        self.assertEqual(catalog[1].display_name, "Raptor vs Trike")
++
++    def test_catalog_rejects_duplicate_set_ids_even_if_requested_set_is_unique(self):
++        tmp, root = make_fixture_root()
++        self.addCleanup(tmp.cleanup)
++        catalog_path = root / "assets/sets/catalog.json"
++        catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
++        catalog["sets"].append(dict(catalog["sets"][0]))
++        catalog_path.write_text(json.dumps(catalog), encoding="utf-8")
++
++        with self.assertRaisesRegex(SetContractError, "duplicate official set_id"):
++            load_official_catalog(resolver(root))
++
++
++class SessionManagerTests(unittest.TestCase):
++    def setUp(self):
++        self.tmp, self.root = make_fixture_root()
++        self.addCleanup(self.tmp.cleanup)
++        add_second_official_set(self.root)
++        self.state_path = self.root / "state/selected-set.json"
++        self.resolve = resolver(self.root)
++
++    def manager(self):
++        return JTSetSessionManager(self.resolve, self.state_path)
++
++    def test_valid_persisted_selection_is_restored_for_menu_and_startup_intro(self):
++        self.state_path.parent.mkdir(parents=True, exist_ok=True)
++        self.state_path.write_text(json.dumps({"format_version": 1, "set_id": "raptor_vs_trike"}), encoding="utf-8")
++
++        manager = self.manager()
++
++        self.assertEqual(manager.selected_set.set_id, "raptor_vs_trike")
++        self.assertEqual(manager.startup_intro_set.set_id, "raptor_vs_trike")
++        self.assertIsNone(manager.session_set)
++
++    def test_invalid_persisted_json_falls_back_to_canonical_and_repairs_state(self):
++        self.state_path.parent.mkdir(parents=True, exist_ok=True)
++        self.state_path.write_text("{broken", encoding="utf-8")
++
++        manager = self.manager()
++
++        self.assertEqual(manager.selected_set.set_id, CANONICAL_SET_ID)
++        self.assertEqual(json.loads(self.state_path.read_text(encoding="utf-8")), {"format_version": 1, "set_id": CANONICAL_SET_ID})
++
++    def test_unknown_persisted_set_id_falls_back_to_canonical(self):
++        self.state_path.parent.mkdir(parents=True, exist_ok=True)
++        self.state_path.write_text(json.dumps({"format_version": 1, "set_id": "missing"}), encoding="utf-8")
++
++        manager = self.manager()
++
++        self.assertEqual(manager.selected_set.set_id, CANONICAL_SET_ID)
++        self.assertEqual(json.loads(self.state_path.read_text(encoding="utf-8"))["set_id"], CANONICAL_SET_ID)
++
++    def test_select_persists_with_atomic_replace_and_no_temp_file_left(self):
++        manager = self.manager()
++        replace_calls = []
++        real_replace = os.replace
++
++        def recording_replace(src, dst):
++            replace_calls.append((Path(src), Path(dst)))
++            return real_replace(src, dst)
++
++        manager._replace = recording_replace
++        chosen = manager.select("raptor_vs_trike")
++
++        self.assertEqual(chosen.set_id, "raptor_vs_trike")
++        self.assertEqual(json.loads(self.state_path.read_text(encoding="utf-8"))["set_id"], "raptor_vs_trike")
++        self.assertEqual(len(replace_calls), 1)
++        self.assertEqual(replace_calls[0][1], self.state_path)
++        self.assertEqual(list(self.state_path.parent.glob("*.tmp")), [])
++
++    def test_session_freezes_selection_and_refuses_menu_change_until_end(self):
++        manager = self.manager()
++        manager.select("raptor_vs_trike")
++
++        frozen = manager.begin_session()
++
++        self.assertEqual(frozen.set_id, "raptor_vs_trike")
++        self.assertEqual(manager.runtime_set.set_id, "raptor_vs_trike")
++        with self.assertRaisesRegex(SetContractError, "active session"):
++            manager.select(CANONICAL_SET_ID)
++        self.assertEqual(manager.session_set.set_id, "raptor_vs_trike")
++
++    def test_after_return_to_menu_new_selection_applies_to_next_session(self):
++        manager = self.manager()
++        manager.select("raptor_vs_trike")
++        session_a = manager.begin_session()
++        manager.end_session()
++
++        manager.select(CANONICAL_SET_ID)
++        session_b = manager.begin_session()
++
++        self.assertEqual(session_a.set_id, "raptor_vs_trike")
++        self.assertEqual(session_b.set_id, CANONICAL_SET_ID)
++        self.assertIsNot(session_a, session_b)
++        self.assertEqual(manager.runtime_set.set_id, CANONICAL_SET_ID)
++
++
++if __name__ == "__main__":
++    unittest.main()
+diff --git a/tests/test_sets_session_isolation.py b/tests/test_sets_session_isolation.py
+new file mode 100644
+index 0000000..771d0d4
+--- /dev/null
++++ b/tests/test_sets_session_isolation.py
+@@ -0,0 +1,103 @@
++import json
++import unittest
++from pathlib import Path
++
++from tests.runtime_harness import Video
++from tests.test_sets_media_session import build_media, make_two_set_root
++from tests.test_sets_power_identity import give_alt_unique_power_identity
++
++
++def add_second_synthetic_set(root, source_id, second_id):
++    source_path = root / f"assets/sets/{source_id}/manifest.json"
++    source = source_path.read_text(encoding="utf-8")
++    second = json.loads(source.replace(source_id, second_id))
++    second["set_id"] = second_id
++    second["display_name"] = "Ankyl vs Spino"
++    second["dinosaurs"]["left"]["display_name"] = "Ankyl"
++    second["dinosaurs"]["right"]["display_name"] = "Spino"
++    second_dir = root / f"assets/sets/{second_id}"
++    second_dir.mkdir(parents=True)
++    (second_dir / "manifest.json").write_text(json.dumps(second), encoding="utf-8")
++    (second_dir / "intro.mp4").touch()
++    (second_dir / "orbs.mp4").touch()
++
++    catalog_path = root / "assets/sets/catalog.json"
++    catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
++    catalog["sets"].append({
++        "set_id": second_id,
++        "manifest": f"assets/sets/{second_id}/manifest.json",
++    })
++    catalog_path.write_text(json.dumps(catalog), encoding="utf-8")
++
++
++class SetSessionIsolationTests(unittest.TestCase):
++    def setUp(self):
++        self.tmp, self.root, self.first_id = make_two_set_root()
++        self.addCleanup(self.tmp.cleanup)
++        give_alt_unique_power_identity(self.root, self.first_id)
++        self.second_id = "ankyl_vs_spino"
++        add_second_synthetic_set(self.root, self.first_id, self.second_id)
++
++    def test_two_successive_synthetic_sessions_use_only_their_frozen_identity(self):
++        media, _ = build_media(self.root)
++        media._intro_done = True
++        applied = []
++        media._engine = {"jt_apply_power_paths": lambda table: applied.append(table)}
++
++        media.on_phase_changed("MENU")
++        media.select_official_set(self.first_id)
++        media.on_phase_changed("ROUND_INTRO")
++        first_orbs = media._scene_config("wait")["file"]
++        first_power = applied[-1][1]["ready"]
++
++        media.on_phase_changed("MENU")
++        media.select_official_set(self.second_id)
++        media.on_phase_changed("ROUND_INTRO")
++        second_orbs = media._scene_config("wait")["file"]
++        second_power = applied[-1][1]["ready"]
++
++        self.assertIn(self.first_id, first_orbs)
++        self.assertIn(self.first_id, first_power)
++        self.assertIn(self.second_id, second_orbs)
++        self.assertIn(self.second_id, second_power)
++        self.assertEqual(media.sets.session_set.set_id, self.second_id)
++        self.assertEqual(len(applied), 2)
++
++    def test_stale_frame_and_eos_from_session_a_cannot_mutate_session_b(self):
++        media, _ = build_media(self.root)
++        media._intro_done = True
++        media.on_phase_changed("MENU")
++        media.select_official_set(self.first_id)
++        media.on_phase_changed("ROUND_INTRO")
++
++        old_player = Video(filename="session-a.mp4", eos="stop", autoplay=False)
++        old_generation = 11
++        media._scene_player = old_player
++        media._scene_key = "power-stsf"
++        media._scene_state = 21
++        media._scene_generation = old_generation
++
++        media.on_phase_changed("MENU")
++        media.select_official_set(self.second_id)
++        media.on_phase_changed("ROUND_INTRO")
++
++        new_player = Video(filename="session-b.mp4", eos="stop", autoplay=False)
++        media._scene_player = new_player
++        media._scene_key = "power-trph"
++        media._scene_state = 25
++        current_generation = media._scene_generation
++        media._scene_eos_reached = False
++        media._scene_completed_key = None
++
++        media._on_scene_frame(old_player, old_generation)
++        media._on_scene_eos(old_player, old_generation)
++
++        self.assertIs(media._scene_player, new_player)
++        self.assertEqual(media._scene_generation, current_generation)
++        self.assertFalse(media._scene_eos_reached)
++        self.assertIsNone(media._scene_completed_key)
++        self.assertEqual(media.sets.session_set.set_id, self.second_id)
++
++
++if __name__ == "__main__":
++    unittest.main()
+diff --git a/tools/jtrex_media_runtime.py b/tools/jtrex_media_runtime.py
+index 1a96370..fa8e5bf 100644
+--- a/tools/jtrex_media_runtime.py
++++ b/tools/jtrex_media_runtime.py
+@@ -22,7 +22,7 @@ from kivy.uix.popup import Popup
+ from kivy.uix.scrollview import ScrollView
+ from kivy.uix.widget import Widget
+ from jtrex_phase_runtime import JTPhaseController
+-from jtrex_sets_runtime import load_official_set
++from jtrex_sets_runtime import JTSetSessionManager, POWER_KEYS, SetContractError
+ 
+ 
+ SCENE_SPECS = {
+@@ -153,7 +153,14 @@ class JTMediaController:
+     def __init__(self, app):
+         self.app = app
+         self.root = app.root
+-        self.selection = load_official_set(self._resolve)
++        state_root = Path(getattr(app, "user_data_dir", "."))
++        self.sets = JTSetSessionManager(
++            self._resolve, state_root / "jt-set-selection.json"
++        )
++        self.selection = self.sets.runtime_set
++        self._phase_name = "INTRO"
++        self._set_popup = None
++        self._set_option_buttons = []
+         self._intro_player = None
+         self._intro_overlay = None
+         self._intro_timeout = None
+@@ -225,6 +232,19 @@ class JTMediaController:
+         )
+         self._status_label.text_size = self._status_label.size
+         self.root.add_widget(self._status_label)
++        self._set_button = Button(
++            text="",
++            size_hint=(None, None),
++            size=(dp(520), dp(68)),
++            font_size=dp(21),
++            opacity=0,
++            disabled=True,
++        )
++        self._set_button.bind(on_release=lambda *args: self._open_set_selector())
++        self.root.add_widget(self._set_button)
++        self.root.bind(size=self._layout_set_button, pos=self._layout_set_button)
++        self._layout_set_button()
++        self._refresh_set_button()
+         self._indicator_event = Clock.schedule_interval(
+             self._update_status_indicator, 0.35
+         )
+@@ -237,8 +257,130 @@ class JTMediaController:
+         self._engine = engine
+         self.phases = JTPhaseController(self, engine, Clock, Rectangle, Label)
+         engine['_JT_PHASES'] = self.phases
++        if self.sets.session_active:
++            self._apply_session_power_identity()
+         self.phases.sync()
+ 
++    def _session_power_path_table(self):
++        selection = self.sets.session_set
++        return {
++            slot: selection.power_paths(power_key)
++            for slot, power_key in enumerate(POWER_KEYS, 1)
++        }
++
++    def _apply_session_power_identity(self):
++        if self._engine is None or not self.sets.session_active:
++            return
++        callback = self._engine.get('jt_apply_power_paths')
++        if callback is None:
++            return
++        callback(self._session_power_path_table())
++        print(
++            "[JT-SET] power identity session={}".format(self.sets.session_set.set_id),
++            flush=True,
++        )
++
++    def _layout_set_button(self, *args):
++        width = min(dp(520), max(dp(280), float(getattr(self.root, "width", dp(520))) * 0.62))
++        self._set_button.size = (width, dp(68))
++        self._set_button.pos = (dp(18), max(dp(18), float(getattr(self.root, "height", dp(100))) - dp(86)))
++
++    def _refresh_set_button(self):
++        selected = self.sets.selected_set
++        self._set_button.text = "DINOSAURES : {}".format(selected.display_name)
++
++    def _set_selector_visible(self, visible):
++        self._set_button.opacity = 1 if visible else 0
++        self._set_button.disabled = not visible
++        if not visible and self._set_popup is not None:
++            try:
++                self._set_popup.dismiss()
++            except Exception:
++                pass
++            self._set_popup = None
++            self._set_option_buttons = []
++
++    def _invalidate_set_media(self):
++        self._stop_scene("set-change", preserve_failure=False)
++        self._wait_resume_fraction = 0.0
++        self._wait_seek_pending = False
++        self._scene_completed_key = None
++        self._scene_failed_key = None
++        self._paused_player = None
++        self.root._jt_finishing_complete_pending = None
++
++    def on_phase_changed(self, name):
++        self._phase_name = name
++        if name == "MENU":
++            if self.sets.session_active:
++                self.sets.end_session()
++            self.selection = self.sets.selected_set
++            self._refresh_set_button()
++            self._set_selector_visible(True)
++            return
++        self._set_selector_visible(False)
++        if name != "INTRO" and not self.sets.session_active:
++            self.selection = self.sets.begin_session()
++            self._apply_session_power_identity()
++
++    def select_official_set(self, set_id):
++        if self.sets.session_active:
++            # Keep the session manager as the authority for the rejection reason.
++            return self.sets.select(set_id)
++        if self._phase_name != "MENU":
++            raise SetContractError("set selection only available in menu")
++        selection = self.sets.select(set_id)
++        self._invalidate_set_media()
++        self.selection = selection
++        self._refresh_set_button()
++        print("[JT-SET] menu selection={}".format(selection.set_id), flush=True)
++        return selection
++
++    def _choose_set_from_popup(self, set_id, popup):
++        self.select_official_set(set_id)
++        try:
++            popup.dismiss()
++        except Exception:
++            pass
++        self._set_popup = None
++        self._set_option_buttons = []
++
++    def _open_set_selector(self):
++        if self._phase_name != "MENU" or self.sets.session_active or self._set_popup is not None:
++            return
++        content = BoxLayout(orientation="vertical", spacing=dp(8), padding=dp(10))
++        entries = self.sets.official_catalog()
++        self._set_option_buttons = []
++        for selection in entries:
++            dinosaurs = selection.dinosaurs()
++            button = Button(
++                text="{}\n{}  VS  {}".format(
++                    selection.display_name,
++                    dinosaurs["left"]["display_name"],
++                    dinosaurs["right"]["display_name"],
++                ),
++                size_hint=(1, None),
++                height=dp(76),
++                font_size=dp(20),
++            )
++            self._set_option_buttons.append(button)
++            content.add_widget(button)
++        close_button = Button(text="FERMER", size_hint=(1, None), height=dp(58), font_size=dp(20))
++        content.add_widget(close_button)
++        popup = Popup(
++            title="CHOISIR LES DINOSAURES",
++            content=content,
++            size_hint=(0.92, 0.86),
++            auto_dismiss=True,
++        )
++        for button, selection in zip(self._set_option_buttons, entries):
++            button.bind(
++                on_release=lambda instance, sid=selection.set_id: self._choose_set_from_popup(sid, popup)
++            )
++        close_button.bind(on_release=lambda *args: popup.dismiss())
++        self._set_popup = popup
++        popup.open()
++
+     def present_round(self, number, token):
+         self.cancel_round_presentation()
+         self._round_overlay = RoundOverlay(self, number, token, size_hint=(1, 1))
+@@ -499,10 +641,11 @@ class JTMediaController:
+ 
+     def _scene_config(self, key):
+         spec = dict(SCENE_SPECS[key])
++        selection = self.sets.runtime_set
+         if "media_role" in spec:
+-            spec["file"] = self.selection.media_path(spec["media_role"])
++            spec["file"] = selection.media_path(spec["media_role"])
+         elif "power_key" in spec:
+-            spec["file"] = self.selection.power_media_path(spec["power_key"])
++            spec["file"] = selection.power_media_path(spec["power_key"])
+         else:
+             raise KeyError("scene without media selector: {}".format(key))
+         return spec
+@@ -512,7 +655,7 @@ class JTMediaController:
+             Clock.schedule_once(lambda dt: done_callback(), 0)
+             return
+         self._intro_done_callback = done_callback
+-        chosen = random.choice(self.selection.intro_paths())
++        chosen = random.choice(self.sets.startup_intro_set.intro_paths())
+         path = self._resolve(chosen)
+         print("[JT-INTRO] chosen={}".format(chosen), flush=True)
+         if not path or CoreVideo is None:
+@@ -1037,6 +1180,18 @@ class JTMediaController:
+             except Exception:
+                 pass
+             self._status_label = None
++        if self._set_popup is not None:
++            try:
++                self._set_popup.dismiss()
++            except Exception:
++                pass
++            self._set_popup = None
++        if self._set_button is not None:
++            try:
++                self.root.remove_widget(self._set_button)
++            except Exception:
++                pass
++            self._set_button = None
+         if not self._intro_done:
+             self._finish_intro("shutdown")
+         self._stop_scene("shutdown", preserve_failure=False)
+diff --git a/tools/jtrex_phase_runtime.py b/tools/jtrex_phase_runtime.py
+index e78f36a..eab6964 100644
+--- a/tools/jtrex_phase_runtime.py
++++ b/tools/jtrex_phase_runtime.py
+@@ -612,6 +612,7 @@ class JTPhaseController:
+             return
+         previous = self.name
+         self.name = name
++        self.media.on_phase_changed(name)
+         if previous in ("ROUND_INTRO", "FIGHT_INTRO") and name != previous:
+             self.media.cancel_round_presentation()
+         self._reset_timer()
+diff --git a/tools/jtrex_sets_runtime.py b/tools/jtrex_sets_runtime.py
+index 7a14e6c..e5584a9 100644
+--- a/tools/jtrex_sets_runtime.py
++++ b/tools/jtrex_sets_runtime.py
+@@ -5,10 +5,12 @@ policies and power formulas remain owned by the engine/runtime modules.
+ """
+ from copy import deepcopy
+ import json
++import os
+ import re
+ from pathlib import Path, PurePosixPath
+ 
+ CATALOG_PATH = "assets/sets/catalog.json"
++CANONICAL_SET_ID = "trex_vs_steg"
+ FORMAT_VERSION = 1
+ ENGINE_CONTRACT = "jtrex-combat-v1"
+ MEDIA_KEYS = frozenset((
+@@ -109,6 +111,21 @@ class JTSetSelection:
+     def power_media_path(self, power_key):
+         return self.asset_path(self.power(power_key)["media"])
+ 
++    def power_paths(self, power_key):
++        power = self.power(power_key)
++        return {
++            "ready": self.asset_path(power["images"]["ready"]),
++            "used": self.asset_path(power["images"]["used"]),
++            "activation_audio": (
++                self.asset_path(power["activation_audio"])
++                if power["activation_audio"] is not None else None
++            ),
++            "legacy_fallback_audio": (
++                self.asset_path(power["legacy_fallback_audio"])
++                if power["legacy_fallback_audio"] is not None else None
++            ),
++        }
++
+     def assets(self):
+         return tuple(deepcopy(entry) for entry in self._manifest["assets"])
+ 
+@@ -205,23 +222,127 @@ def _validate_manifest(manifest):
+         _fail(f"referenced asset ids missing: {missing}")
+ 
+ 
+-def load_official_set(resolve_path, set_id="trex_vs_steg"):
++def load_official_catalog(resolve_path):
+     catalog = _read_json(resolve_path, CATALOG_PATH, "catalog")
+     _expect_keys(catalog, ("format_version", "sets"), "catalog")
+-    if catalog["format_version"] != FORMAT_VERSION or not isinstance(catalog["sets"], list):
++    if catalog["format_version"] != FORMAT_VERSION or not isinstance(catalog["sets"], list) or not catalog["sets"]:
+         _fail("invalid catalog format")
+-    matches = []
++
++    seen = set()
++    selections = []
+     for index, entry in enumerate(catalog["sets"]):
+         _expect_keys(entry, ("set_id", "manifest"), f"catalog.sets[{index}]")
+-        _nonempty_string(entry["set_id"], f"catalog.sets[{index}].set_id")
+-        _safe_path(entry["manifest"], f"catalog.sets[{index}].manifest")
+-        if entry["set_id"] == set_id:
+-            matches.append(entry)
++        set_id = _nonempty_string(entry["set_id"], f"catalog.sets[{index}].set_id")
++        if not _SIMPLE_ID.fullmatch(set_id):
++            _fail(f"catalog.sets[{index}].set_id invalid")
++        if set_id in seen:
++            _fail(f"duplicate official set_id: {set_id}")
++        seen.add(set_id)
++        manifest_path = _safe_path(entry["manifest"], f"catalog.sets[{index}].manifest")
++        manifest = _read_json(resolve_path, manifest_path, "manifest")
++        _validate_manifest(manifest)
++        if manifest["set_id"] != set_id:
++            _fail("catalog/manifest set_id mismatch")
++        selections.append(JTSetSelection(manifest, manifest_path))
++    return tuple(selections)
++
++
++def load_official_set(resolve_path, set_id=CANONICAL_SET_ID):
++    matches = [selection for selection in load_official_catalog(resolve_path) if selection.set_id == set_id]
+     if len(matches) != 1:
+         _fail(f"official set not found uniquely: {set_id}")
+-    manifest_path = matches[0]["manifest"]
+-    manifest = _read_json(resolve_path, manifest_path, "manifest")
+-    _validate_manifest(manifest)
+-    if manifest["set_id"] != set_id:
+-        _fail("catalog/manifest set_id mismatch")
+-    return JTSetSelection(manifest, manifest_path)
++    return matches[0]
++
++
++class JTSetSessionManager:
++    """Persist menu selection and freeze one validated set for a combat session."""
++
++    def __init__(self, resolve_path, state_path, canonical_id=CANONICAL_SET_ID):
++        self._catalog = load_official_catalog(resolve_path)
++        self._by_id = {selection.set_id: selection for selection in self._catalog}
++        if canonical_id not in self._by_id:
++            _fail(f"canonical set missing from official catalog: {canonical_id}")
++        self._canonical_id = canonical_id
++        self._state_path = Path(state_path)
++        self._replace = os.replace
++        self._session = None
++        selected_id = self._load_persisted_id()
++        if selected_id not in self._by_id:
++            selected_id = canonical_id
++            self._persist(selected_id)
++        self._selected = deepcopy(self._by_id[selected_id])
++        self._startup_intro = deepcopy(self._selected)
++
++    def _load_persisted_id(self):
++        try:
++            payload = json.loads(self._state_path.read_text(encoding="utf-8"))
++        except (OSError, UnicodeError, json.JSONDecodeError):
++            return None
++        if not isinstance(payload, dict) or set(payload) != {"format_version", "set_id"}:
++            return None
++        if payload.get("format_version") != FORMAT_VERSION:
++            return None
++        set_id = payload.get("set_id")
++        if not isinstance(set_id, str) or not _SIMPLE_ID.fullmatch(set_id):
++            return None
++        return set_id
++
++    def _persist(self, set_id):
++        self._state_path.parent.mkdir(parents=True, exist_ok=True)
++        tmp = self._state_path.with_name(self._state_path.name + ".tmp")
++        payload = {"format_version": FORMAT_VERSION, "set_id": set_id}
++        try:
++            with tmp.open("w", encoding="utf-8") as handle:
++                json.dump(payload, handle, ensure_ascii=False, separators=(",", ":"))
++                handle.write("\n")
++                handle.flush()
++                os.fsync(handle.fileno())
++            self._replace(tmp, self._state_path)
++        finally:
++            try:
++                tmp.unlink()
++            except FileNotFoundError:
++                pass
++
++    def official_catalog(self):
++        return tuple(deepcopy(selection) for selection in self._catalog)
++
++    @property
++    def selected_set(self):
++        return deepcopy(self._selected)
++
++    @property
++    def startup_intro_set(self):
++        return deepcopy(self._startup_intro)
++
++    @property
++    def session_set(self):
++        return None if self._session is None else deepcopy(self._session)
++
++    @property
++    def runtime_set(self):
++        return deepcopy(self._session if self._session is not None else self._selected)
++
++    @property
++    def session_active(self):
++        return self._session is not None
++
++    def select(self, set_id):
++        if self._session is not None:
++            _fail("cannot change set during active session")
++        try:
++            selection = self._by_id[set_id]
++        except KeyError:
++            _fail(f"unknown official set: {set_id}")
++        self._selected = deepcopy(selection)
++        self._persist(set_id)
++        return deepcopy(self._selected)
++
++    def begin_session(self):
++        if self._session is not None:
++            return deepcopy(self._session)
++        self._session = deepcopy(self._selected)
++        return deepcopy(self._session)
++
++    def end_session(self):
++        self._session = None
+diff --git a/tools/prepare_android.py b/tools/prepare_android.py
+index a372468..fa3717d 100644
+--- a/tools/prepare_android.py
++++ b/tools/prepare_android.py
+@@ -10,7 +10,7 @@ import tempfile
+ import zipfile
+ from pathlib import Path, PurePosixPath
+ 
+-from jtrex_sets_runtime import CATALOG_PATH, load_official_set
++from jtrex_sets_runtime import CATALOG_PATH, POWER_KEYS, load_official_set
+ 
+ 
+ VERSION = "1.0.15"
+@@ -76,6 +76,47 @@ def replace_exact(text, old, new, expected):
+     return text.replace(old, new)
+ 
+ 
++def build_power_path_table(selection):
++    return {
++        slot: selection.power_paths(power_key)
++        for slot, power_key in enumerate(POWER_KEYS, 1)
++    }
++
++
++def rewrite_power_icon_sources(lines, start, end, newline):
++    replacements = 0
++    for index in range(start, end):
++        stripped = lines[index].strip()
++        for slot in range(1, 7):
++            prefix = f"self.b{slot}.source="
++            if not stripped.startswith(prefix):
++                continue
++            if not (stripped.endswith("1.png'") or stripped.endswith('1.png"')) and not (
++                stripped.endswith("0.png'") or stripped.endswith('0.png"')
++            ):
++                continue
++            state = "ready" if "1.png" in stripped.rsplit("=", 1)[-1] else "used"
++            indent = lines[index][:len(lines[index]) - len(lines[index].lstrip(" \t"))]
++            lines[index] = (
++                indent
++                + f"self.b{slot}.source=JT_POWER_PATHS[{slot}]['{state}']"
++                + newline
++            )
++            replacements += 1
++            break
++    return replacements
++
++
++def _canonical_power_path_table():
++    repo_root = Path(__file__).resolve().parents[1]
++
++    def resolve_repo(relative_path):
++        path = repo_root.joinpath(*PurePosixPath(relative_path).parts)
++        return str(path) if path.is_file() else None
++
++    return build_power_path_table(load_official_set(resolve_repo))
++
++
+ def method_bounds(lines, method_name):
+     target = f"def {method_name}("
+     start = None
+@@ -99,8 +140,9 @@ def method_bounds(lines, method_name):
+     return start, end
+ 
+ 
+-def adapt_main(source):
++def adapt_main(source, power_paths=None):
+     newline = "\r\n" if "\r\n" in source else "\n"
++    power_paths = power_paths or _canonical_power_path_table()
+ 
+     source = replace_exact(source, "'a.png'", "'A.png'", 4)
+     source = replace_exact(
+@@ -129,6 +171,40 @@ def adapt_main(source):
+         + newline
+         + "POWER_READY_STATE={1:False,2:False,3:False,4:False,5:False,6:False}"
+         + newline
++        + "JT_POWER_PATHS=" + repr(power_paths)
++        + newline
++        + "def jt_apply_power_paths(paths):"
++        + newline
++        + "\tglobal JT_POWER_PATHS,sf,ls,ta,fs,ph,maa"
++        + newline
++        + "\trequired=set(range(1,7))"
++        + newline
++        + "\tif set(paths)!=required:"
++        + newline
++        + "\t\traise ValueError('six power slots required')"
++        + newline
++        + "\tJT_POWER_PATHS={slot:dict(paths[slot]) for slot in range(1,7)}"
++        + newline
++        + "\taudio_globals={1:'sf',2:'ls',3:'ta',4:'fs',5:'ph',6:'maa'}"
++        + newline
++        + "\tfor slot,name in audio_globals.items():"
++        + newline
++        + "\t\told=globals().get(name)"
++        + newline
++        + "\t\tif old is not None:"
++        + newline
++        + "\t\t\ttry: old.stop()"
++        + newline
++        + "\t\t\texcept Exception: pass"
++        + newline
++        + "\t\tpath=JT_POWER_PATHS[slot].get('activation_audio')"
++        + newline
++        + "\t\tglobals()[name]=SoundLoader.load(path) if path else None"
++        + newline
++        + "\t\tif 'sona' in globals():"
++        + newline
++        + "\t\t\tsona[20+slot]=JT_POWER_PATHS[slot].get('legacy_fallback_audio')"
++        + newline
+         + "JT_MP4_ONLY_STATES=frozenset((1,2,3,4,5,6,7,8,9,10,11,21,22,23,24,25,26))"
+         + newline
+         + "def jt_power_available(slot):"
+@@ -563,23 +639,15 @@ def _jt_log_new_stops(self, observer):
+     ]
+     lines[first:finish] = power_block
+ 
+-    # Correct the right-side visual identity: slot 4=TRFS, slot 6=TRMA.
++    # Power item identity is data-driven; gameplay availability remains engine-owned.
+     start, end = method_bounds(lines, "affbt")
+-    tr_identity_swaps = 0
+-    for index in range(start, end):
+-        if "self.b4.source" in lines[index] and "trma" in lines[index]:
+-            lines[index] = lines[index].replace("trma", "trfs")
+-            tr_identity_swaps += 1
+-        elif "self.b6.source" in lines[index] and "trfs" in lines[index]:
+-            lines[index] = lines[index].replace("trfs", "trma")
+-            tr_identity_swaps += 1
++    power_icon_rewrites = rewrite_power_icon_sources(lines, start, end, newline)
+     require(
+-        tr_identity_swaps == 4,
+-        f"Identité visuelle TRFS/TRMA: {tr_identity_swaps} remplacement(s), 4 attendus.",
++        power_icon_rewrites == 12,
++        f"Identité visuelle des pouvoirs: {power_icon_rewrites} remplacement(s), 12 attendus.",
+     )
+ 
+     # Canonical rotating aura: b1s..b6s are the animated select/select0..15 overlays.
+-    # Keep the power item icons historical; only the aura follows actual launchability.
+     start, end = method_bounds(lines, "affbt")
+     method_indent = len(lines[start]) - len(lines[start].lstrip(" \t"))
+     body_indent = None
+@@ -991,7 +1059,7 @@ def prepare(archive, destination, spec, media_root, runtime):
+         )
+ 
+         original = main.read_bytes().decode("utf-8")
+-        adapted = adapt_main(original)
++        adapted = adapt_main(original, build_power_path_table(selection))
+         main.write_bytes(adapted.encode("utf-8"))
+ 
+         app_asset_report = {}
