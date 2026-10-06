@@ -9,6 +9,7 @@ on:
       - 'tools/prepare_android.py'
       - 'tools/jtrex_media_runtime.py'
       - 'tools/jtrex_sets_runtime.py'
+      - 'tools/jtrex_sets_io.py'
       - 'tools/jtrex_phase_runtime.py'
       - 'tests/**'
       - 'tools/p4a-ffmpeg-6.1.2.py'
@@ -105,6 +106,7 @@ jobs:
           main = Path("app/main.py").read_text(encoding="utf-8")
           runtime = Path("app/jtrex_media_runtime.py").read_text(encoding="utf-8")
           sets_runtime = Path("app/jtrex_sets_runtime.py").read_text(encoding="utf-8")
+          sets_io_runtime = Path("app/jtrex_sets_io.py").read_text(encoding="utf-8")
           catalog_path = Path("app/assets/sets/catalog.json")
           catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
           canonical = next(item for item in catalog["sets"] if item["set_id"] == "trex_vs_steg")
@@ -117,6 +119,7 @@ jobs:
           prep_report = json.loads(Path("app/android-preparation.json").read_text(encoding="utf-8"))
           assert prep_report["canonical_set_id"] == "trex_vs_steg"
           assert prep_report["canonical_set_asset_count"] == 41
+          assert prep_report["sets_io_runtime_sha256"]
 
           required_main = (
               "POWER_COSTS={1:60,2:40,3:60,4:60,5:60,6:80}",
@@ -234,6 +237,9 @@ jobs:
           for token in ("SetContractError", "load_official_set", "CATALOG_PATH", "parameters are closed in v1"):
               if token not in sets_runtime:
                   raise SystemExit(f"missing set-runtime token: {token}")
+          for token in ("JTSetStorage", "import_set_zip", "export_set", "copy_content_uri"):
+              if token not in sets_io_runtime:
+                  raise SystemExit(f"missing set-io runtime token: {token}")
           if "_install_zero_win_scene" in Path("app/jtrex_phase_runtime.py").read_text(encoding="utf-8"):
               raise SystemExit("phase runtime still mutates ZeroWin scene catalog")
           if "StegVsTrexvaetviensremolace" in runtime:
@@ -388,6 +394,14 @@ jobs:
           compile(runtime, "app/jtrex_media_runtime.py", "exec")
           print("JT validation: Python compiles; gauge interaction preserved, power EOS gate, beach wait, finishing HUD and MP4 frame pruning pass")
           PY
+
+      - name: Compile set runtimes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile \
+            app/jtrex_sets_runtime.py \
+            app/jtrex_sets_io.py
 
       - name: Exercise actual generated engine and presentation phases
         shell: bash
