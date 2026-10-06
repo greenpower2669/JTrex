@@ -121,6 +121,8 @@ jobs:
           required_main = (
               "POWER_COSTS={1:60,2:40,3:60,4:60,5:60,6:80}",
               "def jt_power_available(slot):",
+              "def jt_apply_power_paths(paths):",
+              "source=JT_POWER_PATHS",
               "energy>POWER_COSTS[slot]",
               "jt_power_available(i)",
               "[JT-POWER]",
@@ -163,6 +165,8 @@ jobs:
           for token in required_main:
               if token not in main:
                   raise SystemExit(f"missing generated main token: {token}")
+          if main.count("source=JT_POWER_PATHS") != 12:
+              raise SystemExit("generated main must contain exactly 12 set-aware power icon references")
 
           forbidden_main = (
               "stamg>60 and select[i]",
@@ -186,7 +190,12 @@ jobs:
 
           required_runtime = (
               "SCENE_SPECS = {",
-              "load_official_set",
+              "JTSetSessionManager",
+              "self.sets = JTSetSessionManager",
+              "def on_phase_changed",
+              "def select_official_set",
+              "def _apply_session_power_identity",
+              "startup_intro_set",
               "self.selection",
               "def _scene_config",
               '"zero-win"',
