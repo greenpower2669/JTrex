@@ -46,7 +46,7 @@ jobs:
           git apply --check /tmp/jt-sets-lot04.patch
           git apply /tmp/jt-sets-lot04.patch
           git diff --check
-          git diff --name-only | sort > /tmp/lot04-files.txt
+          { git diff --name-only; git ls-files --others --exclude-standard; } | sort > /tmp/lot04-files.txt
           cat > /tmp/lot04-expected.txt <<'EOF'
           .github/workflows/android.yml
           tests/test_sets_io.py
