@@ -1,0 +1,33 @@
+name: JT-SETS Lot04 Source Snapshot
+
+on:
+  push:
+    paths:
+      - '.github/workflows/jt-sets-lot04-snapshot.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout exact feature head
+        uses: actions/checkout@v4
+        with:
+          ref: feature/dinosaur-sets-v1
+          fetch-depth: 1
+      - name: Archive tracked source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "e5c443df685060bec57d2d2f7b25ec9cff74e553"
+          git ls-files -z | tar --null -T - -czf /tmp/jtrex-lot04-source.tar.gz
+          sha256sum /tmp/jtrex-lot04-source.tar.gz
+      - name: Upload source snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: JT-SETS-Lot04-Source
+          path: /tmp/jtrex-lot04-source.tar.gz
+          if-no-files-found: error
+          retention-days: 7
