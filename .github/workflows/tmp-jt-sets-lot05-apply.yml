@@ -32,6 +32,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          git fetch --no-tags --depth=2 origin tmp-jt-sets-lot05-apply
           git checkout --detach c2460a7e0eba31922ba2a7c39646accb2514aa11
           git apply --index /tmp/lot05.patch
           cat > /tmp/expected-files <<'EOF'
