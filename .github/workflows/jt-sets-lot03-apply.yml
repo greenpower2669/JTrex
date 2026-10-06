@@ -1,4 +1,4 @@
-name: Dispatch JT-SETS-001 Lot03 Android
+name: Prepare JT-SETS-001 Lot03 CI Guard Fix
 
 on:
   push:
@@ -8,23 +8,96 @@ on:
       - '.github/workflows/jt-sets-lot03-apply.yml'
 
 permissions:
-  actions: write
   contents: read
 
 jobs:
-  dispatch:
+  prepare:
     runs-on: ubuntu-24.04
     steps:
-      - name: Dispatch Android validation on feature branch
+      - name: Checkout mission branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/dinosaur-sets-v1
+
+      - name: RED — strengthen Android set workflow contract
         shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          curl --fail-with-body -sS -X POST \
-            -H "Authorization: Bearer ${GH_TOKEN}" \
-            -H 'Accept: application/vnd.github+json' \
-            -H 'X-GitHub-Api-Version: 2022-11-28' \
-            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/android.yml/dispatches" \
-            -d '{"ref":"feature/dinosaur-sets-v1"}'
-          echo 'ANDROID_DISPATCHED=feature/dinosaur-sets-v1'
+          cat > tests/test_android_set_workflow_contract.py <<'PY'
+          import unittest
+          from pathlib import Path
+
+          ROOT = Path(__file__).resolve().parents[1]
+
+          class AndroidSetWorkflowContract(unittest.TestCase):
+              def test_android_ci_validates_manifest_driven_runtime(self):
+                  source = (ROOT / '.github/workflows/android.yml').read_text()
+                  self.assertIn('assets/sets/catalog.json', source)
+                  self.assertIn('jtrex_sets_runtime.py', source)
+                  self.assertIn('SCENE_SPECS', source)
+                  self.assertIn('canonical_set_asset_count', source)
+
+              def test_android_ci_validates_lot03_frozen_session_contract(self):
+                  source = (ROOT / '.github/workflows/android.yml').read_text()
+                  runtime_guard = source.split('required_runtime = (', 1)[1].split('for token in required_runtime:', 1)[0]
+                  main_guard = source.split('required_main = (', 1)[1].split('for token in required_main:', 1)[0]
+                  for token in (
+                      'JTSetSessionManager',
+                      'self.sets = JTSetSessionManager',
+                      'def on_phase_changed',
+                      'def select_official_set',
+                      'def _apply_session_power_identity',
+                      'startup_intro_set',
+                  ):
+                      self.assertIn(token, runtime_guard)
+                  self.assertNotIn('"load_official_set"', runtime_guard)
+                  self.assertIn('def jt_apply_power_paths(paths):', main_guard)
+                  self.assertIn('source=JT_POWER_PATHS', main_guard)
+                  self.assertIn('main.count("source=JT_POWER_PATHS") != 12', source)
+          PY
+          set +e
+          PYTHONPATH=tests python3 -m unittest tests.test_android_set_workflow_contract -v > /tmp/red.log 2>&1
+          rc=$?
+          set -e
+          cat /tmp/red.log
+          test "$rc" -ne 0
+          grep -q 'FAIL' /tmp/red.log
+          echo 'LOT03_CI_GUARD_RED=OK'
+
+      - name: GREEN — update only stale static guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('.github/workflows/android.yml')
+          source = path.read_text()
+          old_main = '''              "def jt_power_available(slot):",\n              "energy>POWER_COSTS[slot]",'''
+          new_main = '''              "def jt_power_available(slot):",\n              "def jt_apply_power_paths(paths):",\n              "source=JT_POWER_PATHS",\n              "energy>POWER_COSTS[slot]",'''
+          if source.count(old_main) != 1:
+              raise SystemExit('required_main anchor mismatch')
+          source = source.replace(old_main, new_main, 1)
+          old_runtime = '''              "SCENE_SPECS = {",\n              "load_official_set",\n              "self.selection",'''
+          new_runtime = '''              "SCENE_SPECS = {",\n              "JTSetSessionManager",\n              "self.sets = JTSetSessionManager",\n              "def on_phase_changed",\n              "def select_official_set",\n              "def _apply_session_power_identity",\n              "startup_intro_set",\n              "self.selection",'''
+          if source.count(old_runtime) != 1:
+              raise SystemExit('required_runtime anchor mismatch')
+          source = source.replace(old_runtime, new_runtime, 1)
+          loop_anchor = '''          for token in required_main:\n              if token not in main:\n                  raise SystemExit(f"missing generated main token: {token}")\n'''
+          loop_new = loop_anchor + '''          if main.count("source=JT_POWER_PATHS") != 12:\n              raise SystemExit("generated main must contain exactly 12 set-aware power icon references")\n'''
+          if source.count(loop_anchor) != 1:
+              raise SystemExit('required_main loop anchor mismatch')
+          source = source.replace(loop_anchor, loop_new, 1)
+          path.write_text(source)
+          PY
+          PYTHONPATH=tests python3 -m unittest tests.test_android_set_workflow_contract -v
+          git diff --check
+          echo 'LOT03_CI_GUARD_GREEN=OK'
+
+      - name: Upload exact CI guard fix
+        uses: actions/upload-artifact@v4
+        with:
+          name: JT-SETS-Lot03-CI-Guard-Fix
+          path: |
+            .github/workflows/android.yml
+            tests/test_android_set_workflow_contract.py
+          retention-days: 7
