@@ -929,6 +929,12 @@ def prepare(archive, destination, spec, media_root, runtime):
     require(sets_runtime.is_file(), "Runtime de sets absent.")
     sets_io_runtime = runtime.with_name("jtrex_sets_io.py")
     require(sets_io_runtime.is_file(), "Runtime I/O de sets absent.")
+    sets_admin_runtime = runtime.with_name("jtrex_sets_admin.py")
+    require(sets_admin_runtime.is_file(), "Runtime admin de sets absent.")
+    sets_preview_runtime = runtime.with_name("jtrex_sets_preview.py")
+    require(sets_preview_runtime.is_file(), "Runtime preview de sets absent.")
+    sets_android_runtime = runtime.with_name("jtrex_sets_android.py")
+    require(sets_android_runtime.is_file(), "Runtime Android de sets absent.")
     repo_root = media_root.parent
     def resolve_repo(relative_path):
         path = repo_root.joinpath(*PurePosixPath(relative_path).parts)
@@ -1094,6 +1100,9 @@ def prepare(archive, destination, spec, media_root, runtime):
         shutil.copyfile(runtime, stage / "jtrex_media_runtime.py")
         shutil.copyfile(sets_runtime, stage / "jtrex_sets_runtime.py")
         shutil.copyfile(sets_io_runtime, stage / "jtrex_sets_io.py")
+        shutil.copyfile(sets_admin_runtime, stage / "jtrex_sets_admin.py")
+        shutil.copyfile(sets_preview_runtime, stage / "jtrex_sets_preview.py")
+        shutil.copyfile(sets_android_runtime, stage / "jtrex_sets_android.py")
         phase_runtime = runtime.with_name("jtrex_phase_runtime.py")
         require(phase_runtime.is_file(), "Runtime de phases absent.")
         shutil.copyfile(phase_runtime, stage / "jtrex_phase_runtime.py")
@@ -1113,6 +1122,14 @@ def prepare(archive, destination, spec, media_root, runtime):
             "jtrex_sets_io.py",
             "exec",
         )
+        for runtime_name in (
+            "jtrex_sets_admin.py", "jtrex_sets_preview.py", "jtrex_sets_android.py"
+        ):
+            compile(
+                (stage / runtime_name).read_text(encoding="utf-8"),
+                runtime_name,
+                "exec",
+            )
         for source_file, relative_name in ((catalog_source, CATALOG_PATH), (manifest_source, selection.manifest_path)):
             target = stage.joinpath(*PurePosixPath(relative_name).parts)
             target.parent.mkdir(parents=True, exist_ok=True)
@@ -1126,6 +1143,9 @@ def prepare(archive, destination, spec, media_root, runtime):
             "assets/icon/JtrexIcon.png",
             "jtrex_sets_runtime.py",
             "jtrex_sets_io.py",
+            "jtrex_sets_admin.py",
+            "jtrex_sets_preview.py",
+            "jtrex_sets_android.py",
             CATALOG_PATH,
             selection.manifest_path,
         ):
@@ -1189,6 +1209,9 @@ def prepare(archive, destination, spec, media_root, runtime):
             "phase_runtime_sha256": digest(stage / "jtrex_phase_runtime.py"),
             "sets_runtime_sha256": digest(stage / "jtrex_sets_runtime.py"),
             "sets_io_runtime_sha256": digest(stage / "jtrex_sets_io.py"),
+            "sets_admin_runtime_sha256": digest(stage / "jtrex_sets_admin.py"),
+            "sets_preview_runtime_sha256": digest(stage / "jtrex_sets_preview.py"),
+            "sets_android_runtime_sha256": digest(stage / "jtrex_sets_android.py"),
             "buildozer_spec_sha256": digest(stage / "buildozer.spec"),
             "canonical_set_id": selection.set_id,
             "canonical_manifest_sha256": canonical_manifest_sha256,

@@ -10,6 +10,9 @@ on:
       - 'tools/jtrex_media_runtime.py'
       - 'tools/jtrex_sets_runtime.py'
       - 'tools/jtrex_sets_io.py'
+      - 'tools/jtrex_sets_admin.py'
+      - 'tools/jtrex_sets_preview.py'
+      - 'tools/jtrex_sets_android.py'
       - 'tools/jtrex_phase_runtime.py'
       - 'tests/**'
       - 'tools/p4a-ffmpeg-6.1.2.py'
@@ -107,6 +110,9 @@ jobs:
           runtime = Path("app/jtrex_media_runtime.py").read_text(encoding="utf-8")
           sets_runtime = Path("app/jtrex_sets_runtime.py").read_text(encoding="utf-8")
           sets_io_runtime = Path("app/jtrex_sets_io.py").read_text(encoding="utf-8")
+          sets_admin_runtime = Path("app/jtrex_sets_admin.py").read_text(encoding="utf-8")
+          sets_preview_runtime = Path("app/jtrex_sets_preview.py").read_text(encoding="utf-8")
+          sets_android_runtime = Path("app/jtrex_sets_android.py").read_text(encoding="utf-8")
           catalog_path = Path("app/assets/sets/catalog.json")
           catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
           canonical = next(item for item in catalog["sets"] if item["set_id"] == "trex_vs_steg")
@@ -120,6 +126,9 @@ jobs:
           assert prep_report["canonical_set_id"] == "trex_vs_steg"
           assert prep_report["canonical_set_asset_count"] == 41
           assert prep_report["sets_io_runtime_sha256"]
+          assert prep_report["sets_admin_runtime_sha256"]
+          assert prep_report["sets_preview_runtime_sha256"]
+          assert prep_report["sets_android_runtime_sha256"]
 
           required_main = (
               "POWER_COSTS={1:60,2:40,3:60,4:60,5:60,6:80}",
@@ -401,7 +410,10 @@ jobs:
           set -euo pipefail
           python3 -m py_compile \
             app/jtrex_sets_runtime.py \
-            app/jtrex_sets_io.py
+            app/jtrex_sets_io.py \
+            app/jtrex_sets_admin.py \
+            app/jtrex_sets_preview.py \
+            app/jtrex_sets_android.py
 
       - name: Exercise actual generated engine and presentation phases
         shell: bash

@@ -6,11 +6,14 @@ historical state machine.
 """
 
 import random
+import tempfile
 import time
 from pathlib import Path
 
 from kivy.clock import Clock
 from kivy.core.video import Video as CoreVideo
+from kivy.core.image import Image as CoreImage
+from kivy.core.audio import SoundLoader
 from kivy.core.window import Window
 from kivy.graphics import Color, Ellipse, Rectangle
 from kivy.metrics import dp
@@ -20,9 +23,16 @@ from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.popup import Popup
 from kivy.uix.scrollview import ScrollView
+from kivy.uix.textinput import TextInput
 from kivy.uix.widget import Widget
 from jtrex_phase_runtime import JTPhaseController
-from jtrex_sets_runtime import JTSetSessionManager, POWER_KEYS, SetContractError
+from jtrex_sets_runtime import (
+    CATALOG_PATH, JTSetSessionManager, POWER_KEYS, SetContractError,
+)
+from jtrex_sets_io import JTSetStorage
+from jtrex_sets_admin import JTSetAdminService
+from jtrex_sets_preview import JTSetPreviewController
+from jtrex_sets_android import AndroidDocumentPicker, JTAsyncEgress, JTAsyncIngress
 
 
 SCENE_SPECS = {
@@ -49,6 +59,41 @@ POWER_SCENE_KEYS = frozenset((
 ))
 FINISH_SCENE_KEYS = frozenset(("finish-st", "finish-tr"))
 MP4_ONLY_STATES = frozenset((1,2,3,4,5,6,7,8,9,10,11,21,22,23,24,25,26))
+
+
+class WorkshopPreviewSurface(Widget):
+    """Large aspect-fit surface for admin previews; never connected to gameplay."""
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._texture_size = None
+        with self.canvas:
+            Color(0, 0, 0, 1)
+            self._background = Rectangle(pos=self.pos, size=self.size)
+            Color(1, 1, 1, 1)
+            self._preview = Rectangle(pos=self.pos, size=(0, 0))
+        self.bind(pos=self._layout, size=self._layout)
+
+    def set_texture(self, texture):
+        self._preview.texture = texture
+        self._texture_size = texture.size if texture is not None else None
+        self._layout()
+
+    def _layout(self, *args):
+        self._background.pos = self.pos
+        self._background.size = self.size
+        if not self._texture_size:
+            self._preview.pos = self.pos
+            self._preview.size = (0, 0)
+            return
+        tw, th = self._texture_size
+        ww, wh = self.size
+        if tw <= 0 or th <= 0 or ww <= 0 or wh <= 0:
+            return
+        scale = min(ww / float(tw), wh / float(th))
+        rw, rh = tw * scale, th * scale
+        self._preview.size = (rw, rh)
+        self._preview.pos = (self.x + (ww-rw)/2.0, self.y + (wh-rh)/2.0)
 
 
 class IntroOverlay(Widget):
@@ -153,14 +198,59 @@ class JTMediaController:
     def __init__(self, app):
         self.app = app
         self.root = app.root
-        state_root = Path(getattr(app, "user_data_dir", "."))
-        self.sets = JTSetSessionManager(
-            self._resolve, state_root / "jt-set-selection.json"
+        raw_state_root = getattr(app, "user_data_dir", None)
+        state_root = Path(raw_state_root) if raw_state_root else (
+            Path(tempfile.gettempdir()) / "jtrex-user-data-{}".format(id(app))
         )
+        catalog_physical = self._resolve(CATALOG_PATH)
+        official_root = (
+            Path(catalog_physical).resolve().parents[2]
+            if catalog_physical else Path.cwd().resolve()
+        )
+        storage_root = state_root.resolve(strict=False)
+        if (
+            storage_root == official_root
+            or storage_root in official_root.parents
+            or official_root in storage_root.parents
+        ):
+            storage_root = Path(tempfile.gettempdir()) / "jtrex-set-storage-{}".format(id(app))
+        self._state_root = state_root
+        self._set_storage = JTSetStorage(
+            official_root, storage_root / "jt-user-sets", storage_root / "jt-set-drafts"
+        )
+        self.sets = JTSetSessionManager(
+            self._resolve, state_root / "jt-set-selection.json",
+            user_catalog_provider=self._set_storage.promoted_catalog,
+        )
+        self._official_set_ids = frozenset(
+            selection.set_id for selection in self.sets.official_catalog()
+        )
+        self._set_admin = JTSetAdminService(self._set_storage, self._official_set_ids)
+        image_cls = globals().get("CoreImage")
+        sound_loader = globals().get("SoundLoader")
+        self._set_preview = JTSetPreviewController(
+            self.root, CoreVideo, Clock,
+            image_loader=(lambda path: image_cls(path)) if image_cls is not None else None,
+            sound_loader=(lambda path: sound_loader.load(path)) if sound_loader is not None else None,
+        )
+        self._set_picker = AndroidDocumentPicker()
+        self._set_ingress = JTAsyncIngress(self._set_storage, Clock)
+        self._set_egress = JTAsyncEgress(Clock)
+        self._workshop_draft_id = None
+        self._workshop_popup = None
+        self._workshop_editor_popup = None
+        self._workshop_editor_label = None
+        self._workshop_preview_popup = None
+        self._workshop_preview_surface = None
+        self._workshop_preview_label = None
+        self._workshop_preview_event = None
+        self._workshop_buttons = {}
+        self._workshop_status = ""
         self.selection = self.sets.runtime_set
         self._phase_name = "INTRO"
         self._set_popup = None
         self._set_option_buttons = []
+        self._draft_test_return_callback = None
         self._intro_player = None
         self._intro_overlay = None
         self._intro_timeout = None
@@ -196,6 +286,7 @@ class JTMediaController:
         self._admin_tap_deadline = 0.0
         self._admin_popup = None
         self._admin_label = None
+        self._admin_workshop_button = None
         self._admin_refresh_event = None
         self._admin_enabled = False
         self._indicator_phase = False
@@ -263,10 +354,17 @@ class JTMediaController:
 
     def _session_power_path_table(self):
         selection = self.sets.session_set
-        return {
-            slot: selection.power_paths(power_key)
-            for slot, power_key in enumerate(POWER_KEYS, 1)
-        }
+        table = {}
+        for slot, power_key in enumerate(POWER_KEYS, 1):
+            logical = selection.power_paths(power_key)
+            table[slot] = {
+                name: (
+                    None if relative is None
+                    else (selection.resolve_path(relative) or relative)
+                )
+                for name, relative in logical.items()
+            }
+        return table
 
     def _apply_session_power_identity(self):
         if self._engine is None or not self.sets.session_active:
@@ -312,16 +410,48 @@ class JTMediaController:
     def on_phase_changed(self, name):
         self._phase_name = name
         if name == "MENU":
+            was_temporary = self.sets.session_temporary
+            return_callback = self._draft_test_return_callback if was_temporary else None
+            if was_temporary:
+                self._invalidate_set_media()
             if self.sets.session_active:
                 self.sets.end_session()
             self.selection = self.sets.selected_set
             self._refresh_set_button()
             self._set_selector_visible(True)
+            if was_temporary:
+                self._draft_test_return_callback = None
+                if return_callback is not None:
+                    Clock.schedule_once(lambda dt, cb=return_callback: cb(), 0)
             return
         self._set_selector_visible(False)
         if name != "INTRO" and not self.sets.session_active:
             self.selection = self.sets.begin_session()
             self._apply_session_power_identity()
+
+
+    def start_draft_test(self, selection, return_callback=None):
+        if self._phase_name != "MENU" or self.sets.session_active:
+            raise SetContractError("draft test only available from idle menu")
+        if return_callback is not None and not callable(return_callback):
+            raise TypeError("return_callback must be callable")
+        if self._engine is None or self.phases is None:
+            raise SetContractError("draft test requires active engine controller")
+        self._invalidate_set_media()
+        temporary = self.sets.begin_temporary_session(selection)
+        self.selection = temporary
+        self._draft_test_return_callback = return_callback
+        try:
+            self._apply_session_power_identity()
+            self._engine["indexa"] = 4
+            self.sync_scene_state(4)
+            return self.sets.session_set
+        except Exception:
+            self._invalidate_set_media()
+            self.sets.end_session()
+            self.selection = self.sets.selected_set
+            self._draft_test_return_callback = None
+            raise
 
     def select_official_set(self, set_id):
         if self.sets.session_active:
@@ -349,13 +479,14 @@ class JTMediaController:
         if self._phase_name != "MENU" or self.sets.session_active or self._set_popup is not None:
             return
         content = BoxLayout(orientation="vertical", spacing=dp(8), padding=dp(10))
-        entries = self.sets.official_catalog()
+        entries = self.sets.catalog()
         self._set_option_buttons = []
         for selection in entries:
             dinosaurs = selection.dinosaurs()
+            origin = "OFFICIEL" if selection.set_id in self._official_set_ids else "UTILISATEUR"
             button = Button(
-                text="{}\n{}  VS  {}".format(
-                    selection.display_name,
+                text="[{}] {}\n{}  VS  {}".format(
+                    origin, selection.display_name,
                     dinosaurs["left"]["display_name"],
                     dinosaurs["right"]["display_name"],
                 ),
@@ -380,6 +511,139 @@ class JTMediaController:
         close_button.bind(on_release=lambda *args: popup.dismiss())
         self._set_popup = popup
         popup.open()
+
+    def _require_workshop_idle(self):
+        if not self._admin_enabled:
+            raise SetContractError("admin workshop is not enabled")
+        if self._phase_name != "MENU" or self.sets.session_active:
+            raise SetContractError("workshop only available in menu with no active session")
+
+    def refresh_player_catalog(self):
+        catalog = self.sets.refresh_catalog()
+        self.selection = self.sets.runtime_set
+        self._refresh_set_button()
+        return catalog
+
+    def workshop_import_zip(self, archive_path):
+        self._require_workshop_idle()
+        return self._set_storage.import_set_zip(
+            archive_path, official_set_ids=self._official_set_ids
+        )
+
+    def promote_user_revision(self, set_id, revision):
+        self._require_workshop_idle()
+        self._set_storage.promote(set_id, revision)
+        self.refresh_player_catalog()
+        return self._set_storage.load_user_revision(set_id, revision)
+
+    def workshop_resume_draft(self, draft_id):
+        self._require_workshop_idle()
+        state = self._set_admin.open_draft(draft_id)
+        self._workshop_draft_id = draft_id
+        return state
+
+    def workshop_create_from_current(self, set_id, display_name=None, draft_id=None):
+        self._require_workshop_idle()
+        source = self.sets.selected_set
+        source_kind = "official" if source.set_id in self._official_set_ids else "user"
+        if draft_id is None:
+            draft_id = "draft-{}".format(int(time.time() * 1000))
+        state = self._set_admin.create_from_selection(
+            source, draft_id=draft_id, set_id=set_id, source_kind=source_kind
+        )
+        if display_name is not None:
+            state = self._set_admin.set_identity(draft_id, display_name=display_name)
+        self._workshop_draft_id = draft_id
+        return state
+
+    def workshop_modify_selected_user(self, draft_id=None):
+        self._require_workshop_idle()
+        source = self.sets.selected_set
+        if source.set_id in self._official_set_ids:
+            raise SetContractError("select a user set before modification")
+        if draft_id is None:
+            draft_id = "edit-{}-{}".format(source.set_id, int(time.time() * 1000))
+        state = self._set_admin.create_from_selection(
+            source, draft_id=draft_id, set_id=source.set_id, source_kind="user"
+        )
+        self._workshop_draft_id = draft_id
+        return state
+
+    def workshop_current_role_info(self):
+        if self._workshop_draft_id is None:
+            raise SetContractError("no workshop draft selected")
+        state = self._set_admin.open_draft(self._workshop_draft_id)
+        roles = self._set_admin.roles(self._workshop_draft_id)
+        role = roles[state.role_index]
+        return {
+            "state": state,
+            "role": role,
+            "progress": (state.role_index + 1, len(roles)),
+            "current_path": self._set_admin.role_asset_path(self._workshop_draft_id, role.role_id),
+            "candidate_path": self._set_admin.candidate_path(self._workshop_draft_id, role.role_id),
+        }
+
+    def workshop_keep_and_next(self):
+        if self._workshop_draft_id is None:
+            raise SetContractError("no workshop draft selected")
+        self._set_admin.keep_and_next(self._workshop_draft_id)
+        return self.workshop_current_role_info()
+
+    def workshop_previous(self):
+        if self._workshop_draft_id is None:
+            raise SetContractError("no workshop draft selected")
+        self._set_admin.previous_role(self._workshop_draft_id)
+        return self.workshop_current_role_info()
+
+    def workshop_stage_candidate(self, local_path):
+        info = self.workshop_current_role_info()
+        return self._set_admin.stage_candidate(
+            self._workshop_draft_id, info["role"].role_id, local_path
+        )
+
+    def workshop_preview_current(self):
+        info = self.workshop_current_role_info()
+        if info["current_path"] is None:
+            raise ValueError("current role has no media")
+        return self._set_preview.preview(
+            info["current_path"], info["role"].asset_type, info["role"].role_id
+        )
+
+    def workshop_preview_candidate(self):
+        info = self.workshop_current_role_info()
+        if info["candidate_path"] is None:
+            raise ValueError("replacement candidate unavailable")
+        return self._set_preview.preview(
+            info["candidate_path"], info["role"].asset_type, info["role"].role_id
+        )
+
+    def workshop_accept_and_next(self):
+        info = self.workshop_current_role_info()
+        if info["candidate_path"] is None:
+            raise ValueError("replacement candidate unavailable")
+        self._set_admin.accept_candidate(self._workshop_draft_id, info["role"].role_id)
+        self._set_admin.keep_and_next(self._workshop_draft_id)
+        return self.workshop_current_role_info()
+
+    def workshop_validate(self):
+        if self._workshop_draft_id is None:
+            raise SetContractError("no workshop draft selected")
+        return self._set_admin.validate_complete(self._workshop_draft_id)
+
+    def workshop_install_promote(self):
+        self._require_workshop_idle()
+        if self._workshop_draft_id is None:
+            raise SetContractError("no workshop draft selected")
+        result = self._set_admin.install_revision(self._workshop_draft_id)
+        self._set_storage.promote(result.set_id, result.revision)
+        self.refresh_player_catalog()
+        return result
+
+    def workshop_export_revision(self, destination_zip):
+        self._require_workshop_idle()
+        if self._workshop_draft_id is None:
+            raise SetContractError("no workshop draft selected")
+        return self._set_admin.export_revision(self._workshop_draft_id, destination_zip)
 
     def present_round(self, number, token):
         self.cancel_round_presentation()
@@ -538,6 +802,452 @@ class JTMediaController:
             )
         return "\n".join(lines)
 
+    def _set_workshop_status(self, message):
+        self._workshop_status = str(message or "")
+        self._refresh_workshop_editor()
+
+    def _close_workshop(self, *args):
+        popup = self._workshop_popup
+        self._workshop_popup = None
+        self._workshop_buttons = {}
+        if popup is not None:
+            try:
+                popup.dismiss()
+            except Exception:
+                pass
+
+    def _open_workshop(self):
+        self._require_workshop_idle()
+        if self._workshop_popup is not None:
+            return self._workshop_popup
+        content = BoxLayout(orientation="vertical", spacing=dp(10), padding=dp(12))
+        title = Label(
+            text="ATELIER SETS — DATA / MEDIA UNIQUEMENT\nAucun coût, dégât, chrono, KO ou règle de combat n'est éditable.",
+            size_hint=(1, None), height=dp(86), font_size=dp(19),
+        )
+        content.add_widget(title)
+        specs = (
+            ("create", "CREER DEPUIS LE SET ACTUEL", self._workshop_create_dialog),
+            ("resume", "REPRENDRE UN BROUILLON", self._workshop_resume_dialog),
+            ("modify", "MODIFIER LE SET UTILISATEUR", self._workshop_modify_current_action),
+            ("import", "IMPORTER UN ZIP", self._workshop_import_action),
+            ("close", "FERMER", self._close_workshop),
+        )
+        self._workshop_buttons = {}
+        for key, label, callback in specs:
+            button = Button(
+                text=label, size_hint=(1, None), height=dp(64), font_size=dp(20)
+            )
+            button.bind(on_release=lambda instance, cb=callback: cb())
+            content.add_widget(button)
+            self._workshop_buttons[key] = button
+        popup = Popup(
+            title="ATELIER DINOSAURES", content=content,
+            size_hint=(0.92, 0.92), auto_dismiss=True,
+        )
+        self._workshop_popup = popup
+        popup.open()
+        return popup
+
+    def _workshop_create_dialog(self):
+        self._require_workshop_idle()
+        set_id = TextInput(
+            text="set-{}".format(int(time.time())), multiline=False,
+            size_hint=(1, None), height=dp(58), font_size=dp(20),
+        )
+        display = TextInput(
+            text="Nouveau set", multiline=False,
+            size_hint=(1, None), height=dp(58), font_size=dp(20),
+        )
+        save = Button(text="CREER", size_hint=(1, None), height=dp(62), font_size=dp(20))
+        cancel = Button(text="ANNULER", size_hint=(1, None), height=dp(58), font_size=dp(20))
+        content = BoxLayout(orientation="vertical", spacing=dp(8), padding=dp(10))
+        content.add_widget(Label(text="Identifiant technique (minuscules, chiffres, . _ -)", size_hint=(1, None), height=dp(44)))
+        content.add_widget(set_id)
+        content.add_widget(Label(text="Nom affiché", size_hint=(1, None), height=dp(44)))
+        content.add_widget(display)
+        content.add_widget(save)
+        content.add_widget(cancel)
+        popup = Popup(title="NOUVEAU SET", content=content, size_hint=(0.86, 0.82), auto_dismiss=True)
+        def create(*args):
+            try:
+                state = self.workshop_create_from_current(set_id.text.strip(), display.text.strip())
+                popup.dismiss()
+                self._close_workshop()
+                self._workshop_open_editor(state.draft_id)
+            except Exception as exc:
+                self._set_workshop_status("Création refusée : {}".format(exc))
+        save.bind(on_release=create)
+        cancel.bind(on_release=lambda *args: popup.dismiss())
+        popup.open()
+
+    def _workshop_resume_dialog(self):
+        self._require_workshop_idle()
+        drafts = self._set_admin.list_drafts()
+        content = BoxLayout(orientation="vertical", spacing=dp(8), padding=dp(10))
+        popup = Popup(title="REPRENDRE UN BROUILLON", content=content, size_hint=(0.9, 0.9), auto_dismiss=True)
+        if not drafts:
+            content.add_widget(Label(text="Aucun brouillon disponible"))
+        for state in drafts:
+            button = Button(
+                text="{} — {} r{} — étape {}".format(
+                    state.draft_id, state.set_id, state.revision, state.role_index + 1
+                ), size_hint=(1, None), height=dp(64), font_size=dp(19),
+            )
+            def resume(instance, draft_id=state.draft_id):
+                self.workshop_resume_draft(draft_id)
+                popup.dismiss()
+                self._close_workshop()
+                self._workshop_open_editor(draft_id)
+            button.bind(on_release=resume)
+            content.add_widget(button)
+        close = Button(text="FERMER", size_hint=(1, None), height=dp(58), font_size=dp(20))
+        close.bind(on_release=lambda *args: popup.dismiss())
+        content.add_widget(close)
+        popup.open()
+
+    def _workshop_modify_current_action(self):
+        try:
+            state = self.workshop_modify_selected_user()
+        except Exception as exc:
+            self._set_workshop_status("Modification refusée : {}".format(exc))
+            return
+        self._close_workshop()
+        self._workshop_open_editor(state.draft_id)
+
+    def _workshop_import_action(self):
+        self._require_workshop_idle()
+        stamp = int(time.time() * 1000)
+        draft_name = "import-{}.zip".format(stamp)
+        def picked(uri, error):
+            if error is not None:
+                self._set_workshop_status("Import : {}".format(error))
+                return
+            if uri is None:
+                self._set_workshop_status("Import annulé")
+                return
+            def copied(path, copy_error):
+                try:
+                    if copy_error is not None:
+                        raise copy_error
+                    result = self.workshop_import_zip(path)
+                    self._set_workshop_status(
+                        "Importé {} r{} — non promu tant que vous ne validez pas.".format(
+                            result.set_id, result.revision
+                        )
+                    )
+                except Exception as exc:
+                    self._set_workshop_status("Import refusé : {}".format(exc))
+                finally:
+                    if path is not None:
+                        try:
+                            Path(path).unlink()
+                        except OSError:
+                            pass
+            self._set_ingress.copy(uri, draft_name, copied)
+        self._set_picker.choose("application/zip", picked)
+
+    def _refresh_workshop_editor(self, dt=0):
+        if self._workshop_editor_label is None or self._workshop_draft_id is None:
+            return
+        try:
+            info = self.workshop_current_role_info()
+            current, total = info["progress"]
+            role = info["role"]
+            current_name = Path(info["current_path"]).name if info["current_path"] else "(aucun)"
+            candidate_name = Path(info["candidate_path"]).name if info["candidate_path"] else "(aucun)"
+            self._workshop_editor_label.text = (
+                "BROUILLON : {}\nETAPE {}/{} — {}\nTYPE : {}{}\nACTUEL : {}\nREMPLACEMENT : {}\n{}".format(
+                    self._workshop_draft_id, current, total, role.label,
+                    role.asset_type.upper(), " — OBLIGATOIRE" if role.required else " — OPTIONNEL",
+                    current_name, candidate_name, self._workshop_status,
+                )
+            )
+        except Exception as exc:
+            self._workshop_editor_label.text = "Atelier indisponible : {}".format(exc)
+
+    def _workshop_open_editor(self, draft_id=None):
+        self._require_workshop_idle()
+        if draft_id is not None:
+            self.workshop_resume_draft(draft_id)
+        if self._workshop_draft_id is None:
+            raise SetContractError("no workshop draft selected")
+        if self._workshop_editor_popup is not None:
+            try:
+                self._workshop_editor_popup.dismiss()
+            except Exception:
+                pass
+        label = Label(
+            text="", size_hint=(1, None), height=dp(150), font_size=dp(18),
+            halign="left", valign="middle",
+        )
+        content = BoxLayout(orientation="vertical", spacing=dp(7), padding=dp(8))
+        content.add_widget(label)
+        actions = (
+            ("APERÇU ACTUEL", self._workshop_preview_current_action),
+            ("CHOISIR REMPLACEMENT", self._workshop_choose_replacement),
+            ("APERÇU REMPLACEMENT", self._workshop_preview_candidate_action),
+            ("CONSERVER / SUIVANT", self._workshop_keep_action),
+            ("VALIDER REMPLACEMENT / SUIVANT", self._workshop_accept_action),
+            ("ETAPE PRECEDENTE", self._workshop_previous_action),
+            ("IDENTITE / NOMS", self._workshop_identity_dialog),
+            ("TESTER CE SET", self._workshop_test_action),
+            ("INSTALLER + PROMOUVOIR", self._workshop_promote_action),
+            ("EXPORTER ZIP", self._workshop_export_action),
+        )
+        for text, callback in actions:
+            button = Button(text=text, size_hint=(1, None), height=dp(58), font_size=dp(18))
+            button.bind(on_release=lambda instance, cb=callback: cb())
+            content.add_widget(button)
+        close = Button(text="RETOUR ATELIER", size_hint=(1, None), height=dp(60), font_size=dp(19))
+        content.add_widget(close)
+        popup = Popup(title="ASSISTANT SET", content=content, size_hint=(0.96, 0.96), auto_dismiss=True)
+        self._workshop_editor_popup = popup
+        self._workshop_editor_label = label
+        close.bind(on_release=lambda *args: popup.dismiss())
+        popup.bind(on_dismiss=lambda *args: self._workshop_editor_closed())
+        self._refresh_workshop_editor()
+        popup.open()
+        return popup
+
+    def _workshop_editor_closed(self):
+        self._workshop_editor_popup = None
+        self._workshop_editor_label = None
+        self._close_workshop_preview_popup()
+        self._set_preview.close("editor-close")
+
+    def _workshop_preview_current_action(self):
+        try:
+            result = self.workshop_preview_current()
+            self._set_workshop_status(self._preview_status(result))
+            self._open_workshop_preview_popup("APERÇU ACTUEL")
+        except Exception as exc:
+            self._set_workshop_status("Aperçu actuel impossible : {}".format(exc))
+
+    def _workshop_preview_candidate_action(self):
+        try:
+            result = self.workshop_preview_candidate()
+            self._set_workshop_status(self._preview_status(result))
+            self._open_workshop_preview_popup("APERÇU REMPLACEMENT")
+        except Exception as exc:
+            self._set_workshop_status("Aperçu remplacement impossible : {}".format(exc))
+
+    def _open_workshop_preview_popup(self, title):
+        self._close_workshop_preview_popup()
+        surface = WorkshopPreviewSurface(size_hint=(1, 1))
+        status = Label(
+            text="", size_hint=(1, None), height=dp(72), font_size=dp(17),
+            halign="left", valign="middle",
+        )
+        close = Button(text="FERMER APERÇU", size_hint=(1, None), height=dp(60), font_size=dp(19))
+        content = BoxLayout(orientation="vertical", spacing=dp(6), padding=dp(6))
+        content.add_widget(surface)
+        content.add_widget(status)
+        content.add_widget(close)
+        popup = Popup(title=title, content=content, size_hint=(0.96, 0.94), auto_dismiss=True)
+        self._workshop_preview_popup = popup
+        self._workshop_preview_surface = surface
+        self._workshop_preview_label = status
+
+        def refresh(dt=0):
+            if self._workshop_preview_popup is not popup:
+                return
+            surface.set_texture(self._set_preview.current_texture)
+            result = self._set_preview.current_result
+            status.text = self._preview_status(result) if result is not None else "Aperçu fermé"
+
+        self._workshop_preview_event = Clock.schedule_interval(refresh, 1.0 / 30.0)
+        close.bind(on_release=lambda *args: popup.dismiss())
+        popup.bind(on_dismiss=lambda *args: self._close_workshop_preview_popup())
+        refresh(0)
+        popup.open()
+        return popup
+
+    def _close_workshop_preview_popup(self):
+        event = self._workshop_preview_event
+        self._workshop_preview_event = None
+        if event is not None:
+            try:
+                event.cancel()
+            except Exception:
+                pass
+        popup = self._workshop_preview_popup
+        self._workshop_preview_popup = None
+        self._workshop_preview_surface = None
+        self._workshop_preview_label = None
+        if popup is not None:
+            try:
+                popup.dismiss()
+            except Exception:
+                pass
+        self._set_preview.close("preview-popup-close")
+
+    @staticmethod
+    def _preview_status(result):
+        details = ["Aperçu {}".format("OK" if result.opened else "NON OUVERT")]
+        if result.dimensions:
+            details.append("{}x{}".format(*result.dimensions))
+        if result.duration is not None:
+            details.append("{:.2f}s".format(result.duration))
+        details.extend(result.warnings)
+        return " — ".join(details)
+
+    def _workshop_keep_action(self):
+        try:
+            self.workshop_keep_and_next()
+            self._set_workshop_status("Ressource actuelle conservée")
+        except Exception as exc:
+            self._set_workshop_status("Navigation impossible : {}".format(exc))
+
+    def _workshop_accept_action(self):
+        try:
+            self.workshop_accept_and_next()
+            self._set_workshop_status("Remplacement validé")
+        except Exception as exc:
+            self._set_workshop_status("Validation impossible : {}".format(exc))
+
+    def _workshop_previous_action(self):
+        try:
+            self.workshop_previous()
+            self._set_workshop_status("Etape précédente")
+        except Exception as exc:
+            self._set_workshop_status("Retour impossible : {}".format(exc))
+
+    def _workshop_choose_replacement(self):
+        try:
+            info = self.workshop_current_role_info()
+        except Exception as exc:
+            self._set_workshop_status("Sélection impossible : {}".format(exc))
+            return
+        mime = {"video": "video/mp4", "image": "image/*", "audio": "audio/*"}[info["role"].asset_type]
+        suffix = {"video": ".mp4", "image": ".jpg", "audio": ".wav"}[info["role"].asset_type]
+        draft_name = "ingress-{}-{}{}".format(
+            self._workshop_draft_id, int(time.time() * 1000), suffix
+        )
+        def picked(uri, error):
+            if error is not None:
+                self._set_workshop_status("Sélecteur : {}".format(error)); return
+            if uri is None:
+                self._set_workshop_status("Sélection annulée"); return
+            def copied(path, copy_error):
+                try:
+                    if copy_error is not None:
+                        raise copy_error
+                    self.workshop_stage_candidate(path)
+                    self._set_workshop_status("Remplacement chargé — utilisez APERÇU puis VALIDER")
+                except Exception as exc:
+                    self._set_workshop_status("Remplacement refusé : {}".format(exc))
+                finally:
+                    if path is not None:
+                        try: Path(path).unlink()
+                        except OSError: pass
+            self._set_ingress.copy(uri, draft_name, copied)
+        self._set_picker.choose(mime, picked)
+
+    def _workshop_identity_dialog(self):
+        try:
+            selection = self.workshop_validate()
+        except Exception as exc:
+            self._set_workshop_status("Identité indisponible : {}".format(exc)); return
+        manifest = selection.manifest()
+        display = TextInput(text=manifest["display_name"], multiline=False, size_hint=(1, None), height=dp(52))
+        left = TextInput(text=manifest["dinosaurs"]["left"]["display_name"], multiline=False, size_hint=(1, None), height=dp(52))
+        right = TextInput(text=manifest["dinosaurs"]["right"]["display_name"], multiline=False, size_hint=(1, None), height=dp(52))
+        power_fields = {}
+        body = BoxLayout(orientation="vertical", spacing=dp(6), padding=dp(8), size_hint_y=None)
+        body.bind(minimum_height=body.setter("height"))
+        for title, field in (("Nom du set", display), ("Dinosaure gauche", left), ("Dinosaure droit", right)):
+            body.add_widget(Label(text=title, size_hint=(1, None), height=dp(36)))
+            body.add_widget(field)
+        for power_key in POWER_KEYS:
+            side, slot = power_key.split("_", 1)
+            field = TextInput(
+                text=manifest["powers"][power_key]["label"], multiline=False,
+                size_hint=(1, None), height=dp(52),
+            )
+            power_fields[power_key] = field
+            body.add_widget(Label(
+                text="Pouvoir {} {}".format("gauche" if side == "left" else "droit", slot),
+                size_hint=(1, None), height=dp(36),
+            ))
+            body.add_widget(field)
+        scroll = ScrollView(size_hint=(1, 1))
+        scroll.add_widget(body)
+        save = Button(text="VALIDER IDENTITE", size_hint=(1, None), height=dp(60), font_size=dp(19))
+        content = BoxLayout(orientation="vertical", spacing=dp(6), padding=dp(8))
+        content.add_widget(scroll)
+        content.add_widget(save)
+        popup = Popup(title="IDENTITE ET POUVOIRS", content=content, size_hint=(0.88, 0.92), auto_dismiss=True)
+        def apply(*args):
+            try:
+                power_labels = {power_key: field.text for power_key, field in power_fields.items()}
+                self._set_admin.set_identity(
+                    self._workshop_draft_id, display_name=display.text,
+                    left_name=left.text, right_name=right.text,
+                    power_labels=power_labels,
+                )
+                popup.dismiss(); self._set_workshop_status("Identité mise à jour")
+            except Exception as exc:
+                self._set_workshop_status("Identité refusée : {}".format(exc))
+        save.bind(on_release=apply)
+        popup.open()
+
+    def _workshop_test_action(self):
+        try:
+            selection = self.workshop_validate()
+            popup = self._workshop_editor_popup
+            if popup is not None:
+                popup.dismiss()
+            self.start_draft_test(
+                selection,
+                return_callback=lambda: self._workshop_open_editor(self._workshop_draft_id),
+            )
+        except Exception as exc:
+            self._set_workshop_status("Test impossible : {}".format(exc))
+
+    def _workshop_promote_action(self):
+        try:
+            result = self.workshop_install_promote()
+            self._set_workshop_status(
+                "Installé et promu : {} r{}".format(result.set_id, result.revision)
+            )
+        except Exception as exc:
+            self._set_workshop_status("Installation/promotion refusée : {}".format(exc))
+
+    def _workshop_export_action(self):
+        try:
+            self._require_workshop_idle()
+            if self._workshop_draft_id is None:
+                raise SetContractError("no workshop draft selected")
+            state = self._set_admin.open_draft(self._workshop_draft_id)
+            suggested = "{}-r{}.jtrex.zip".format(state.set_id, state.revision)
+        except Exception as exc:
+            self._set_workshop_status("Export refusé : {}".format(exc)); return
+
+        def picked(uri, error):
+            if error is not None:
+                self._set_workshop_status("Export : {}".format(error)); return
+            if uri is None:
+                self._set_workshop_status("Export annulé"); return
+            self._set_workshop_status("Export ZIP en cours…")
+
+            def build_archive():
+                export_root = self._state_root / "jt-set-exports"
+                export_root.mkdir(parents=True, exist_ok=True)
+                target = export_root / ".share-{}-{}".format(int(time.time() * 1000), suggested)
+                self.workshop_export_revision(target)
+                return target
+
+            def finished(written, export_error):
+                if export_error is not None:
+                    self._set_workshop_status("Export refusé : {}".format(export_error))
+                else:
+                    self._set_workshop_status("ZIP exporté — {} octets".format(written))
+
+            self._set_egress.export(uri, build_archive, finished)
+
+        self._set_picker.create("application/zip", suggested, picked)
+
     def _refresh_admin(self, dt=0):
         if self._admin_label is not None:
             self._admin_label.text = self._admin_status_text()
@@ -564,6 +1274,12 @@ class JTMediaController:
         )
         scroll = ScrollView(size_hint=(1, 1))
         scroll.add_widget(label)
+        workshop_button = Button(
+            text="ATELIER SETS",
+            size_hint=(1, None),
+            height=dp(64),
+            font_size=dp(20),
+        )
         close_button = Button(
             text="FERMER",
             size_hint=(1, None),
@@ -572,6 +1288,7 @@ class JTMediaController:
         )
         content = BoxLayout(orientation="vertical", spacing=dp(8), padding=dp(8))
         content.add_widget(scroll)
+        content.add_widget(workshop_button)
         content.add_widget(close_button)
         popup = Popup(
             title="ADMIN MEDIA — diagnostic uniquement",
@@ -581,6 +1298,8 @@ class JTMediaController:
         )
         self._admin_popup = popup
         self._admin_label = label
+        self._admin_workshop_button = workshop_button
+        workshop_button.bind(on_release=lambda *args: self._open_workshop())
         close_button.bind(on_release=lambda *args: popup.dismiss())
         popup.bind(on_dismiss=self._on_admin_dismiss)
         self._admin_refresh_event = Clock.schedule_interval(
@@ -601,6 +1320,7 @@ class JTMediaController:
             self._admin_refresh_event = None
         self._admin_popup = None
         self._admin_label = None
+        self._admin_workshop_button = None
         print("[JT-ADMIN] close", flush=True)
 
     @staticmethod
@@ -648,6 +1368,15 @@ class JTMediaController:
             spec["file"] = selection.power_media_path(spec["power_key"])
         else:
             raise KeyError("scene without media selector: {}".format(key))
+        # Official selections must keep using the controller's live Kivy resolver
+        # so runtime/media failures remain observable. Portable user/draft sets
+        # own a private physical resolver and must never fall through to an APK
+        # asset with the same relative name.
+        if selection.manifest_path == "manifest.json":
+            resolved = selection.resolve_path(spec["file"])
+        else:
+            resolved = self._resolve(spec["file"])
+        spec["resolved_file"] = resolved
         return spec
 
     def start_intro(self, done_callback):
@@ -655,8 +1384,12 @@ class JTMediaController:
             Clock.schedule_once(lambda dt: done_callback(), 0)
             return
         self._intro_done_callback = done_callback
-        chosen = random.choice(self.sets.startup_intro_set.intro_paths())
-        path = self._resolve(chosen)
+        startup_selection = self.sets.startup_intro_set
+        chosen = random.choice(startup_selection.intro_paths())
+        if startup_selection.manifest_path == "manifest.json":
+            path = startup_selection.resolve_path(chosen)
+        else:
+            path = self._resolve(chosen)
         print("[JT-INTRO] chosen={}".format(chosen), flush=True)
         if not path or CoreVideo is None:
             print("[JT-INTRO][ERROR] unavailable file/provider; continuing", flush=True)
@@ -778,7 +1511,7 @@ class JTMediaController:
 
     def _start_scene(self, key, indexa):
         scene = self._scene_config(key)
-        path = self._resolve(scene["file"])
+        path = scene.get("resolved_file")
         self._scene_key = key
         self._scene_generation += 1
         generation = self._scene_generation
@@ -1156,6 +1889,23 @@ class JTMediaController:
         if self.phases is not None:
             self.phases.shutdown()
         self.cancel_round_presentation()
+        self._close_workshop_preview_popup()
+        try:
+            self._set_picker.close()
+        except Exception:
+            pass
+        if self._workshop_editor_popup is not None:
+            try:
+                self._workshop_editor_popup.dismiss()
+            except Exception:
+                pass
+            self._workshop_editor_popup = None
+        if self._workshop_popup is not None:
+            try:
+                self._workshop_popup.dismiss()
+            except Exception:
+                pass
+            self._workshop_popup = None
         if self._admin_popup is not None:
             try:
                 self._admin_popup.dismiss()

@@ -75,9 +75,12 @@ def _read_json(resolve_path, relative, context):
 
 
 class JTSetSelection:
-    def __init__(self, manifest, manifest_path):
+    def __init__(self, manifest, manifest_path, resolve_path):
+        if not callable(resolve_path):
+            _fail("resolve_path must be callable")
         self._manifest = deepcopy(manifest)
         self._assets = {entry["id"]: deepcopy(entry) for entry in manifest["assets"]}
+        self._resolve_path = resolve_path
         self.manifest_path = manifest_path
         self.set_id = manifest["set_id"]
         self.format_version = manifest["format_version"]
@@ -87,6 +90,13 @@ class JTSetSelection:
 
     def manifest(self):
         return deepcopy(self._manifest)
+
+    def resolve_path(self, relative_path):
+        relative_path = _safe_path(relative_path, "resource_path")
+        return self._resolve_path(relative_path)
+
+    def resolve_asset(self, asset_id):
+        return self.resolve_path(self.asset_path(asset_id))
 
     def dinosaurs(self):
         return deepcopy(self._manifest["dinosaurs"])
@@ -230,7 +240,7 @@ def load_set_manifest(resolve_path, manifest_path="manifest.json"):
     manifest_path = _safe_path(manifest_path, "manifest_path")
     manifest = _read_json(resolve_path, manifest_path, "manifest")
     _validate_manifest(manifest)
-    return JTSetSelection(manifest, manifest_path)
+    return JTSetSelection(manifest, manifest_path, resolve_path)
 
 
 def verify_selection_assets(selection, resolve_path, chunk_size=1024 * 1024):
@@ -285,7 +295,7 @@ def load_official_catalog(resolve_path):
         _validate_manifest(manifest)
         if manifest["set_id"] != set_id:
             _fail("catalog/manifest set_id mismatch")
-        selections.append(JTSetSelection(manifest, manifest_path))
+        selections.append(JTSetSelection(manifest, manifest_path, resolve_path))
     return tuple(selections)
 
 
@@ -299,21 +309,53 @@ def load_official_set(resolve_path, set_id=CANONICAL_SET_ID):
 class JTSetSessionManager:
     """Persist menu selection and freeze one validated set for a combat session."""
 
-    def __init__(self, resolve_path, state_path, canonical_id=CANONICAL_SET_ID):
-        self._catalog = load_official_catalog(resolve_path)
-        self._by_id = {selection.set_id: selection for selection in self._catalog}
-        if canonical_id not in self._by_id:
-            _fail(f"canonical set missing from official catalog: {canonical_id}")
+    def __init__(
+        self, resolve_path, state_path, canonical_id=CANONICAL_SET_ID,
+        user_catalog_provider=None,
+    ):
+        self._official_catalog = load_official_catalog(resolve_path)
+        self._user_catalog_provider = user_catalog_provider
         self._canonical_id = canonical_id
         self._state_path = Path(state_path)
         self._replace = os.replace
         self._session = None
+        self._session_temporary = False
+        self._catalog = ()
+        self._by_id = {}
+        self._rebuild_catalog()
+        if canonical_id not in self._by_id:
+            _fail(f"canonical set missing from official catalog: {canonical_id}")
         selected_id = self._load_persisted_id()
         if selected_id not in self._by_id:
             selected_id = canonical_id
             self._persist(selected_id)
         self._selected = deepcopy(self._by_id[selected_id])
         self._startup_intro = deepcopy(self._selected)
+
+    def _rebuild_catalog(self):
+        official_ids = {selection.set_id for selection in self._official_catalog}
+        users = () if self._user_catalog_provider is None else tuple(self._user_catalog_provider())
+        seen_users = set()
+        for selection in users:
+            if not isinstance(selection, JTSetSelection):
+                _fail("user catalog entries must be JTSetSelection")
+            if selection.set_id in official_ids:
+                _fail(f"user set_id collision with official catalog: {selection.set_id}")
+            if selection.set_id in seen_users:
+                _fail(f"duplicate user set_id: {selection.set_id}")
+            seen_users.add(selection.set_id)
+        self._catalog = tuple(self._official_catalog) + users
+        self._by_id = {selection.set_id: selection for selection in self._catalog}
+
+    def refresh_catalog(self):
+        self._rebuild_catalog()
+        selected_id = getattr(self, "_selected", None)
+        selected_id = selected_id.set_id if selected_id is not None else self._canonical_id
+        if selected_id not in self._by_id:
+            selected_id = self._canonical_id
+            self._persist(selected_id)
+        self._selected = deepcopy(self._by_id[selected_id])
+        return self.catalog()
 
     def _load_persisted_id(self):
         try:
@@ -347,6 +389,9 @@ class JTSetSessionManager:
                 pass
 
     def official_catalog(self):
+        return tuple(deepcopy(selection) for selection in self._official_catalog)
+
+    def catalog(self):
         return tuple(deepcopy(selection) for selection in self._catalog)
 
     @property
@@ -369,13 +414,17 @@ class JTSetSessionManager:
     def session_active(self):
         return self._session is not None
 
+    @property
+    def session_temporary(self):
+        return self._session is not None and self._session_temporary
+
     def select(self, set_id):
         if self._session is not None:
             _fail("cannot change set during active session")
         try:
             selection = self._by_id[set_id]
         except KeyError:
-            _fail(f"unknown official set: {set_id}")
+            _fail(f"unknown set: {set_id}")
         self._selected = deepcopy(selection)
         self._persist(set_id)
         return deepcopy(self._selected)
@@ -384,7 +433,27 @@ class JTSetSessionManager:
         if self._session is not None:
             return deepcopy(self._session)
         self._session = deepcopy(self._selected)
+        self._session_temporary = False
+        return deepcopy(self._session)
+
+    def begin_temporary_session(self, selection):
+        if self._session is not None:
+            _fail("cannot start temporary session during active session")
+        try:
+            manifest = selection.manifest()
+            manifest_path = selection.manifest_path
+            resolve_path = selection.resolve_path
+        except AttributeError:
+            _fail("temporary selection must be JTSetSelection-compatible")
+        if not callable(resolve_path):
+            _fail("temporary selection resolver must be callable")
+        _validate_manifest(manifest)
+        local_selection = JTSetSelection(manifest, manifest_path, resolve_path)
+        verify_selection_assets(local_selection, local_selection.resolve_path)
+        self._session = deepcopy(local_selection)
+        self._session_temporary = True
         return deepcopy(self._session)
 
     def end_session(self):
         self._session = None
+        self._session_temporary = False

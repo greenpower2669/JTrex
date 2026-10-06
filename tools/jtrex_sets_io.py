@@ -12,11 +12,13 @@ import zipfile
 
 if __package__:
     from .jtrex_sets_runtime import (
-        JTSetSelection, load_set_manifest, verify_selection_assets,
+        FORMAT_VERSION, SetContractError, JTSetSelection, load_set_manifest,
+        verify_selection_assets,
     )
 else:
     from jtrex_sets_runtime import (
-        JTSetSelection, load_set_manifest, verify_selection_assets,
+        FORMAT_VERSION, SetContractError, JTSetSelection, load_set_manifest,
+        verify_selection_assets,
     )
 
 _SAFE_ID = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
@@ -103,6 +105,8 @@ class JTSetStorage:
         self.user_root.mkdir(parents=True, exist_ok=True)
         self.draft_root.mkdir(parents=True, exist_ok=True)
         self._rename = os.rename
+        self._replace = os.replace
+        self._promotions_path = self.user_root / ".jtrex-promotions.json"
 
     def user_revision_path(self, set_id, revision):
         set_id = _safe_set_id(set_id)
@@ -112,6 +116,106 @@ class JTSetStorage:
     def draft_path(self, draft_id):
         name = _safe_draft_name(draft_id, self.limits.max_path_chars)
         return self.draft_root / name
+
+
+    def list_user_revisions(self):
+        revisions = []
+        if not self.user_root.is_dir():
+            return ()
+        for set_dir in self.user_root.iterdir():
+            if not set_dir.is_dir() or not _SAFE_ID.fullmatch(set_dir.name):
+                continue
+            for revision_dir in set_dir.iterdir():
+                if not revision_dir.is_dir() or not revision_dir.name.startswith("r"):
+                    continue
+                try:
+                    revision = int(revision_dir.name[1:])
+                    _safe_revision(revision)
+                except (ValueError, TypeError):
+                    continue
+                revisions.append((set_dir.name, revision))
+        return tuple(sorted(revisions, key=lambda item: (item[0], item[1])))
+
+    def _official_set_ids(self):
+        catalog = self.official_root / "assets" / "sets" / "catalog.json"
+        try:
+            payload = json.loads(catalog.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError):
+            return set()
+        entries = payload.get("sets") if isinstance(payload, dict) else None
+        if not isinstance(entries, list):
+            return set()
+        result = set()
+        for entry in entries:
+            if not isinstance(entry, dict):
+                continue
+            set_id = entry.get("set_id")
+            if isinstance(set_id, str) and _SAFE_ID.fullmatch(set_id):
+                result.add(set_id)
+        return result
+
+    def load_promotions(self):
+        try:
+            payload = json.loads(self._promotions_path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError):
+            return {}
+        if not isinstance(payload, dict) or set(payload) != {"format_version", "sets"}:
+            return {}
+        if payload.get("format_version") != FORMAT_VERSION or not isinstance(payload.get("sets"), dict):
+            return {}
+        result = {}
+        for set_id, revision in payload["sets"].items():
+            try:
+                _safe_set_id(set_id)
+                _safe_revision(revision)
+            except ValueError:
+                return {}
+            result[set_id] = revision
+        return result
+
+    def _write_promotions(self, promotions):
+        payload = {"format_version": FORMAT_VERSION, "sets": dict(sorted(promotions.items()))}
+        temp = self._promotions_path.with_name(self._promotions_path.name + ".tmp")
+        try:
+            with temp.open("w", encoding="utf-8") as handle:
+                json.dump(payload, handle, ensure_ascii=False, separators=(",", ":"))
+                handle.write("\n")
+                handle.flush()
+                os.fsync(handle.fileno())
+            self._replace(temp, self._promotions_path)
+        finally:
+            try:
+                temp.unlink()
+            except FileNotFoundError:
+                pass
+
+    def promote(self, set_id, revision):
+        set_id = _safe_set_id(set_id)
+        revision = _safe_revision(revision)
+        if set_id in self._official_set_ids():
+            raise SetContractError(f"official set_id cannot be promoted as user set: {set_id}")
+        self.load_user_revision(set_id, revision)
+        promotions = self.load_promotions()
+        promotions[set_id] = revision
+        self._write_promotions(promotions)
+
+    def promoted_catalog(self):
+        promotions = self.load_promotions()
+        valid = {}
+        selections = []
+        for set_id in sorted(promotions):
+            revision = promotions[set_id]
+            if set_id in self._official_set_ids():
+                continue
+            try:
+                selection = self.load_user_revision(set_id, revision)
+            except (JTSetIOError, SetContractError, OSError, ValueError):
+                continue
+            valid[set_id] = revision
+            selections.append(selection)
+        if valid != promotions:
+            self._write_promotions(valid)
+        return tuple(selections)
 
     def copy_content_uri(self, uri, open_stream, draft_name, chunk_size=1024 * 1024):
         if not isinstance(uri, str) or not uri.startswith("content://"):

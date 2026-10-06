@@ -79,8 +79,53 @@ class SessionManagerTests(unittest.TestCase):
         self.state_path = self.root / "state/selected-set.json"
         self.resolve = resolver(self.root)
 
-    def manager(self):
-        return JTSetSessionManager(self.resolve, self.state_path)
+    def manager(self, user_catalog_provider=None):
+        return JTSetSessionManager(self.resolve, self.state_path, user_catalog_provider=user_catalog_provider)
+
+
+    def make_user_selection(self, set_id="ankyl_vs_spino", revision=4):
+        manifest = json.loads((self.root / "assets/sets/trex_vs_steg/manifest.json").read_text(encoding="utf-8"))
+        manifest["set_id"] = set_id
+        manifest["revision"] = revision
+        manifest["display_name"] = "User Set"
+        path = self.root / f"user/{set_id}/r{revision}/manifest.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(manifest), encoding="utf-8")
+        def resolve(relative):
+            candidate = path.parent / relative
+            return str(candidate) if candidate.is_file() else None
+        from tools.jtrex_sets_runtime import load_set_manifest
+        return load_set_manifest(resolve, "manifest.json")
+
+    def test_user_catalog_provider_is_selectable_and_persisted(self):
+        user = self.make_user_selection()
+        manager = self.manager(lambda: (user,))
+
+        self.assertEqual([s.set_id for s in manager.catalog()], [CANONICAL_SET_ID, "raptor_vs_trike", "ankyl_vs_spino"])
+        chosen = manager.select("ankyl_vs_spino")
+        self.assertEqual(chosen.set_id, "ankyl_vs_spino")
+        self.assertEqual(json.loads(self.state_path.read_text(encoding="utf-8"))["set_id"], "ankyl_vs_spino")
+
+    def test_refresh_catalog_falls_back_to_canonical_but_keeps_active_session_frozen(self):
+        user = self.make_user_selection()
+        current = [user]
+        manager = self.manager(lambda: tuple(current))
+        manager.select("ankyl_vs_spino")
+        frozen = manager.begin_session()
+        current.clear()
+
+        manager.refresh_catalog()
+
+        self.assertEqual(manager.session_set.set_id, frozen.set_id)
+        self.assertEqual(manager.selected_set.set_id, CANONICAL_SET_ID)
+        self.assertEqual(json.loads(self.state_path.read_text(encoding="utf-8"))["set_id"], CANONICAL_SET_ID)
+        manager.end_session()
+        self.assertEqual(manager.runtime_set.set_id, CANONICAL_SET_ID)
+
+    def test_user_provider_cannot_shadow_official_set_id(self):
+        user = self.make_user_selection(set_id=CANONICAL_SET_ID)
+        with self.assertRaisesRegex(SetContractError, "collision"):
+            self.manager(lambda: (user,))
 
     def test_valid_persisted_selection_is_restored_for_menu_and_startup_intro(self):
         self.state_path.parent.mkdir(parents=True, exist_ok=True)
