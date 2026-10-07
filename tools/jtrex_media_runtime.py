@@ -298,6 +298,7 @@ class JTMediaController:
         self._admin_refresh_event = None
         self._admin_enabled = False
         self._indicator_phase = False
+        self._menu_right_dino_event = None
 
         self.root._jt_scene_video_active = False
         self.root._jt_scene_cinematic_lock = False
@@ -334,18 +335,18 @@ class JTMediaController:
         self._set_button = Button(
             text="",
             size_hint=(None, None),
-            size=(dp(280), dp(44)),
-            font_size=dp(16),
+            size=(dp(220), dp(40)),
+            font_size=dp(15),
             opacity=0,
             disabled=True,
         )
         self._set_button.bind(on_release=lambda *args: self._open_set_selector())
         self.root.add_widget(self._set_button)
         self._set_edit_button = Button(
-            text="✎",
+            text="MOD",
             size_hint=(None, None),
-            size=(dp(44), dp(44)),
-            font_size=dp(21),
+            size=(dp(48), dp(40)),
+            font_size=dp(13),
             opacity=0,
             disabled=True,
         )
@@ -356,6 +357,9 @@ class JTMediaController:
         self._refresh_set_button()
         self._indicator_event = Clock.schedule_interval(
             self._update_status_indicator, 0.35
+        )
+        self._menu_right_dino_event = Clock.schedule_interval(
+            self._guard_menu_right_dinosaur_crop, 0.05
         )
         Window.bind(on_touch_down=self._on_admin_trigger)
 
@@ -405,21 +409,64 @@ class JTMediaController:
             flush=True,
         )
 
+    def _guard_menu_right_dinosaur_crop(self, dt=0):
+        """Keep the intentionally cropped right selection dinosaur edge off-screen."""
+        if self._phase_name != "MENU":
+            return
+        try:
+            root_x = float(getattr(self.root, "x", 0.0))
+            root_width = float(getattr(self.root, "width", 0.0))
+        except (TypeError, ValueError):
+            return
+        if root_width <= 0:
+            return
+        screen_right = root_x + root_width
+        visible_threshold = root_x + root_width * 0.78
+        candidates = []
+        for name in ("jh", "jb"):
+            rect = getattr(self.root, name, None)
+            if rect is None:
+                continue
+            try:
+                x, y = rect.pos
+                width, height = rect.size
+                x, y = float(x), float(y)
+                width, height = float(width), float(height)
+            except (AttributeError, TypeError, ValueError):
+                continue
+            if width <= 0 or height <= 0:
+                continue
+            right_edge = x + width
+            if right_edge < visible_threshold:
+                continue
+            candidates.append((x, rect, width, y))
+        if not candidates:
+            return
+        x, rect, width, y = max(candidates, key=lambda item: item[0])
+        safety = min(dp(44), max(dp(18), width * 0.08))
+        minimum_x = screen_right + safety - width
+        if x < minimum_x:
+            rect.pos = (minimum_x, y)
+
     def _layout_set_button(self, *args):
         root_width = float(getattr(self.root, "width", dp(520)))
         root_height = float(getattr(self.root, "height", dp(100)))
-        width = min(dp(300), max(dp(180), root_width * 0.34))
-        height = dp(44)
-        x = dp(12)
-        y = max(dp(12), root_height - dp(56))
+        width = min(dp(240), max(dp(150), root_width * 0.26))
+        height = dp(40)
+        edit_visible = bool(self._admin_enabled)
+        edit_width = dp(48) if edit_visible else 0.0
+        gap = dp(6) if edit_visible else 0.0
+        group_width = width + gap + edit_width
+        x = max(dp(8), (root_width - group_width) / 2.0)
+        y = max(dp(8), root_height - dp(50))
         self._set_button.size = (width, height)
         self._set_button.pos = (x, y)
-        self._set_edit_button.size = (dp(44), height)
-        self._set_edit_button.pos = (x + width + dp(6), y)
+        self._set_edit_button.size = (dp(48), height)
+        self._set_edit_button.pos = (x + width + gap, y)
 
     def _refresh_set_button(self):
         selected = self.sets.selected_set
-        self._set_button.text = "SET ▼  {}".format(selected.display_name)
+        self._set_button.text = "SET v  {}".format(selected.display_name)
 
     def _set_selector_visible(self, visible):
         visible = bool(visible)
@@ -428,6 +475,7 @@ class JTMediaController:
         edit_visible = visible and self._admin_enabled
         self._set_edit_button.opacity = 1 if edit_visible else 0
         self._set_edit_button.disabled = not edit_visible
+        self._layout_set_button()
         if not visible and self._set_popup is not None:
             try:
                 self._set_popup.dismiss()
@@ -1168,6 +1216,7 @@ class JTMediaController:
 
     def _workshop_preview_current_action(self):
         try:
+            self._close_workshop_preview_popup()
             result = self.workshop_preview_current()
             self._set_workshop_status(self._preview_status(result))
             self._open_workshop_preview_popup("APERÇU ACTUEL")
@@ -1176,6 +1225,7 @@ class JTMediaController:
 
     def _workshop_preview_candidate_action(self):
         try:
+            self._close_workshop_preview_popup()
             result = self.workshop_preview_candidate()
             self._set_workshop_status(self._preview_status(result))
             self._open_workshop_preview_popup("APERÇU REMPLACEMENT")
@@ -1183,14 +1233,16 @@ class JTMediaController:
             self._set_workshop_status("Aperçu remplacement impossible : {}".format(exc))
 
     def _open_workshop_preview_popup(self, title):
-        self._close_workshop_preview_popup()
         surface = WorkshopPreviewSurface(size_hint=(1, 1))
         status = Label(
-            text="", size_hint=(1, None), height=dp(72), font_size=dp(17),
-            halign="left", valign="middle",
+            text="", size_hint=(1, None), height=dp(56), font_size=dp(15),
+            halign="center", valign="middle",
         )
-        close = Button(text="FERMER APERÇU", size_hint=(1, None), height=dp(60), font_size=dp(19))
-        content = BoxLayout(orientation="vertical", spacing=dp(6), padding=dp(6))
+        close = Button(
+            text="FERMER APERÇU", size_hint=(0.62, None), pos_hint={"center_x": 0.5},
+            height=dp(46), font_size=dp(16)
+        )
+        content = BoxLayout(orientation="vertical", spacing=dp(10), padding=dp(10))
         content.add_widget(surface)
         content.add_widget(status)
         content.add_widget(close)
@@ -1234,7 +1286,10 @@ class JTMediaController:
 
     @staticmethod
     def _preview_status(result):
-        details = ["Aperçu {}".format("OK" if result.opened else "NON OUVERT")]
+        if result.opened and result.kind == "video" and not result.first_frame:
+            details = ["Chargement vidéo…"]
+        else:
+            details = ["Aperçu {}".format("OK" if result.opened else "NON OUVERT")]
         if result.dimensions:
             details.append("{}x{}".format(*result.dimensions))
         if result.duration is not None:
@@ -2156,6 +2211,9 @@ class JTMediaController:
         if self._indicator_event is not None:
             self._indicator_event.cancel()
             self._indicator_event = None
+        if self._menu_right_dino_event is not None:
+            self._menu_right_dino_event.cancel()
+            self._menu_right_dino_event = None
         if self._status_dot is not None:
             try:
                 self.root.remove_widget(self._status_dot)
@@ -2180,6 +2238,12 @@ class JTMediaController:
             except Exception:
                 pass
             self._set_button = None
+        if self._set_edit_button is not None:
+            try:
+                self.root.remove_widget(self._set_edit_button)
+            except Exception:
+                pass
+            self._set_edit_button = None
         if not self._intro_done:
             self._finish_intro("shutdown")
         self._stop_scene("shutdown", preserve_failure=False)
