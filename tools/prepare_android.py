@@ -83,6 +83,13 @@ def build_power_path_table(selection):
     }
 
 
+def build_power_parameter_table(selection):
+    return {
+        slot: selection.power_effect_fraction(power_key)
+        for slot, power_key in enumerate(POWER_KEYS, 1)
+    }
+
+
 def rewrite_power_icon_sources(lines, start, end, newline):
     replacements = 0
     for index in range(start, end):
@@ -107,14 +114,56 @@ def rewrite_power_icon_sources(lines, start, end, newline):
     return replacements
 
 
-def _canonical_power_path_table():
+def _canonical_selection():
     repo_root = Path(__file__).resolve().parents[1]
 
     def resolve_repo(relative_path):
         path = repo_root.joinpath(*PurePosixPath(relative_path).parts)
         return str(path) if path.is_file() else None
 
-    return build_power_path_table(load_official_set(resolve_repo))
+    return load_official_set(resolve_repo)
+
+
+def _canonical_power_path_table():
+    return build_power_path_table(_canonical_selection())
+
+
+def _canonical_power_parameter_table():
+    return build_power_parameter_table(_canonical_selection())
+
+
+def rewrite_power_effects(source):
+    replacements = {
+        181: ("degd+=pvd/4", "degd+=pvd*JT_POWER_EFFECT_FRACTIONS[1]"),
+        182: ("degg-=pvg/4", "degg-=pvg*JT_POWER_EFFECT_FRACTIONS[2]"),
+        183: ("degd+=pvd/4", "degd+=pvd*JT_POWER_EFFECT_FRACTIONS[3]"),
+        184: ("degg+=pvg/4", "degg+=pvg*JT_POWER_EFFECT_FRACTIONS[4]"),
+        185: ("degg+=pvg/4", "degg+=pvg*JT_POWER_EFFECT_FRACTIONS[5]"),
+        186: ("degg+=pvg/3", "degg+=pvg*JT_POWER_EFFECT_FRACTIONS[6]"),
+    }
+    lines = source.splitlines(keepends=True)
+    seen = {marker: 0 for marker in replacements}
+    for index in range(len(lines) - 1):
+        stripped = lines[index].strip()
+        if not stripped.startswith("if anim1==") or not stripped.endswith(":"):
+            continue
+        try:
+            marker = int(stripped[len("if anim1=="):-1])
+        except ValueError:
+            continue
+        if marker not in replacements:
+            continue
+        old_effect, new_effect = replacements[marker]
+        if lines[index + 1].strip() != old_effect:
+            continue
+        line = lines[index + 1]
+        indent = line[:len(line) - len(line.lstrip(" \t"))]
+        ending = "\r\n" if line.endswith("\r\n") else ("\n" if line.endswith("\n") else "")
+        lines[index + 1] = indent + new_effect + ending
+        seen[marker] += 1
+    for marker, count in seen.items():
+        require(count == 1, f"Jalon pouvoir {marker}: {count} écriture(s), 1 attendue.")
+    return "".join(lines)
 
 
 def method_bounds(lines, method_name):
@@ -140,9 +189,10 @@ def method_bounds(lines, method_name):
     return start, end
 
 
-def adapt_main(source, power_paths=None):
+def adapt_main(source, power_paths=None, power_parameters=None):
     newline = "\r\n" if "\r\n" in source else "\n"
     power_paths = power_paths or _canonical_power_path_table()
+    power_parameters = power_parameters or _canonical_power_parameter_table()
 
     source = replace_exact(source, "'a.png'", "'A.png'", 4)
     source = replace_exact(
@@ -172,6 +222,32 @@ def adapt_main(source, power_paths=None):
         + "POWER_READY_STATE={1:False,2:False,3:False,4:False,5:False,6:False}"
         + newline
         + "JT_POWER_PATHS=" + repr(power_paths)
+        + newline
+        + "JT_POWER_EFFECT_FRACTIONS=" + repr(power_parameters)
+        + newline
+        + "def jt_apply_power_parameters(values):"
+        + newline
+        + "\tglobal JT_POWER_EFFECT_FRACTIONS"
+        + newline
+        + "\trequired=set(range(1,7))"
+        + newline
+        + "\tif set(values)!=required:"
+        + newline
+        + "\t\traise ValueError('six power parameter slots required')"
+        + newline
+        + "\tnormalized={}"
+        + newline
+        + "\tfor slot in range(1,7):"
+        + newline
+        + "\t\tvalue=values[slot]"
+        + newline
+        + "\t\tif isinstance(value,bool) or not isinstance(value,(int,float)) or not math.isfinite(value):"
+        + newline
+        + "\t\t\traise ValueError('finite power parameter required')"
+        + newline
+        + "\t\tnormalized[slot]=float(value)"
+        + newline
+        + "\tJT_POWER_EFFECT_FRACTIONS=normalized"
         + newline
         + "def jt_apply_power_paths(paths):"
         + newline
@@ -238,6 +314,8 @@ def adapt_main(source, power_paths=None):
         + "\t\tmedia_controller.sync_scene_state(indexa)",
         1,
     )
+
+    source = rewrite_power_effects(source)
 
     human_power_guards = {
         1: (
@@ -1067,7 +1145,11 @@ def prepare(archive, destination, spec, media_root, runtime):
         )
 
         original = main.read_bytes().decode("utf-8")
-        adapted = adapt_main(original, build_power_path_table(selection))
+        adapted = adapt_main(
+            original,
+            build_power_path_table(selection),
+            build_power_parameter_table(selection),
+        )
         main.write_bytes(adapted.encode("utf-8"))
 
         app_asset_report = {}

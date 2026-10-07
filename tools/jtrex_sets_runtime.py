@@ -6,6 +6,7 @@ policies and power formulas remain owned by the engine/runtime modules.
 from copy import deepcopy
 import hashlib
 import json
+import math
 import os
 import re
 from pathlib import Path, PurePosixPath
@@ -27,6 +28,14 @@ MECHANISMS = {
     "right_1": "right_slot_1_target_damage",
     "right_2": "right_slot_2_target_damage",
     "right_3": "right_slot_3_target_damage",
+}
+POWER_PARAMETER_SPECS = {
+    "left_1": {"field": "raw_damage_fraction", "default": 0.25, "min": 0.10, "max": 0.40},
+    "left_2": {"field": "heal_fraction", "default": 0.25, "min": 0.10, "max": 0.40},
+    "left_3": {"field": "raw_damage_fraction", "default": 0.25, "min": 0.10, "max": 0.40},
+    "right_1": {"field": "raw_damage_fraction", "default": 0.25, "min": 0.10, "max": 0.40},
+    "right_2": {"field": "raw_damage_fraction", "default": 0.25, "min": 0.10, "max": 0.40},
+    "right_3": {"field": "raw_damage_fraction", "default": 1.0 / 3.0, "min": 0.15, "max": 0.50},
 }
 _HEX64 = re.compile(r"^[0-9a-f]{64}$")
 _SIMPLE_ID = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
@@ -122,6 +131,19 @@ class JTSetSelection:
             _fail(f"unknown power key: {power_key}")
         return deepcopy(self._manifest["powers"][power_key])
 
+    def power_parameters(self, power_key):
+        if power_key not in POWER_KEYS:
+            _fail(f"unknown power key: {power_key}")
+        return _normalize_power_parameters(
+            power_key, self._manifest["powers"][power_key]["parameters"]
+        )
+
+    def power_effect_fraction(self, power_key):
+        spec = POWER_PARAMETER_SPECS.get(power_key)
+        if spec is None:
+            _fail(f"unknown power key: {power_key}")
+        return self.power_parameters(power_key)[spec["field"]]
+
     def power_media_path(self, power_key):
         return self.asset_path(self.power(power_key)["media"])
 
@@ -142,6 +164,28 @@ class JTSetSelection:
 
     def assets(self):
         return tuple(deepcopy(entry) for entry in self._manifest["assets"])
+
+
+def _normalize_power_parameters(power_key, parameters):
+    spec = POWER_PARAMETER_SPECS[power_key]
+    context = f"powers.{power_key}.parameters"
+    if not isinstance(parameters, dict):
+        _fail(f"{context}: object expected")
+    if not parameters:
+        return {spec["field"]: spec["default"]}
+    _expect_keys(parameters, (spec["field"],), context)
+    value = parameters[spec["field"]]
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        _fail(f"{context}.{spec['field']}: finite number expected")
+    value = float(value)
+    if not math.isfinite(value):
+        _fail(f"{context}.{spec['field']}: finite number expected")
+    if value < spec["min"] or value > spec["max"]:
+        _fail(
+            f"{context}.{spec['field']}: {value} outside "
+            f"{spec['min']}..{spec['max']}"
+        )
+    return {spec["field"]: value}
 
 
 def _validate_manifest(manifest):
@@ -193,8 +237,7 @@ def _validate_manifest(manifest):
             _nonempty_string(entry["legacy_fallback_audio"], f"powers.{key}.legacy_fallback_audio")
         if entry["mechanism"] != MECHANISMS[key]:
             _fail(f"powers.{key}: mechanism is engine-owned for v1")
-        if entry["parameters"] != {}:
-            _fail(f"powers.{key}: parameters are closed in v1")
+        _normalize_power_parameters(key, entry["parameters"])
 
     assets = manifest["assets"]
     if not isinstance(assets, list) or not assets:

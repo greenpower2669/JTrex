@@ -13,10 +13,10 @@ import shutil
 import tempfile
 
 if __package__:
-    from .jtrex_sets_runtime import POWER_KEYS, JTSetSelection, load_set_manifest, verify_selection_assets
+    from .jtrex_sets_runtime import POWER_KEYS, POWER_PARAMETER_SPECS, JTSetSelection, load_set_manifest, verify_selection_assets
     from .jtrex_sets_io import JTSetStorage, _safe_revision, _safe_set_id
 else:
-    from jtrex_sets_runtime import POWER_KEYS, JTSetSelection, load_set_manifest, verify_selection_assets
+    from jtrex_sets_runtime import POWER_KEYS, POWER_PARAMETER_SPECS, JTSetSelection, load_set_manifest, verify_selection_assets
     from jtrex_sets_io import JTSetStorage, _safe_revision, _safe_set_id
 
 
@@ -35,6 +35,17 @@ class JTDraftState:
     revision: int
     role_index: int
     source_kind: str
+
+
+@dataclass(frozen=True)
+class JTPowerParameterField:
+    power_key: str
+    label: str
+    parameter: str
+    value: float
+    default: float
+    minimum: float
+    maximum: float
 
 
 _EXTENSIONS = {
@@ -309,6 +320,42 @@ class JTSetAdminService:
                 JTAdminRole(f"powers.{power_key}.legacy_fallback_audio", prefix + " — son fallback", "audio", False),
             ))
         return tuple(result)
+
+    def _power_parameter_field(self, draft_id, power_key):
+        if power_key not in POWER_KEYS:
+            raise ValueError(f"unknown power key: {power_key}")
+        selection = load_set_manifest(_resolver(self._root(draft_id)))
+        spec = POWER_PARAMETER_SPECS[power_key]
+        return JTPowerParameterField(
+            power_key=power_key,
+            label=selection.power(power_key)["label"],
+            parameter=spec["field"],
+            value=selection.power_effect_fraction(power_key),
+            default=spec["default"],
+            minimum=spec["min"],
+            maximum=spec["max"],
+        )
+
+    def power_parameter_fields(self, draft_id):
+        self.open_draft(draft_id)
+        return tuple(self._power_parameter_field(draft_id, key) for key in POWER_KEYS)
+
+    def set_power_parameter(self, draft_id, power_key, value):
+        if power_key not in POWER_KEYS:
+            raise ValueError(f"unknown power key: {power_key}")
+        manifest = self._load_manifest(draft_id)
+        spec = POWER_PARAMETER_SPECS[power_key]
+        manifest["powers"][power_key]["parameters"] = {spec["field"]: value}
+        self._write_manifest(draft_id, manifest)
+        return self._power_parameter_field(draft_id, power_key)
+
+    def reset_power_parameter(self, draft_id, power_key):
+        if power_key not in POWER_KEYS:
+            raise ValueError(f"unknown power key: {power_key}")
+        manifest = self._load_manifest(draft_id)
+        manifest["powers"][power_key]["parameters"] = {}
+        self._write_manifest(draft_id, manifest)
+        return self._power_parameter_field(draft_id, power_key)
 
     def current_role(self, draft_id):
         state = self.open_draft(draft_id)

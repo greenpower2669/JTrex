@@ -244,6 +244,8 @@ class JTMediaController:
         self._workshop_preview_surface = None
         self._workshop_preview_label = None
         self._workshop_preview_event = None
+        self._workshop_parameter_popup = None
+        self._workshop_parameter_labels = {}
         self._workshop_buttons = {}
         self._workshop_status = ""
         self.selection = self.sets.runtime_set
@@ -366,13 +368,22 @@ class JTMediaController:
             }
         return table
 
+    def _session_power_parameter_table(self):
+        selection = self.sets.session_set
+        return {
+            slot: selection.power_effect_fraction(power_key)
+            for slot, power_key in enumerate(POWER_KEYS, 1)
+        }
+
     def _apply_session_power_identity(self):
         if self._engine is None or not self.sets.session_active:
             return
-        callback = self._engine.get('jt_apply_power_paths')
-        if callback is None:
-            return
-        callback(self._session_power_path_table())
+        path_callback = self._engine.get('jt_apply_power_paths')
+        if path_callback is not None:
+            path_callback(self._session_power_path_table())
+        parameter_callback = self._engine.get('jt_apply_power_parameters')
+        if parameter_callback is not None:
+            parameter_callback(self._session_power_parameter_table())
         print(
             "[JT-SET] power identity session={}".format(self.sets.session_set.set_id),
             flush=True,
@@ -645,6 +656,32 @@ class JTMediaController:
             raise SetContractError("no workshop draft selected")
         return self._set_admin.export_revision(self._workshop_draft_id, destination_zip)
 
+    def workshop_power_parameter_fields(self):
+        self._require_workshop_idle()
+        if self._workshop_draft_id is None:
+            raise SetContractError("no workshop draft selected")
+        return self._set_admin.power_parameter_fields(self._workshop_draft_id)
+
+    def workshop_set_power_parameter(self, power_key, value):
+        self._require_workshop_idle()
+        if self._workshop_draft_id is None:
+            raise SetContractError("no workshop draft selected")
+        field = self._set_admin.set_power_parameter(
+            self._workshop_draft_id, power_key, value
+        )
+        self._refresh_workshop_power_parameter_rows()
+        return field
+
+    def workshop_reset_power_parameter(self, power_key):
+        self._require_workshop_idle()
+        if self._workshop_draft_id is None:
+            raise SetContractError("no workshop draft selected")
+        field = self._set_admin.reset_power_parameter(
+            self._workshop_draft_id, power_key
+        )
+        self._refresh_workshop_power_parameter_rows()
+        return field
+
     def present_round(self, number, token):
         self.cancel_round_presentation()
         self._round_overlay = RoundOverlay(self, number, token, size_hint=(1, 1))
@@ -822,7 +859,7 @@ class JTMediaController:
             return self._workshop_popup
         content = BoxLayout(orientation="vertical", spacing=dp(10), padding=dp(12))
         title = Label(
-            text="ATELIER SETS — DATA / MEDIA UNIQUEMENT\nAucun coût, dégât, chrono, KO ou règle de combat n'est éditable.",
+            text="ATELIER SETS — DATA / MEDIA + COEFFICIENTS BORNÉS\nCoûts, chrono, KO, jalons et règles moteur restent verrouillés.",
             size_hint=(1, None), height=dp(86), font_size=dp(19),
         )
         content.add_widget(title)
@@ -991,6 +1028,7 @@ class JTMediaController:
             ("VALIDER REMPLACEMENT / SUIVANT", self._workshop_accept_action),
             ("ETAPE PRECEDENTE", self._workshop_previous_action),
             ("IDENTITE / NOMS", self._workshop_identity_dialog),
+            ("PARAMÈTRES POUVOIRS", self._workshop_power_parameters_dialog),
             ("TESTER CE SET", self._workshop_test_action),
             ("INSTALLER + PROMOUVOIR", self._workshop_promote_action),
             ("EXPORTER ZIP", self._workshop_export_action),
@@ -1143,6 +1181,94 @@ class JTMediaController:
                         except OSError: pass
             self._set_ingress.copy(uri, draft_name, copied)
         self._set_picker.choose(mime, picked)
+
+    def _workshop_adjust_power_parameter(self, power_key, delta):
+        fields = {field.power_key: field for field in self.workshop_power_parameter_fields()}
+        field = fields[power_key]
+        target = round(field.value + float(delta), 10)
+        target = min(max(target, field.minimum), field.maximum)
+        return self.workshop_set_power_parameter(power_key, target)
+
+    @staticmethod
+    def _power_parameter_text(field):
+        return "{} — {:.0f} % ({}–{} %)".format(
+            field.label, field.value * 100.0,
+            int(round(field.minimum * 100.0)), int(round(field.maximum * 100.0)),
+        )
+
+    def _refresh_workshop_power_parameter_rows(self):
+        if not self._workshop_parameter_labels or self._workshop_draft_id is None:
+            return
+        try:
+            fields = self.workshop_power_parameter_fields()
+        except Exception:
+            return
+        for field in fields:
+            label = self._workshop_parameter_labels.get(field.power_key)
+            if label is not None:
+                label.text = self._power_parameter_text(field)
+
+    def _close_workshop_power_parameters(self, *args):
+        popup = self._workshop_parameter_popup
+        self._workshop_parameter_popup = None
+        self._workshop_parameter_labels = {}
+        if popup is not None:
+            try:
+                popup.dismiss()
+            except Exception:
+                pass
+
+    def _workshop_power_parameters_dialog(self):
+        self._require_workshop_idle()
+        if self._workshop_draft_id is None:
+            raise SetContractError("no workshop draft selected")
+        if self._workshop_parameter_popup is not None:
+            return self._workshop_parameter_popup
+
+        fields = self.workshop_power_parameter_fields()
+        body = BoxLayout(
+            orientation="vertical", spacing=dp(8), padding=dp(8), size_hint_y=None,
+            height=dp(len(fields) * 124),
+        )
+        self._workshop_parameter_labels = {}
+        for field in fields:
+            label = Label(
+                text=self._power_parameter_text(field), size_hint=(1, None),
+                height=dp(52), font_size=dp(18), halign="left", valign="middle",
+            )
+            self._workshop_parameter_labels[field.power_key] = label
+            body.add_widget(label)
+            controls = BoxLayout(orientation="horizontal", spacing=dp(8), size_hint=(1, None), height=dp(62))
+            minus = Button(text="−1 %", size_hint=(1, None), height=dp(60), font_size=dp(19))
+            plus = Button(text="+1 %", size_hint=(1, None), height=dp(60), font_size=dp(19))
+            reset = Button(text="DÉFAUT", size_hint=(1, None), height=dp(60), font_size=dp(19))
+            minus.bind(on_release=lambda instance, key=field.power_key: self._workshop_adjust_power_parameter(key, -0.01))
+            plus.bind(on_release=lambda instance, key=field.power_key: self._workshop_adjust_power_parameter(key, +0.01))
+            reset.bind(on_release=lambda instance, key=field.power_key: self.workshop_reset_power_parameter(key))
+            controls.add_widget(minus)
+            controls.add_widget(plus)
+            controls.add_widget(reset)
+            body.add_widget(controls)
+
+        scroll = ScrollView(size_hint=(1, 1))
+        scroll.add_widget(body)
+        close = Button(text="RETOUR ASSISTANT", size_hint=(1, None), height=dp(62), font_size=dp(20))
+        content = BoxLayout(orientation="vertical", spacing=dp(8), padding=dp(8))
+        content.add_widget(Label(
+            text="Six coefficients seulement — ajustement par pas de 1 %.",
+            size_hint=(1, None), height=dp(48), font_size=dp(18),
+        ))
+        content.add_widget(scroll)
+        content.add_widget(close)
+        popup = Popup(
+            title="PARAMÈTRES POUVOIRS", content=content,
+            size_hint=(0.94, 0.94), auto_dismiss=True,
+        )
+        self._workshop_parameter_popup = popup
+        close.bind(on_release=lambda *args: popup.dismiss())
+        popup.bind(on_dismiss=lambda *args: self._close_workshop_power_parameters())
+        popup.open()
+        return popup
 
     def _workshop_identity_dialog(self):
         try:
