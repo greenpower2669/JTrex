@@ -50,3 +50,16 @@ JT-SETS-001 techniquement complet côté code/CI.
 - [x] Test de bord droit hors viewport ajouté.
 - [ ] CI Android fraîche.
 - [ ] Validation téléphone Fab.
+
+
+## JT-SETS-UI-003 — dino droit sans saut
+- [x] Retour téléphone #93 : tout validé sauf dino droit.
+- [x] Timer post-rendu supprimé du runtime.
+- [x] Borne déplacée dans l'affectation historique `self.jb.pos` avant rendu.
+- [x] Condition limitée au MENU (`indexa==0`).
+- [x] `xb/yb`, taille, asset et dinosaure gauche préservés.
+- [x] Garde CI : absence de l'ancien timer + présence de la borne générée.
+- [x] Préparation Android #100 verte.
+- [x] Tests du moteur généré #100 verts.
+- [ ] Build APK #100 terminé.
+- [ ] Validation téléphone Fab : absence totale de saut.
