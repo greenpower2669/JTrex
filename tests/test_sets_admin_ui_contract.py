@@ -121,20 +121,21 @@ class WorkshopUIContractTests(unittest.TestCase):
         verified = self.media.workshop_validate()
         self.assertEqual(verified.set_id, 'ui_dinos')
 
-    def test_right_selection_dinosaur_crop_edge_is_kept_outside_screen(self):
-        self.media.on_phase_changed('MENU')
-        self.root.jh = SimpleNamespace(pos=(20.0, 10.0), size=(200.0, 120.0))
-        self.root.jb = SimpleNamespace(
-            pos=(self.root.width - 200.0, 20.0), size=(200.0, 120.0)
+    def test_right_selection_dinosaur_is_bounded_in_generated_screen_up(self):
+        generated = ROOT / 'app' / 'main.py'
+        if not generated.is_file():
+            self.skipTest('generated Android main.py is produced by the CI preparation step')
+        source = generated.read_text(encoding='utf-8')
+        self.assertIn('_jt_jb_render_pos=', source)
+        self.assertIn('if indexa==0:', source)
+        self.assertIn('_jt_jb_min_x=self.x+self.width+_jt_jb_safety-self.jb.size[0]', source)
+        self.assertIn(
+            'self.jb.pos=(max(_jt_jb_render_pos[0],_jt_jb_min_x),_jt_jb_render_pos[1])',
+            source,
         )
-        old_pos = self.root.jb.pos
-        old_size = self.root.jb.size
-        self.media._guard_menu_right_dinosaur_crop()
-        self.assertGreater(self.root.jb.pos[0], old_pos[0])
-        self.assertEqual(self.root.jb.size, old_size)
-        self.assertGreater(
-            self.root.jb.pos[0] + self.root.jb.size[0], self.root.width
-        )
+        runtime_source = (ROOT / 'tools' / 'jtrex_media_runtime.py').read_text(encoding='utf-8')
+        self.assertNotIn('_guard_menu_right_dinosaur_crop', runtime_source)
+        self.assertNotIn('_menu_right_dino_event', runtime_source)
 
     def test_identity_dialog_exposes_all_six_power_labels(self):
         source = (ROOT / 'tools/jtrex_media_runtime.py').read_text(encoding='utf-8')
