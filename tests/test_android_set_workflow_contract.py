@@ -28,3 +28,9 @@ class AndroidSetWorkflowContract(unittest.TestCase):
         self.assertIn('def jt_apply_power_paths(paths):', main_guard)
         self.assertIn('source=JT_POWER_PATHS', main_guard)
         self.assertIn('main.count("source=JT_POWER_PATHS") != 12', source)
+
+    def test_android_ci_validates_lot06_parameter_contract(self):
+        source = (ROOT / '.github/workflows/android.yml').read_text()
+        self.assertIn('POWER_PARAMETER_SPECS', source)
+        self.assertIn('power_effect_fraction', source)
+        self.assertNotIn('parameters are closed in v1', source)
