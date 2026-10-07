@@ -26,3 +26,7 @@ Dernière consolidation : 2026-10-07
 
 ## Règle
 CI verte != validation téléphone. Aucun merge `main`, Release ou AAB sans ordre Fab.
+
+
+## 2026-10-07 — dette UI Lot 06 observée téléphone
+Le candidat CI était fonctionnel mais le bouton DINOSAURES 520dp et plusieurs BoxLayout non scrollables rendaient la création/édition peu accessible. Correctif JT-SETS-UI-001 limité à l'UI ; ajouter une garde de régression sur compacité et ScrollView.

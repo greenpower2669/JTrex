@@ -38,3 +38,11 @@ Preuves Lot 06 :
 ## État
 JT-SETS-001 est techniquement complet côté code/CI. Validation téléphone du candidat Lot 06 reste distincte et non enregistrée.
 Dernière Release : `v1.0.15-main`.
+
+
+## JT-SETS-UI-001 — correction téléphone (2026-10-07)
+- Autorisé par Fab après validation visuelle du candidat Lot 06.
+- Portée UI uniquement : sélecteur compact, atelier/création/catalogue/brouillons/assistant scrollables, raccourci admin ✎.
+- Set officiel via ✎ = création d'un brouillon depuis le set ; set utilisateur = modification directe.
+- Aucun changement gameplay, coûts, coefficients, phases, KO, score, jalons ou EOS.
+- Branche : `feature/dinosaur-sets-v1`.

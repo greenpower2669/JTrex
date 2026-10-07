@@ -37,17 +37,31 @@ class WorkshopUIContractTests(unittest.TestCase):
         self.assertEqual(self.media._admin_workshop_button.text, 'ATELIER SETS')
         self.assertGreaterEqual(self.media._admin_workshop_button.height, 58)
 
+    def test_mobile_set_selector_is_compact_scrollable_and_admin_edit_is_discreet(self):
+        self.assertTrue(self.media._set_button.text.startswith('SET ▼'))
+        self.assertLessEqual(self.media._set_button.height, 44)
+        self.assertTrue(self.media._set_edit_button.disabled)
+        self.media._open_set_selector()
+        self.assertIsNotNone(self.media._set_selector_scroll)
+        self.assertGreaterEqual(len(self.media._set_option_buttons), 1)
+        self.media._set_selector_closed()
+        self.media._admin_enabled = True
+        self.media._set_selector_visible(True)
+        self.assertFalse(self.media._set_edit_button.disabled)
+        self.assertLessEqual(self.media._set_edit_button.width, 44)
+
     def test_workshop_is_menu_only_and_uses_large_readable_actions(self):
         with self.assertRaisesRegex(Exception, 'admin'):
             self.media._open_workshop()
         self.media._admin_enabled = True
         self.media._open_workshop()
+        self.assertIsNotNone(self.media._workshop_menu_scroll)
         expected = {
             'CREER DEPUIS LE SET ACTUEL', 'REPRENDRE UN BROUILLON',
             'MODIFIER LE SET UTILISATEUR', 'IMPORTER UN ZIP', 'FERMER',
         }
         self.assertTrue(expected.issubset({button.text for button in self.media._workshop_buttons.values()}))
-        self.assertTrue(all(button.height >= 58 for button in self.media._workshop_buttons.values()))
+        self.assertTrue(all(button.height >= 56 for button in self.media._workshop_buttons.values()))
         self.media.on_phase_changed('ROUND_INTRO')
         with self.assertRaisesRegex(Exception, 'menu'):
             self.media._open_workshop()
@@ -62,6 +76,14 @@ class WorkshopUIContractTests(unittest.TestCase):
         self.media._admin_enabled = True
         state = self.media.workshop_resume_draft('ui-draft')
         self.assertEqual(state.role_index, 0)
+        self.media._workshop_open_editor('ui-draft')
+        self.assertIsNotNone(self.media._workshop_editor_scroll)
+        self.assertIsNotNone(self.media._workshop_progress_label)
+        self.assertIn('ÉTAPE 1/', self.media._workshop_progress_label.text)
+        self.media._workshop_editor_popup = None
+        self.media._workshop_editor_label = None
+        self.media._workshop_editor_scroll = None
+        self.media._workshop_progress_label = None
         for _ in range(3):
             self.media.workshop_keep_and_next()
         info = self.media.workshop_current_role_info()

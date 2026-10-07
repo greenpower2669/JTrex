@@ -240,6 +240,11 @@ class JTMediaController:
         self._workshop_popup = None
         self._workshop_editor_popup = None
         self._workshop_editor_label = None
+        self._workshop_editor_scroll = None
+        self._workshop_progress_label = None
+        self._workshop_resume_scroll = None
+        self._workshop_menu_scroll = None
+        self._workshop_create_scroll = None
         self._workshop_preview_popup = None
         self._workshop_preview_surface = None
         self._workshop_preview_label = None
@@ -252,6 +257,7 @@ class JTMediaController:
         self._phase_name = "INTRO"
         self._set_popup = None
         self._set_option_buttons = []
+        self._set_selector_scroll = None
         self._draft_test_return_callback = None
         self._intro_player = None
         self._intro_overlay = None
@@ -328,13 +334,23 @@ class JTMediaController:
         self._set_button = Button(
             text="",
             size_hint=(None, None),
-            size=(dp(520), dp(68)),
-            font_size=dp(21),
+            size=(dp(280), dp(44)),
+            font_size=dp(16),
             opacity=0,
             disabled=True,
         )
         self._set_button.bind(on_release=lambda *args: self._open_set_selector())
         self.root.add_widget(self._set_button)
+        self._set_edit_button = Button(
+            text="✎",
+            size_hint=(None, None),
+            size=(dp(44), dp(44)),
+            font_size=dp(21),
+            opacity=0,
+            disabled=True,
+        )
+        self._set_edit_button.bind(on_release=lambda *args: self._quick_edit_selected_set())
+        self.root.add_widget(self._set_edit_button)
         self.root.bind(size=self._layout_set_button, pos=self._layout_set_button)
         self._layout_set_button()
         self._refresh_set_button()
@@ -390,17 +406,28 @@ class JTMediaController:
         )
 
     def _layout_set_button(self, *args):
-        width = min(dp(520), max(dp(280), float(getattr(self.root, "width", dp(520))) * 0.62))
-        self._set_button.size = (width, dp(68))
-        self._set_button.pos = (dp(18), max(dp(18), float(getattr(self.root, "height", dp(100))) - dp(86)))
+        root_width = float(getattr(self.root, "width", dp(520)))
+        root_height = float(getattr(self.root, "height", dp(100)))
+        width = min(dp(300), max(dp(180), root_width * 0.34))
+        height = dp(44)
+        x = dp(12)
+        y = max(dp(12), root_height - dp(56))
+        self._set_button.size = (width, height)
+        self._set_button.pos = (x, y)
+        self._set_edit_button.size = (dp(44), height)
+        self._set_edit_button.pos = (x + width + dp(6), y)
 
     def _refresh_set_button(self):
         selected = self.sets.selected_set
-        self._set_button.text = "DINOSAURES : {}".format(selected.display_name)
+        self._set_button.text = "SET ▼  {}".format(selected.display_name)
 
     def _set_selector_visible(self, visible):
+        visible = bool(visible)
         self._set_button.opacity = 1 if visible else 0
         self._set_button.disabled = not visible
+        edit_visible = visible and self._admin_enabled
+        self._set_edit_button.opacity = 1 if edit_visible else 0
+        self._set_edit_button.disabled = not edit_visible
         if not visible and self._set_popup is not None:
             try:
                 self._set_popup.dismiss()
@@ -408,6 +435,7 @@ class JTMediaController:
                 pass
             self._set_popup = None
             self._set_option_buttons = []
+            self._set_selector_scroll = None
 
     def _invalidate_set_media(self):
         self._stop_scene("set-change", preserve_failure=False)
@@ -477,20 +505,35 @@ class JTMediaController:
         print("[JT-SET] menu selection={}".format(selection.set_id), flush=True)
         return selection
 
+    def _set_selector_closed(self, *args):
+        self._set_popup = None
+        self._set_option_buttons = []
+        self._set_selector_scroll = None
+
     def _choose_set_from_popup(self, set_id, popup):
         self.select_official_set(set_id)
         try:
             popup.dismiss()
         except Exception:
             pass
-        self._set_popup = None
-        self._set_option_buttons = []
+        self._set_selector_closed()
+
+    def _quick_edit_selected_set(self):
+        self._require_workshop_idle()
+        if self.sets.selected_set.set_id in self._official_set_ids:
+            self._workshop_create_dialog()
+            return
+        self._workshop_modify_current_action()
 
     def _open_set_selector(self):
         if self._phase_name != "MENU" or self.sets.session_active or self._set_popup is not None:
             return
-        content = BoxLayout(orientation="vertical", spacing=dp(8), padding=dp(10))
         entries = self.sets.catalog()
+        body = BoxLayout(
+            orientation="vertical", spacing=dp(8), padding=dp(8),
+            size_hint_y=None,
+            height=max(dp(92), dp(84) * len(entries) + dp(16)),
+        )
         self._set_option_buttons = []
         for selection in entries:
             dinosaurs = selection.dinosaurs()
@@ -506,8 +549,12 @@ class JTMediaController:
                 font_size=dp(20),
             )
             self._set_option_buttons.append(button)
-            content.add_widget(button)
-        close_button = Button(text="FERMER", size_hint=(1, None), height=dp(58), font_size=dp(20))
+            body.add_widget(button)
+        scroll = ScrollView(size_hint=(1, 1))
+        scroll.add_widget(body)
+        close_button = Button(text="FERMER", size_hint=(1, None), height=dp(52), font_size=dp(18))
+        content = BoxLayout(orientation="vertical", spacing=dp(8), padding=dp(8))
+        content.add_widget(scroll)
         content.add_widget(close_button)
         popup = Popup(
             title="CHOISIR LES DINOSAURES",
@@ -520,6 +567,8 @@ class JTMediaController:
                 on_release=lambda instance, sid=selection.set_id: self._choose_set_from_popup(sid, popup)
             )
         close_button.bind(on_release=lambda *args: popup.dismiss())
+        popup.bind(on_dismiss=self._set_selector_closed)
+        self._set_selector_scroll = scroll
         self._set_popup = popup
         popup.open()
 
@@ -761,6 +810,7 @@ class JTMediaController:
             self._admin_tap_count = 0
             self._admin_tap_deadline = 0.0
             self._admin_enabled = True
+            self._set_selector_visible(self._phase_name == "MENU" and not self.sets.session_active)
             print("[JT-ADMIN] 20-tap mode enabled", flush=True)
             Clock.schedule_once(lambda dt: self._open_admin(), 0)
         return False
@@ -843,10 +893,14 @@ class JTMediaController:
         self._workshop_status = str(message or "")
         self._refresh_workshop_editor()
 
+    def _workshop_closed(self, *args):
+        self._workshop_popup = None
+        self._workshop_menu_scroll = None
+        self._workshop_buttons = {}
+
     def _close_workshop(self, *args):
         popup = self._workshop_popup
-        self._workshop_popup = None
-        self._workshop_buttons = {}
+        self._workshop_closed()
         if popup is not None:
             try:
                 popup.dismiss()
@@ -857,10 +911,10 @@ class JTMediaController:
         self._require_workshop_idle()
         if self._workshop_popup is not None:
             return self._workshop_popup
-        content = BoxLayout(orientation="vertical", spacing=dp(10), padding=dp(12))
+        content = BoxLayout(orientation="vertical", spacing=dp(8), padding=dp(8))
         title = Label(
             text="ATELIER SETS — DATA / MEDIA + COEFFICIENTS BORNÉS\nCoûts, chrono, KO, jalons et règles moteur restent verrouillés.",
-            size_hint=(1, None), height=dp(86), font_size=dp(19),
+            size_hint=(1, None), height=dp(72), font_size=dp(17),
         )
         content.add_widget(title)
         specs = (
@@ -868,21 +922,33 @@ class JTMediaController:
             ("resume", "REPRENDRE UN BROUILLON", self._workshop_resume_dialog),
             ("modify", "MODIFIER LE SET UTILISATEUR", self._workshop_modify_current_action),
             ("import", "IMPORTER UN ZIP", self._workshop_import_action),
-            ("close", "FERMER", self._close_workshop),
+        )
+        body = BoxLayout(
+            orientation="vertical", spacing=dp(8), padding=dp(8),
+            size_hint_y=None, height=dp(64) * len(specs) + dp(16),
         )
         self._workshop_buttons = {}
         for key, label, callback in specs:
             button = Button(
-                text=label, size_hint=(1, None), height=dp(64), font_size=dp(20)
+                text=label, size_hint=(1, None), height=dp(56), font_size=dp(18)
             )
             button.bind(on_release=lambda instance, cb=callback: cb())
-            content.add_widget(button)
+            body.add_widget(button)
             self._workshop_buttons[key] = button
+        scroll = ScrollView(size_hint=(1, 1))
+        scroll.add_widget(body)
+        content.add_widget(scroll)
+        close = Button(text="FERMER", size_hint=(1, None), height=dp(56), font_size=dp(18))
+        close.bind(on_release=lambda *args: self._close_workshop())
+        content.add_widget(close)
+        self._workshop_buttons["close"] = close
         popup = Popup(
             title="ATELIER DINOSAURES", content=content,
             size_hint=(0.92, 0.92), auto_dismiss=True,
         )
+        self._workshop_menu_scroll = scroll
         self._workshop_popup = popup
+        popup.bind(on_dismiss=self._workshop_closed)
         popup.open()
         return popup
 
@@ -896,16 +962,25 @@ class JTMediaController:
             text="Nouveau set", multiline=False,
             size_hint=(1, None), height=dp(58), font_size=dp(20),
         )
-        save = Button(text="CREER", size_hint=(1, None), height=dp(62), font_size=dp(20))
-        cancel = Button(text="ANNULER", size_hint=(1, None), height=dp(58), font_size=dp(20))
-        content = BoxLayout(orientation="vertical", spacing=dp(8), padding=dp(10))
-        content.add_widget(Label(text="Identifiant technique (minuscules, chiffres, . _ -)", size_hint=(1, None), height=dp(44)))
-        content.add_widget(set_id)
-        content.add_widget(Label(text="Nom affiché", size_hint=(1, None), height=dp(44)))
-        content.add_widget(display)
+        save = Button(text="CREER", size_hint=(1, None), height=dp(56), font_size=dp(18))
+        cancel = Button(text="ANNULER", size_hint=(1, None), height=dp(52), font_size=dp(18))
+        body = BoxLayout(
+            orientation="vertical", spacing=dp(8), padding=dp(8),
+            size_hint_y=None, height=dp(238),
+        )
+        body.add_widget(Label(text="Identifiant technique (minuscules, chiffres, . _ -)", size_hint=(1, None), height=dp(44)))
+        body.add_widget(set_id)
+        body.add_widget(Label(text="Nom affiché", size_hint=(1, None), height=dp(44)))
+        body.add_widget(display)
+        scroll = ScrollView(size_hint=(1, 1))
+        scroll.add_widget(body)
+        content = BoxLayout(orientation="vertical", spacing=dp(8), padding=dp(8))
+        content.add_widget(scroll)
         content.add_widget(save)
         content.add_widget(cancel)
         popup = Popup(title="NOUVEAU SET", content=content, size_hint=(0.86, 0.82), auto_dismiss=True)
+        self._workshop_create_scroll = scroll
+        popup.bind(on_dismiss=lambda *args: setattr(self, "_workshop_create_scroll", None))
         def create(*args):
             try:
                 state = self.workshop_create_from_current(set_id.text.strip(), display.text.strip())
@@ -921,10 +996,17 @@ class JTMediaController:
     def _workshop_resume_dialog(self):
         self._require_workshop_idle()
         drafts = self._set_admin.list_drafts()
-        content = BoxLayout(orientation="vertical", spacing=dp(8), padding=dp(10))
-        popup = Popup(title="REPRENDRE UN BROUILLON", content=content, size_hint=(0.9, 0.9), auto_dismiss=True)
+        row_count = max(1, len(drafts))
+        body = BoxLayout(
+            orientation="vertical", spacing=dp(8), padding=dp(8),
+            size_hint_y=None, height=dp(72) * row_count + dp(16),
+        )
         if not drafts:
-            content.add_widget(Label(text="Aucun brouillon disponible"))
+            body.add_widget(Label(text="Aucun brouillon disponible", size_hint=(1, None), height=dp(56)))
+        scroll = ScrollView(size_hint=(1, 1))
+        scroll.add_widget(body)
+        content = BoxLayout(orientation="vertical", spacing=dp(8), padding=dp(8))
+        popup = Popup(title="REPRENDRE UN BROUILLON", content=content, size_hint=(0.9, 0.9), auto_dismiss=True)
         for state in drafts:
             button = Button(
                 text="{} — {} r{} — étape {}".format(
@@ -937,10 +1019,13 @@ class JTMediaController:
                 self._close_workshop()
                 self._workshop_open_editor(draft_id)
             button.bind(on_release=resume)
-            content.add_widget(button)
-        close = Button(text="FERMER", size_hint=(1, None), height=dp(58), font_size=dp(20))
+            body.add_widget(button)
+        close = Button(text="FERMER", size_hint=(1, None), height=dp(52), font_size=dp(18))
         close.bind(on_release=lambda *args: popup.dismiss())
+        content.add_widget(scroll)
         content.add_widget(close)
+        self._workshop_resume_scroll = scroll
+        popup.bind(on_dismiss=lambda *args: setattr(self, "_workshop_resume_scroll", None))
         popup.open()
 
     def _workshop_modify_current_action(self):
@@ -994,14 +1079,18 @@ class JTMediaController:
             current_name = Path(info["current_path"]).name if info["current_path"] else "(aucun)"
             candidate_name = Path(info["candidate_path"]).name if info["candidate_path"] else "(aucun)"
             self._workshop_editor_label.text = (
-                "BROUILLON : {}\nETAPE {}/{} — {}\nTYPE : {}{}\nACTUEL : {}\nREMPLACEMENT : {}\n{}".format(
-                    self._workshop_draft_id, current, total, role.label,
+                "BROUILLON : {}\n{}\nTYPE : {}{}\nACTUEL : {}\nREMPLACEMENT : {}\n{}".format(
+                    self._workshop_draft_id, role.label,
                     role.asset_type.upper(), " — OBLIGATOIRE" if role.required else " — OPTIONNEL",
                     current_name, candidate_name, self._workshop_status,
                 )
             )
+            if self._workshop_progress_label is not None:
+                self._workshop_progress_label.text = "ÉTAPE {}/{}".format(current, total)
         except Exception as exc:
             self._workshop_editor_label.text = "Atelier indisponible : {}".format(exc)
+            if self._workshop_progress_label is not None:
+                self._workshop_progress_label.text = "ÉTAPE ?/?"
 
     def _workshop_open_editor(self, draft_id=None):
         self._require_workshop_idle()
@@ -1015,33 +1104,54 @@ class JTMediaController:
             except Exception:
                 pass
         label = Label(
-            text="", size_hint=(1, None), height=dp(150), font_size=dp(18),
+            text="", size_hint=(1, None), height=dp(132), font_size=dp(17),
             halign="left", valign="middle",
         )
-        content = BoxLayout(orientation="vertical", spacing=dp(7), padding=dp(8))
-        content.add_widget(label)
+        previous = Button(text="◀ PRÉC.", size_hint=(0.26, 1), font_size=dp(17))
+        progress = Label(text="", size_hint=(0.48, 1), font_size=dp(17))
+        following = Button(text="SUIVANT ▶", size_hint=(0.26, 1), font_size=dp(17))
+        navigation = BoxLayout(
+            orientation="horizontal", spacing=dp(6), size_hint=(1, None), height=dp(50)
+        )
+        navigation.add_widget(previous)
+        navigation.add_widget(progress)
+        navigation.add_widget(following)
+        previous.bind(on_release=lambda *args: self._workshop_previous_action())
+        following.bind(on_release=lambda *args: self._workshop_keep_action())
+
         actions = (
+            ("CHOISIR VIDÉO / MÉDIA", self._workshop_choose_replacement),
             ("APERÇU ACTUEL", self._workshop_preview_current_action),
-            ("CHOISIR REMPLACEMENT", self._workshop_choose_replacement),
             ("APERÇU REMPLACEMENT", self._workshop_preview_candidate_action),
-            ("CONSERVER / SUIVANT", self._workshop_keep_action),
-            ("VALIDER REMPLACEMENT / SUIVANT", self._workshop_accept_action),
-            ("ETAPE PRECEDENTE", self._workshop_previous_action),
-            ("IDENTITE / NOMS", self._workshop_identity_dialog),
+            ("VALIDER REMPLACEMENT", self._workshop_accept_action),
+            ("IDENTITÉ / NOMS", self._workshop_identity_dialog),
             ("PARAMÈTRES POUVOIRS", self._workshop_power_parameters_dialog),
             ("TESTER CE SET", self._workshop_test_action),
             ("INSTALLER + PROMOUVOIR", self._workshop_promote_action),
             ("EXPORTER ZIP", self._workshop_export_action),
         )
+        body = BoxLayout(
+            orientation="vertical", spacing=dp(7), padding=dp(4),
+            size_hint_y=None, height=dp(60) * len(actions) + dp(16),
+        )
         for text, callback in actions:
-            button = Button(text=text, size_hint=(1, None), height=dp(58), font_size=dp(18))
+            button = Button(text=text, size_hint=(1, None), height=dp(52), font_size=dp(17))
             button.bind(on_release=lambda instance, cb=callback: cb())
-            content.add_widget(button)
-        close = Button(text="RETOUR ATELIER", size_hint=(1, None), height=dp(60), font_size=dp(19))
+            body.add_widget(button)
+        scroll = ScrollView(size_hint=(1, 1))
+        scroll.add_widget(body)
+
+        content = BoxLayout(orientation="vertical", spacing=dp(6), padding=dp(7))
+        content.add_widget(label)
+        content.add_widget(navigation)
+        content.add_widget(scroll)
+        close = Button(text="RETOUR ATELIER", size_hint=(1, None), height=dp(52), font_size=dp(18))
         content.add_widget(close)
         popup = Popup(title="ASSISTANT SET", content=content, size_hint=(0.96, 0.96), auto_dismiss=True)
         self._workshop_editor_popup = popup
         self._workshop_editor_label = label
+        self._workshop_editor_scroll = scroll
+        self._workshop_progress_label = progress
         close.bind(on_release=lambda *args: popup.dismiss())
         popup.bind(on_dismiss=lambda *args: self._workshop_editor_closed())
         self._refresh_workshop_editor()
@@ -1051,6 +1161,8 @@ class JTMediaController:
     def _workshop_editor_closed(self):
         self._workshop_editor_popup = None
         self._workshop_editor_label = None
+        self._workshop_editor_scroll = None
+        self._workshop_progress_label = None
         self._close_workshop_preview_popup()
         self._set_preview.close("editor-close")
 

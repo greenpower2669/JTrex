@@ -25,3 +25,15 @@ JT-SETS-001 techniquement complet côté code/CI.
 - Pas de Release automatique.
 - Pas d'AAB sans ordre explicite.
 - Pas de gameplay dupliqué par set.
+
+
+## JT-SETS-UI-001 — correction téléphone
+- [x] Audit capture + code : bandeau 520dp, catalogue/brouillons/assistant sans scroll.
+- [x] Autorisation Fab.
+- [x] Sélecteur compact `SET ▼` + ✎ admin.
+- [x] Menu atelier + création scrollables.
+- [x] Catalogue des sets scrollable.
+- [x] Liste des brouillons scrollable.
+- [x] Assistant set scrollable + navigation compacte.
+- [x] Tests de contrat UI ajoutés.
+- [ ] CI Android fraîche + APK à valider sur téléphone.

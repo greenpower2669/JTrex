@@ -28,3 +28,7 @@ JT-SETS-001 sur `feature/dinosaur-sets-v1` : plusieurs sets DATA + MEDIA autour 
 
 ## Suite
 Validation téléphone du candidat Lot 06 si Fab le souhaite. Aucun merge `main` ni Release sans ordre.
+
+
+## JT-SETS-UI-001
+Correction téléphone autorisée : remplacer le bandeau de set surdimensionné par `SET ▼` compact, ajouter ✎ admin, rendre atelier/création/catalogue/brouillons/assistant scrollables. Gameplay inchangé.

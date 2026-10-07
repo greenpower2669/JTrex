@@ -28,3 +28,7 @@ Dernière consolidation : 2026-10-07
 
 ## Suite
 Validation téléphone réelle du candidat. Pas de merge/main Release/AAB automatique.
+
+
+## UI téléphone — JT-SETS-UI-001
+`jtrex_media_runtime.py` : contrôles SET compacts, ScrollView atelier/création/catalogue/brouillons/assistant, navigation précédent/étape/suivant, ✎ admin vers copie officielle ou édition utilisateur.
