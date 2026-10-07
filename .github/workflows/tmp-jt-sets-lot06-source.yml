@@ -1,0 +1,23 @@
+name: JT-SETS Lot06 source snapshot
+on:
+  push:
+    branches:
+      - tmp-jt-sets-lot06-source
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp-jt-sets-lot06-source
+      - name: Record exact source head
+        run: |
+          test "$(git rev-parse HEAD)" = "\${GITHUB_SHA}"
+          printf '%s\n' "\${GITHUB_SHA}" > JT_LOT06_SOURCE_HEAD.txt
+          rm -rf .git
+      - uses: actions/upload-artifact@v4
+        with:
+          name: JT-SETS-Lot06-Source
+          path: .
+          include-hidden-files: true
+          retention-days: 7
