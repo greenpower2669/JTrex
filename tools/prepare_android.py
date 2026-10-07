@@ -619,7 +619,7 @@ def _jt_log_new_stops(self, observer):
     start, end = method_bounds(lines, "screen_up")
     jb_pos_matches = [
         index for index in range(start, end)
-        if lines[index].strip().startswith("self.jb.pos=")
+        if lines[index].strip().replace(" ", "").startswith("self.jb.pos=")
     ]
     require(
         len(jb_pos_matches) == 1,
