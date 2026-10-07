@@ -32,3 +32,7 @@ Validation téléphone réelle du candidat. Pas de merge/main Release/AAB automa
 
 ## UI téléphone — JT-SETS-UI-001
 `jtrex_media_runtime.py` : contrôles SET compacts, ScrollView atelier/création/catalogue/brouillons/assistant, navigation précédent/étape/suivant, ✎ admin vers copie officielle ou édition utilisateur.
+
+
+## UI téléphone — JT-SETS-UI-002
+`jtrex_media_runtime.py` : `SET v` + `MOD` centrés, contrôles plus compacts, preview lifetime corrigé, garde périodique MENU sur le rectangle dinosaure visible le plus à droite (`jh/jb`) sans changement d'asset.
