@@ -614,23 +614,15 @@ def _jt_log_new_stops(self, observer):
     lines[start:end] = replacement
 
     # Bound the intentionally cropped right selection dinosaur before rendering.
-    # This belongs in screen_up, not in a later timer: otherwise one frame is
-    # painted at the historical x and the next timer tick visibly snaps it right.
-    start, end = method_bounds(lines, "screen_up")
+    # The historical renderer owns self.jb.pos outside screen_up; patch the one
+    # canonical display assignment directly so there is no post-render snap.
     jb_pos_matches = [
-        index for index in range(start, end)
-        if lines[index].strip().replace(" ", "").startswith("self.jb.pos=")
-    ]
-    jb_debug = [
-        lines[index].strip()
-        for index in range(start, end)
-        if "jb" in lines[index].lower() or "xb" in lines[index].lower()
+        index for index, line in enumerate(lines)
+        if line.strip().replace(" ", "").startswith("self.jb.pos=")
     ]
     require(
         len(jb_pos_matches) == 1,
-        "Position dino droit self.jb.pos: {} occurrence(s), 1 attendue. Candidats screen_up={!r}".format(
-            len(jb_pos_matches), jb_debug[-24:]
-        ),
+        f"Position dino droit self.jb.pos: {len(jb_pos_matches)} occurrence(s), 1 attendue.",
     )
     jb_pos_index = jb_pos_matches[0]
     jb_line = lines[jb_pos_index]
