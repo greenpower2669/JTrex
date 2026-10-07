@@ -38,8 +38,8 @@ class WorkshopUIContractTests(unittest.TestCase):
         self.assertGreaterEqual(self.media._admin_workshop_button.height, 58)
 
     def test_mobile_set_selector_is_compact_scrollable_and_admin_edit_is_discreet(self):
-        self.assertTrue(self.media._set_button.text.startswith('SET ▼'))
-        self.assertLessEqual(self.media._set_button.height, 44)
+        self.assertTrue(self.media._set_button.text.startswith('SET v'))
+        self.assertLessEqual(self.media._set_button.height, 40)
         self.assertTrue(self.media._set_edit_button.disabled)
         self.media._open_set_selector()
         self.assertIsNotNone(self.media._set_selector_scroll)
@@ -48,7 +48,11 @@ class WorkshopUIContractTests(unittest.TestCase):
         self.media._admin_enabled = True
         self.media._set_selector_visible(True)
         self.assertFalse(self.media._set_edit_button.disabled)
-        self.assertLessEqual(self.media._set_edit_button.width, 44)
+        self.assertEqual(self.media._set_edit_button.text, 'MOD')
+        self.assertLessEqual(self.media._set_edit_button.height, 40)
+        group_left = self.media._set_button.x
+        group_right = self.media._set_edit_button.x + self.media._set_edit_button.width
+        self.assertAlmostEqual((group_left + group_right) / 2.0, self.root.width / 2.0, delta=2.0)
 
     def test_workshop_is_menu_only_and_uses_large_readable_actions(self):
         with self.assertRaisesRegex(Exception, 'admin'):
@@ -61,7 +65,7 @@ class WorkshopUIContractTests(unittest.TestCase):
             'MODIFIER LE SET UTILISATEUR', 'IMPORTER UN ZIP', 'FERMER',
         }
         self.assertTrue(expected.issubset({button.text for button in self.media._workshop_buttons.values()}))
-        self.assertTrue(all(button.height >= 56 for button in self.media._workshop_buttons.values()))
+        self.assertTrue(all(button.height >= 44 for button in self.media._workshop_buttons.values()))
         self.media.on_phase_changed('ROUND_INTRO')
         with self.assertRaisesRegex(Exception, 'menu'):
             self.media._open_workshop()
@@ -94,6 +98,15 @@ class WorkshopUIContractTests(unittest.TestCase):
         self.media._workshop_preview_current_action()
         self.assertIsNotNone(self.media._workshop_preview_popup)
         self.assertGreaterEqual(self.media._workshop_preview_popup.size_hint[0], 0.9)
+        player = self.media._set_preview.current_player
+        self.assertIsNotNone(player)
+        self.assertEqual(player.state, 'playing')
+        player.texture = SimpleNamespace(size=(640, 360))
+        player.callbacks['on_frame'](player)
+        self.media._workshop_preview_event.callback(0)
+        self.assertNotEqual(self.media._workshop_preview_label.text, 'Aperçu fermé')
+        self.assertIn('640x360', self.media._workshop_preview_label.text)
+        self.assertIs(self.media._workshop_preview_surface._preview.texture, player.texture)
         candidate = Path(self.tmp.name) / 'replacement.mp4'
         candidate.write_bytes(b'replacement-video')
         staged = self.media.workshop_stage_candidate(candidate)
@@ -107,6 +120,21 @@ class WorkshopUIContractTests(unittest.TestCase):
         self.assertEqual(self.media._set_admin.open_draft('ui-draft').role_index, old_index)
         verified = self.media.workshop_validate()
         self.assertEqual(verified.set_id, 'ui_dinos')
+
+    def test_right_selection_dinosaur_crop_edge_is_kept_outside_screen(self):
+        self.media.on_phase_changed('MENU')
+        self.root.jh = SimpleNamespace(pos=(20.0, 10.0), size=(200.0, 120.0))
+        self.root.jb = SimpleNamespace(
+            pos=(self.root.width - 200.0, 20.0), size=(200.0, 120.0)
+        )
+        old_pos = self.root.jb.pos
+        old_size = self.root.jb.size
+        self.media._guard_menu_right_dinosaur_crop()
+        self.assertGreater(self.root.jb.pos[0], old_pos[0])
+        self.assertEqual(self.root.jb.size, old_size)
+        self.assertGreater(
+            self.root.jb.pos[0] + self.root.jb.size[0], self.root.width
+        )
 
     def test_identity_dialog_exposes_all_six_power_labels(self):
         source = (ROOT / 'tools/jtrex_media_runtime.py').read_text(encoding='utf-8')
