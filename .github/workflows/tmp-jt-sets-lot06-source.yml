@@ -12,8 +12,8 @@ jobs:
           ref: tmp-jt-sets-lot06-source
       - name: Record exact source head
         run: |
-          test "$(git rev-parse HEAD)" = "\${GITHUB_SHA}"
-          printf '%s\n' "\${GITHUB_SHA}" > JT_LOT06_SOURCE_HEAD.txt
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          printf '%s\n' "${GITHUB_SHA}" > JT_LOT06_SOURCE_HEAD.txt
           rm -rf .git
       - uses: actions/upload-artifact@v4
         with:
