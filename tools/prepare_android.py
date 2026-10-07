@@ -621,9 +621,16 @@ def _jt_log_new_stops(self, observer):
         index for index in range(start, end)
         if lines[index].strip().replace(" ", "").startswith("self.jb.pos=")
     ]
+    jb_debug = [
+        lines[index].strip()
+        for index in range(start, end)
+        if "jb" in lines[index].lower() or "xb" in lines[index].lower()
+    ]
     require(
         len(jb_pos_matches) == 1,
-        f"Position dino droit self.jb.pos: {len(jb_pos_matches)} occurrence(s), 1 attendue.",
+        "Position dino droit self.jb.pos: {} occurrence(s), 1 attendue. Candidats screen_up={!r}".format(
+            len(jb_pos_matches), jb_debug[-24:]
+        ),
     )
     jb_pos_index = jb_pos_matches[0]
     jb_line = lines[jb_pos_index]
