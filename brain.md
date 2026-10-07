@@ -36,3 +36,7 @@ Correction téléphone autorisée : remplacer le bandeau de set surdimensionné 
 
 ## JT-SETS-UI-002
 Finition téléphone : sélecteur centré/compact ASCII, boutons moins larges et plus aérés, aperçu réparé (ancien preview fermé avant démarrage du nouveau), garde MENU du dinosaure visuel droit pour conserver le bord tronqué de l'asset hors écran. Asset et gameplay inchangés.
+
+
+## JT-SETS-UI-003
+Le saut du dinosaure droit venait d'un timer post-rendu. Timer supprimé. `prepare_android.py` injecte désormais la borne dans l'affectation visuelle canonique `self.jb.pos`, avant affichage et seulement en menu (`indexa==0`). Logique `xb/yb`, taille et asset inchangés.
