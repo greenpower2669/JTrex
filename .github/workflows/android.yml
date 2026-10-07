@@ -244,7 +244,7 @@ jobs:
           for token in required_runtime:
               if token not in runtime:
                   raise SystemExit(f"missing runtime token: {token}")
-          for token in ("SetContractError", "load_official_set", "CATALOG_PATH", "parameters are closed in v1"):
+          for token in ("SetContractError", "load_official_set", "CATALOG_PATH", "POWER_PARAMETER_SPECS", "power_effect_fraction"):
               if token not in sets_runtime:
                   raise SystemExit(f"missing set-runtime token: {token}")
           for token in ("JTSetStorage", "import_set_zip", "export_set", "copy_content_uri"):
