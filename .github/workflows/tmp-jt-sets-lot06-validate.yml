@@ -40,16 +40,15 @@ jobs:
             git diff --name-only
             git ls-files --others --exclude-standard
           } | sort -u > /tmp/changed.txt
-          cat > /tmp/expected.txt <<'EOF'
-tests/test_power_parameter_integration.py
-tests/test_sets_admin_power_parameters.py
-tests/test_sets_power_parameter_ui.py
-tests/test_sets_power_parameters.py
-tools/jtrex_media_runtime.py
-tools/jtrex_sets_admin.py
-tools/jtrex_sets_runtime.py
-tools/prepare_android.py
-EOF
+          printf '%s\n' \
+            tests/test_power_parameter_integration.py \
+            tests/test_sets_admin_power_parameters.py \
+            tests/test_sets_power_parameter_ui.py \
+            tests/test_sets_power_parameters.py \
+            tools/jtrex_media_runtime.py \
+            tools/jtrex_sets_admin.py \
+            tools/jtrex_sets_runtime.py \
+            tools/prepare_android.py > /tmp/expected.txt
           diff -u /tmp/expected.txt /tmp/changed.txt
           git diff --check
       - name: Download and verify fixed historical archive
