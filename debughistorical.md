@@ -37,3 +37,12 @@ Le candidat CI était fonctionnel mais le bouton DINOSAURES 520dp et plusieurs B
 - Correctif : fermer l'ancien aperçu avant de créer le nouveau ; le popup d'affichage ne ferme plus le lecteur qu'il doit montrer.
 - Audit APK #90 : les rectangles historiques `jh/jb` portent les animations dinosaures. L'image droite peut être volontairement tronquée ; le correctif ne touche pas au média et pousse seulement le rectangle visible le plus à droite suffisamment hors viewport en MENU.
 - Les glyphes `▼` / `✎` n'étaient pas fiables sur l'appareil : libellés ASCII.
+
+
+## 2026-10-08 — saut d'image dinosaure droit
+- Symptôme #93 : première position trop à gauche puis saut vers la droite.
+- Cause confirmée : `_guard_menu_right_dinosaur_crop` tournait toutes les 0,05 s après que le moteur historique avait déjà peint le widget.
+- Première tentative d'injection recherchait `self.jb.pos` dans `screen_up` : échec de préparation, car l'affectation visuelle est ailleurs dans le source historique.
+- Diagnostic CI a confirmé que `screen_up` ne contient que la logique `xb/yb/xbs/ybs`.
+- Correctif final : rechercher l'unique affectation `self.jb.pos` dans le source généré complet et la borner directement avant rendu ; condition menu `indexa==0`.
+- La préparation CI #100 passe désormais ce patch et les tests moteur généré sont verts.
