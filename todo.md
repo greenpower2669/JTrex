@@ -37,3 +37,16 @@ JT-SETS-001 techniquement complet côté code/CI.
 - [x] Assistant set scrollable + navigation compacte.
 - [x] Tests de contrat UI ajoutés.
 - [ ] CI Android fraîche + APK à valider sur téléphone.
+
+
+## JT-SETS-UI-002 — finition téléphone
+- [x] Prompt de passation enregistré.
+- [x] Sélecteur SET centré et encore compacté.
+- [x] Glyphes Android remplacés par `SET v` / `MOD`.
+- [x] Boutons atelier/assistant/preview réduits et davantage espacés.
+- [x] Cause de l'aperçu fermé corrigée.
+- [x] Test première frame/preview vivant ajouté.
+- [x] Garde du dinosaure de sélection droit sans recadrer l'asset.
+- [x] Test de bord droit hors viewport ajouté.
+- [ ] CI Android fraîche.
+- [ ] Validation téléphone Fab.
