@@ -613,6 +613,32 @@ def _jt_log_new_stops(self, observer):
     ]
     lines[start:end] = replacement
 
+    # Bound the intentionally cropped right selection dinosaur before rendering.
+    # This belongs in screen_up, not in a later timer: otherwise one frame is
+    # painted at the historical x and the next timer tick visibly snaps it right.
+    start, end = method_bounds(lines, "screen_up")
+    jb_pos_matches = [
+        index for index in range(start, end)
+        if lines[index].strip().startswith("self.jb.pos=")
+    ]
+    require(
+        len(jb_pos_matches) == 1,
+        f"Position dino droit self.jb.pos: {len(jb_pos_matches)} occurrence(s), 1 attendue.",
+    )
+    jb_pos_index = jb_pos_matches[0]
+    jb_line = lines[jb_pos_index]
+    jb_indent = jb_line[: len(jb_line) - len(jb_line.lstrip(" \t"))]
+    jb_rhs = jb_line.strip().split("=", 1)[1]
+    lines[jb_pos_index:jb_pos_index + 1] = [
+        jb_indent + "_jt_jb_render_pos=" + jb_rhs + newline,
+        jb_indent + "if indexa==0:" + newline,
+        jb_indent + "\t_jt_jb_safety=min(44.0,max(18.0,self.jb.size[0]*0.08))" + newline,
+        jb_indent + "\t_jt_jb_min_x=self.x+self.width+_jt_jb_safety-self.jb.size[0]" + newline,
+        jb_indent + "\tself.jb.pos=(max(_jt_jb_render_pos[0],_jt_jb_min_x),_jt_jb_render_pos[1])" + newline,
+        jb_indent + "else:" + newline,
+        jb_indent + "\tself.jb.pos=_jt_jb_render_pos" + newline,
+    ]
+
     # Synchronize video after all historical transitions in mc1.
     start, end = method_bounds(lines, "mc1")
     global_index = None
