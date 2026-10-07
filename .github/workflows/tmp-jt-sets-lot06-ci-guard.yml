@@ -1,0 +1,17 @@
+name: JT-SETS Lot06 CI guard test
+on:
+  push:
+    branches:
+      - tmp-jt-sets-lot06-ci-guard
+    paths:
+      - '.github/workflows/tmp-jt-sets-lot06-ci-guard.yml'
+      - 'tests/test_android_set_workflow_contract.py'
+      - '.github/workflows/android.yml'
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 -m unittest -v tests.test_android_set_workflow_contract
