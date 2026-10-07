@@ -1,45 +1,40 @@
 # JTREX — ORDRES DE MISSION VIVANTS
 
-Dernière consolidation : 2026-10-06
+Dernière consolidation : 2026-10-07
 
 ## Contrat permanent
 1. Ne jamais recoder de mémoire : relire code, tests et preuves Git avant modification.
-2. `ordres-de-mission.md` définit le contrat actif ; `brain.md`, `brainmap.md`, `debughistorical.md`, `todo.md` sont les mémoires vivantes spécialisées.
-3. Les mémoires vivantes restent courtes ; détails et preuves longues vont dans `docs/` ou `archive/`.
-4. Ne pas modifier les règles canoniques historiques sans ordre explicite de Fab.
-5. Avant toute annonce de succès : preuve fraîche adaptée.
+2. `ordres-de-mission.md` définit le contrat actif ; les autres mémoires restent spécialisées et courtes.
+3. Ne pas modifier les règles canoniques historiques sans ordre explicite de Fab.
+4. Avant toute annonce de succès : preuve fraîche adaptée.
+5. Aucun merge `main`, Release ou AAB sans ordre explicite de Fab.
 
 ## Canon gameplay protégé
-- 3 orbes par camp ; nouvel échange = 10 s complets ; retour pouvoir = temps restant.
-- KO réel seul = victoire de round ; deux rounds = match ; vrai nouveau round = énergie ST/TR à 0.
-- Vie = 500000000 par camp.
-- Coûts slots 1..6 = 60/40/60/60/60/80 ; activation stricte `énergie > coût`.
-- Effets historiques au jalon moteur ; EOS média sans nouvel effet gameplay.
+- 3 orbes/camp ; nouvel échange 10 s ; retour pouvoir = temps restant.
+- KO réel seul = round ; deux rounds = match ; vrai nouveau round = énergie 0/0.
+- Vie 500000000/camp ; score historique.
+- Coûts 60/40/60/60/60/80 ; activation stricte `energy > cost`.
+- États 21..26 et jalons 181..186 moteur-owned.
+- EOS média n'applique aucun effet gameplay.
 
-## JT-SETS-001 — ACTIF
-Branche : `feature/dinosaur-sets-v1`, issue de `main@ce858fe57b395c2a52967dc0e8acdd92ff6aa81e`.  
-Design : `docs/superpowers/specs/2026-10-05-jtrex-dinosaur-sets-design.md`.
+## JT-SETS-001 — LOTS 01 À 06 TERMINÉS CODE/CI
+Branche : `feature/dinosaur-sets-v1`. Base : `main@ce858fe57b395c2a52967dc0e8acdd92ff6aa81e`.
 
-### Lots 01 à 05 — TERMINÉS
-- Lot 01 : inventaire + contrat DATA-only v1.
-- Lot 02 : runtime/catalogue/manifeste canonique + résolution média centrale.
-- Lot 03 : sélection joueur persistante + session figée + identités de pouvoirs set-aware.
-- Lot 04 : stockage officiel/utilisateur/brouillon + ZIP sûr/transactionnel + ingress `content://`.
-- Lot 05 : catalogue utilisateur promu, brouillons autonomes, atelier admin 20 touches, assistant par rôle, aperçu indépendant, SAF asynchrone, export, promotion explicite et `TESTER CE SET`.
+- Lots 01–05 : contrat DATA/MEDIA, runtime/catalogue, sélection/session, stockage ZIP sûr, atelier admin, preview/SAF/test brouillon.
+- Lot 06 : six coefficients seulement, approuvés par Fab et bornés :
+  - STSF/STTA/TRFS/TRPH : dégâts 0.10..0.40, défaut 0.25 ;
+  - Lifestream : soin 0.10..0.40, défaut 0.25 ;
+  - Meteor : dégâts 0.15..0.50, défaut 1/3.
+- `parameters:{}` reste rétrocompatible = défaut canonique.
+- Aucun coût, mécanisme, jalon, chrono, KO, score, énergie dérivée ou EOS éditable.
 
-Preuves Lot 05 :
-- plan `docs/superpowers/plans/2026-10-06-jtrex-sets-lot05.md` ;
-- HEAD produit `dd598f6bc6c92be818bc7af227d7eb6cd13d2a17` ;
-- run inspection `37515396279` : SUCCESS ;
-- run Android #85 `37515396288`, job `112446897658` : SUCCESS ;
-- 152/152 tests CI verts sur l'app générée ;
-- APK artefact `11437986330` : 156521694 octets, SHA-256 `fd08bc534da84fc8753cbc30bb7e8200eda2fcd3a3cbe0a6ea98147867673cc2`.
+Preuves Lot 06 :
+- produit `8d89c1ed7a70f7e55bac4e6895020a2bbd8995d2` ;
+- HEAD CI `d7214bb514e144dfa9191c1d6f3064718b91c570` ;
+- validation produit : 173/173 tests ;
+- Android #89 `37576480368`, job `112646411728` : SUCCESS, 174/174 tests ;
+- APK 156528315 octets, SHA-256 `4f40880fae9b3a4cc3a20175216bbd02cda7ab731c261c4ad7ca36449e4039ef`.
 
-### Prochain lot contractuel
-Lot 06 : paramètres de pouvoirs. **Ne rien coder tant que Fab n'a pas validé explicitement la liste des champs éditables et leurs bornes.** Les mécanismes, coûts, impacts, chrono, KO et EOS restent moteur-owned par défaut.
-
-Aucun merge `main`, aucune Release ni AAB sans ordre explicite de Fab.
-
-## Baseline publiée précédente
-- Build #78 / `37245309424` : CI verte ; validation téléphone complète non enregistrée.
-- Dernière Release : `v1.0.15-main`.
+## État
+JT-SETS-001 est techniquement complet côté code/CI. Validation téléphone du candidat Lot 06 reste distincte et non enregistrée.
+Dernière Release : `v1.0.15-main`.
