@@ -55,3 +55,11 @@ Dernière Release : `v1.0.15-main`.
 - Libellés spéciaux remplacés par ASCII `SET v` / `MOD` pour éviter les glyphes absents Android.
 - Portée UI/preview seulement ; canon gameplay protégé.
 - Passation : `docs/jt-sets-001/ui-finish-002-passation.md`.
+
+
+## JT-SETS-UI-003 — dino droit avant rendu (2026-10-08)
+- Retour téléphone #93 : UI/aperçu validés ; seul le dinosaure de sélection droit saute du centre vers la droite.
+- Cause : le correctif UI-002 agissait par timer 50 ms après le rendu historique.
+- Correction canonique : supprimer le timer runtime et borner l'unique affectation `self.jb.pos` directement dans le `main.py` généré, uniquement quand `indexa==0`.
+- Ne pas modifier `xb/yb`, la taille du widget, l'asset volontairement tronqué, ni le dinosaure gauche.
+- Aucun gameplay modifié.
