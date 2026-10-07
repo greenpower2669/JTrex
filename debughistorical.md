@@ -30,3 +30,10 @@ CI verte != validation téléphone. Aucun merge `main`, Release ou AAB sans ordr
 
 ## 2026-10-07 — dette UI Lot 06 observée téléphone
 Le candidat CI était fonctionnel mais le bouton DINOSAURES 520dp et plusieurs BoxLayout non scrollables rendaient la création/édition peu accessible. Correctif JT-SETS-UI-001 limité à l'UI ; ajouter une garde de régression sur compacité et ScrollView.
+
+
+## 2026-10-07 — aperçu fermé + bord dinosaure droit
+- Cause `Aperçu fermé` : `_open_workshop_preview_popup()` appelait `_close_workshop_preview_popup()` après que `workshop_preview_current/candidate` avait déjà créé et lancé le lecteur ; le lecteur neuf était donc immédiatement stop/unload.
+- Correctif : fermer l'ancien aperçu avant de créer le nouveau ; le popup d'affichage ne ferme plus le lecteur qu'il doit montrer.
+- Audit APK #90 : les rectangles historiques `jh/jb` portent les animations dinosaures. L'image droite peut être volontairement tronquée ; le correctif ne touche pas au média et pousse seulement le rectangle visible le plus à droite suffisamment hors viewport en MENU.
+- Les glyphes `▼` / `✎` n'étaient pas fiables sur l'appareil : libellés ASCII.
