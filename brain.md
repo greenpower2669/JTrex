@@ -32,3 +32,7 @@ Validation téléphone du candidat Lot 06 si Fab le souhaite. Aucun merge `main`
 
 ## JT-SETS-UI-001
 Correction téléphone autorisée : remplacer le bandeau de set surdimensionné par `SET ▼` compact, ajouter ✎ admin, rendre atelier/création/catalogue/brouillons/assistant scrollables. Gameplay inchangé.
+
+
+## JT-SETS-UI-002
+Finition téléphone : sélecteur centré/compact ASCII, boutons moins larges et plus aérés, aperçu réparé (ancien preview fermé avant démarrage du nouveau), garde MENU du dinosaure visuel droit pour conserver le bord tronqué de l'asset hors écran. Asset et gameplay inchangés.
