@@ -1,4 +1,5 @@
 name: Build June T-Rex APK
+# JT-SETS Lot06 Android validation
 
 on:
   workflow_dispatch:
