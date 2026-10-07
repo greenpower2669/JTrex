@@ -46,3 +46,12 @@ Dernière Release : `v1.0.15-main`.
 - Set officiel via ✎ = création d'un brouillon depuis le set ; set utilisateur = modification directe.
 - Aucun changement gameplay, coûts, coefficients, phases, KO, score, jalons ou EOS.
 - Branche : `feature/dinosaur-sets-v1`.
+
+
+## JT-SETS-UI-002 — finition téléphone (2026-10-07)
+- Demande Fab : centrage/compacité/aération, réparation aperçu, et garde du dinosaure droit volontairement tronqué.
+- Ne jamais recadrer/redimensionner l'asset dinosaure : seulement empêcher son rectangle visible le plus à droite d'aller trop à gauche en MENU.
+- Cause aperçu : le popup déchargeait le lecteur juste après son démarrage ; fermeture déplacée avant le nouveau preview.
+- Libellés spéciaux remplacés par ASCII `SET v` / `MOD` pour éviter les glyphes absents Android.
+- Portée UI/preview seulement ; canon gameplay protégé.
+- Passation : `docs/jt-sets-001/ui-finish-002-passation.md`.
