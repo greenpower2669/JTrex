@@ -36,3 +36,7 @@ Validation téléphone réelle du candidat. Pas de merge/main Release/AAB automa
 
 ## UI téléphone — JT-SETS-UI-002
 `jtrex_media_runtime.py` : `SET v` + `MOD` centrés, contrôles plus compacts, preview lifetime corrigé, garde périodique MENU sur le rectangle dinosaure visible le plus à droite (`jh/jb`) sans changement d'asset.
+
+
+## UI téléphone — JT-SETS-UI-003
+`prepare_android.py` repère l'unique `self.jb.pos` historique et remplace son rendu par `_jt_jb_render_pos` + minimum X menu. `jtrex_media_runtime.py` ne possède plus de timer de rattrapage du dinosaure.
