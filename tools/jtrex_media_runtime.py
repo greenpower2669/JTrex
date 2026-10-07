@@ -962,7 +962,7 @@ class JTMediaController:
         content = BoxLayout(orientation="vertical", spacing=dp(8), padding=dp(8))
         title = Label(
             text="ATELIER SETS — DATA / MEDIA + COEFFICIENTS BORNÉS\nCoûts, chrono, KO, jalons et règles moteur restent verrouillés.",
-            size_hint=(1, None), height=dp(72), font_size=dp(17),
+            size_hint=(1, None), height=dp(60), font_size=dp(15),
         )
         content.add_widget(title)
         specs = (
@@ -972,13 +972,14 @@ class JTMediaController:
             ("import", "IMPORTER UN ZIP", self._workshop_import_action),
         )
         body = BoxLayout(
-            orientation="vertical", spacing=dp(8), padding=dp(8),
-            size_hint_y=None, height=dp(64) * len(specs) + dp(16),
+            orientation="vertical", spacing=dp(10), padding=dp(10),
+            size_hint_y=None, height=dp(58) * len(specs) + dp(20),
         )
         self._workshop_buttons = {}
         for key, label, callback in specs:
             button = Button(
-                text=label, size_hint=(1, None), height=dp(56), font_size=dp(18)
+                text=label, size_hint=(0.80, None), pos_hint={"center_x": 0.5},
+                height=dp(46), font_size=dp(16)
             )
             button.bind(on_release=lambda instance, cb=callback: cb())
             body.add_widget(button)
@@ -986,7 +987,10 @@ class JTMediaController:
         scroll = ScrollView(size_hint=(1, 1))
         scroll.add_widget(body)
         content.add_widget(scroll)
-        close = Button(text="FERMER", size_hint=(1, None), height=dp(56), font_size=dp(18))
+        close = Button(
+            text="FERMER", size_hint=(0.68, None), pos_hint={"center_x": 0.5},
+            height=dp(44), font_size=dp(15)
+        )
         close.bind(on_release=lambda *args: self._close_workshop())
         content.add_widget(close)
         self._workshop_buttons["close"] = close
@@ -1004,14 +1008,22 @@ class JTMediaController:
         self._require_workshop_idle()
         set_id = TextInput(
             text="set-{}".format(int(time.time())), multiline=False,
-            size_hint=(1, None), height=dp(58), font_size=dp(20),
+            size_hint=(0.88, None), pos_hint={"center_x": 0.5},
+            height=dp(48), font_size=dp(17),
         )
         display = TextInput(
             text="Nouveau set", multiline=False,
-            size_hint=(1, None), height=dp(58), font_size=dp(20),
+            size_hint=(0.88, None), pos_hint={"center_x": 0.5},
+            height=dp(48), font_size=dp(17),
         )
-        save = Button(text="CREER", size_hint=(1, None), height=dp(56), font_size=dp(18))
-        cancel = Button(text="ANNULER", size_hint=(1, None), height=dp(52), font_size=dp(18))
+        save = Button(
+            text="CREER", size_hint=(0.62, None), pos_hint={"center_x": 0.5},
+            height=dp(44), font_size=dp(15)
+        )
+        cancel = Button(
+            text="ANNULER", size_hint=(0.62, None), pos_hint={"center_x": 0.5},
+            height=dp(42), font_size=dp(15)
+        )
         body = BoxLayout(
             orientation="vertical", spacing=dp(8), padding=dp(8),
             size_hint_y=None, height=dp(238),
@@ -1152,14 +1164,15 @@ class JTMediaController:
             except Exception:
                 pass
         label = Label(
-            text="", size_hint=(1, None), height=dp(132), font_size=dp(17),
+            text="", size_hint=(1, None), height=dp(112), font_size=dp(15),
             halign="left", valign="middle",
         )
-        previous = Button(text="◀ PRÉC.", size_hint=(0.26, 1), font_size=dp(17))
-        progress = Label(text="", size_hint=(0.48, 1), font_size=dp(17))
-        following = Button(text="SUIVANT ▶", size_hint=(0.26, 1), font_size=dp(17))
+        previous = Button(text="< PREC.", size_hint=(0.24, 1), font_size=dp(15))
+        progress = Label(text="", size_hint=(0.52, 1), font_size=dp(14))
+        following = Button(text="SUIVANT >", size_hint=(0.24, 1), font_size=dp(15))
         navigation = BoxLayout(
-            orientation="horizontal", spacing=dp(6), size_hint=(1, None), height=dp(50)
+            orientation="horizontal", spacing=dp(8), size_hint=(0.86, None),
+            pos_hint={"center_x": 0.5}, height=dp(44)
         )
         navigation.add_widget(previous)
         navigation.add_widget(progress)
@@ -1179,21 +1192,27 @@ class JTMediaController:
             ("EXPORTER ZIP", self._workshop_export_action),
         )
         body = BoxLayout(
-            orientation="vertical", spacing=dp(7), padding=dp(4),
-            size_hint_y=None, height=dp(60) * len(actions) + dp(16),
+            orientation="vertical", spacing=dp(10), padding=dp(8),
+            size_hint_y=None, height=dp(56) * len(actions) + dp(20),
         )
         for text, callback in actions:
-            button = Button(text=text, size_hint=(1, None), height=dp(52), font_size=dp(17))
+            button = Button(
+                text=text, size_hint=(0.78, None), pos_hint={"center_x": 0.5},
+                height=dp(44), font_size=dp(15)
+            )
             button.bind(on_release=lambda instance, cb=callback: cb())
             body.add_widget(button)
         scroll = ScrollView(size_hint=(1, 1))
         scroll.add_widget(body)
 
-        content = BoxLayout(orientation="vertical", spacing=dp(6), padding=dp(7))
+        content = BoxLayout(orientation="vertical", spacing=dp(9), padding=dp(9))
         content.add_widget(label)
         content.add_widget(navigation)
         content.add_widget(scroll)
-        close = Button(text="RETOUR ATELIER", size_hint=(1, None), height=dp(52), font_size=dp(18))
+        close = Button(
+            text="RETOUR ATELIER", size_hint=(0.68, None), pos_hint={"center_x": 0.5},
+            height=dp(44), font_size=dp(15)
+        )
         content.add_widget(close)
         popup = Popup(title="ASSISTANT SET", content=content, size_hint=(0.96, 0.96), auto_dismiss=True)
         self._workshop_editor_popup = popup
