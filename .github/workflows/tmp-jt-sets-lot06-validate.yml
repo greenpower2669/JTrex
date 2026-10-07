@@ -1,0 +1,106 @@
+name: JT-SETS Lot06 validate product
+on:
+  push:
+    branches:
+      - tmp-jt-sets-lot06-validate
+    paths:
+      - '.github/workflows/tmp-jt-sets-lot06-validate.yml'
+permissions:
+  contents: write
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout transport branch
+        uses: actions/checkout@v4
+        with:
+          ref: tmp-jt-sets-lot06-validate
+          fetch-depth: 0
+      - name: Reconstruct and verify product patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          payload=temp/jt-sets-lot06-product.patch.gz.b64
+          test "$(sha256sum "$payload" | awk '{print $1}')" = "abf3bcf0b5c1fc1181c7128574e1812a7ce8c7c445ad271dfc72251ca5db3803"
+          base64 -d "$payload" | gzip -d > /tmp/jt-sets-lot06-product.patch
+          test "$(sha256sum /tmp/jt-sets-lot06-product.patch | awk '{print $1}')" = "53be03ab75cd44619fc3419ac43da31fc7ed7f82189950608a14faf047dfeab9"
+      - name: Apply only to exact Lot06 base
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=54f6e6f94160a451c12017820d37b3c0c6a73ba3
+          remote_head="$(git ls-remote origin refs/heads/feature/dinosaur-sets-v1 | awk '{print $1}')"
+          test "$remote_head" = "$BASE"
+          git worktree add --detach /tmp/jtrex-product "$BASE"
+          cd /tmp/jtrex-product
+          git apply --check /tmp/jt-sets-lot06-product.patch
+          git apply /tmp/jt-sets-lot06-product.patch
+          {
+            git diff --name-only
+            git ls-files --others --exclude-standard
+          } | sort -u > /tmp/changed.txt
+          cat > /tmp/expected.txt <<'EOF'
+tests/test_power_parameter_integration.py
+tests/test_sets_admin_power_parameters.py
+tests/test_sets_power_parameter_ui.py
+tests/test_sets_power_parameters.py
+tools/jtrex_media_runtime.py
+tools/jtrex_sets_admin.py
+tools/jtrex_sets_runtime.py
+tools/prepare_android.py
+EOF
+          diff -u /tmp/expected.txt /tmp/changed.txt
+          git diff --check
+      - name: Download and verify fixed historical archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/jtrex-product
+          curl --fail --location --retry 3 \
+            --output /tmp/JuneTrex.zip \
+            'https://github.com/greenpower2669/JTrex/releases/download/JTrex/JuneTrex.zip'
+          test "$(stat -c%s /tmp/JuneTrex.zip)" = "327992765"
+          test "$(sha256sum /tmp/JuneTrex.zip | awk '{print $1}')" = "f73ca1fd5e96ca6e11df5987bda8b2e59ebac26b1beb23fe34883b15bee66647"
+      - name: Prepare canonical app and run full Lot06 suite
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/jtrex-product
+          rm -rf app
+          python3 tools/prepare_android.py --archive /tmp/JuneTrex.zip --output app 2>&1 | tee /tmp/preparation.log
+          python3 -m py_compile \
+            tools/jtrex_sets_runtime.py \
+            tools/jtrex_sets_admin.py \
+            tools/jtrex_media_runtime.py \
+            tools/prepare_android.py \
+            app/main.py
+          JT_GENERATED_MAIN=app/main.py PYTHONPATH=tests:. \
+            python3 -W ignore::SyntaxWarning -m unittest discover -s tests -v 2>&1 | tee /tmp/tests.log
+          grep -q "Ran 173 tests" /tmp/tests.log
+          grep -q "^OK$" /tmp/tests.log
+      - name: Commit and fast-forward product branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=54f6e6f94160a451c12017820d37b3c0c6a73ba3
+          cd /tmp/jtrex-product
+          rm -rf app
+          git status --short
+          git config user.name "greenpower2669"
+          git config user.email "80179295+greenpower2669@users.noreply.github.com"
+          git add \
+            tests/test_power_parameter_integration.py \
+            tests/test_sets_admin_power_parameters.py \
+            tests/test_sets_power_parameter_ui.py \
+            tests/test_sets_power_parameters.py \
+            tools/jtrex_media_runtime.py \
+            tools/jtrex_sets_admin.py \
+            tools/jtrex_sets_runtime.py \
+            tools/prepare_android.py
+          git diff --cached --check
+          git commit -m "feat: add bounded JTrex power parameters"
+          test "$(git rev-parse HEAD^)" = "$BASE"
+          remote_head="$(git ls-remote origin refs/heads/feature/dinosaur-sets-v1 | awk '{print $1}')"
+          test "$remote_head" = "$BASE"
+          git push origin HEAD:refs/heads/feature/dinosaur-sets-v1
