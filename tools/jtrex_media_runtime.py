@@ -298,7 +298,6 @@ class JTMediaController:
         self._admin_refresh_event = None
         self._admin_enabled = False
         self._indicator_phase = False
-        self._menu_right_dino_event = None
 
         self.root._jt_scene_video_active = False
         self.root._jt_scene_cinematic_lock = False
@@ -358,9 +357,6 @@ class JTMediaController:
         self._indicator_event = Clock.schedule_interval(
             self._update_status_indicator, 0.35
         )
-        self._menu_right_dino_event = Clock.schedule_interval(
-            self._guard_menu_right_dinosaur_crop, 0.05
-        )
         Window.bind(on_touch_down=self._on_admin_trigger)
 
         provider = getattr(CoreVideo, "__module__", repr(CoreVideo))
@@ -408,45 +404,6 @@ class JTMediaController:
             "[JT-SET] power identity session={}".format(self.sets.session_set.set_id),
             flush=True,
         )
-
-    def _guard_menu_right_dinosaur_crop(self, dt=0):
-        """Keep the intentionally cropped right selection dinosaur edge off-screen."""
-        if self._phase_name != "MENU":
-            return
-        try:
-            root_x = float(getattr(self.root, "x", 0.0))
-            root_width = float(getattr(self.root, "width", 0.0))
-        except (TypeError, ValueError):
-            return
-        if root_width <= 0:
-            return
-        screen_right = root_x + root_width
-        visible_threshold = root_x + root_width * 0.78
-        candidates = []
-        for name in ("jh", "jb"):
-            rect = getattr(self.root, name, None)
-            if rect is None:
-                continue
-            try:
-                x, y = rect.pos
-                width, height = rect.size
-                x, y = float(x), float(y)
-                width, height = float(width), float(height)
-            except (AttributeError, TypeError, ValueError):
-                continue
-            if width <= 0 or height <= 0:
-                continue
-            right_edge = x + width
-            if right_edge < visible_threshold:
-                continue
-            candidates.append((x, rect, width, y))
-        if not candidates:
-            return
-        x, rect, width, y = max(candidates, key=lambda item: item[0])
-        safety = min(dp(44), max(dp(18), width * 0.08))
-        minimum_x = screen_right + safety - width
-        if x < minimum_x:
-            rect.pos = (minimum_x, y)
 
     def _layout_set_button(self, *args):
         root_width = float(getattr(self.root, "width", dp(520)))
@@ -2230,9 +2187,6 @@ class JTMediaController:
         if self._indicator_event is not None:
             self._indicator_event.cancel()
             self._indicator_event = None
-        if self._menu_right_dino_event is not None:
-            self._menu_right_dino_event.cancel()
-            self._menu_right_dino_event = None
         if self._status_dot is not None:
             try:
                 self.root.remove_widget(self._status_dot)
