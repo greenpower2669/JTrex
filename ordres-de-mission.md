@@ -77,3 +77,10 @@ Dernière Release : `v1.0.15-main`.
 - Borne droite : bord parent + dépassement réglable de 2 % de la largeur parent, moins le bord visuel interne du rectangle.
 - Le correctif 40 % de UI-004 est remplacé par cette géométrie explicite.
 - Aucun média, taille, `xb/yb`, dinosaure gauche ou gameplay modifié.
+
+## JT-SETS-UI-006 — correction capture menu (2026-10-08)
+- Fab montre deux dinosaures collés à droite et rien à gauche.
+- Cause probable : le correctif précédent borne uniquement `self.jb.pos` ; `self.jh.pos` ne possède pas de borne MAX empêchant la traversée vers la droite.
+- Correction : borner la X visuelle du rectangle `jh` à `min(x_historique, self.x-0.02*self.width)` dans le MENU seulement. Garder la borne MIN du `jb` inchangée.
+- Préserver la X historique quand elle est déjà à gauche, Y, taille, frames, vitesse, gameplay, toutes autres phases.
+- Validation source générée/CI puis APK téléphone. Pas de merge main, Release ni AAB sans autorisation.

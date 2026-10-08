@@ -225,6 +225,8 @@ def adapt_main(source, power_paths=None, power_parameters=None):
         + newline
         + "JT_POWER_EFFECT_FRACTIONS=" + repr(power_parameters)
         + newline
+        + "JT_SELECTION_LEFT_OVERHANG_RATIO=0.02"
+        + newline
         + "JT_SELECTION_RIGHT_VISUAL_EDGE_RATIO=174.0/320.0"
         + newline
         + "JT_SELECTION_RIGHT_OVERHANG_RATIO=0.02"
@@ -616,6 +618,31 @@ def _jt_log_new_stops(self, observer):
         newline,
     ]
     lines[start:end] = replacement
+
+    # The left selection dinosaur has a valid left stop historically, but no
+    # rightward MENU stop. Keep its natural X when farther left, and otherwise
+    # clamp its rectangle LEFT edge to the viewport LEFT edge minus 2%.
+    # Do this at the canonical pre-render assignment without touching Y or size.
+    jh_pos_matches = [
+        index for index, line in enumerate(lines)
+        if line.strip().replace(" ", "").startswith("self.jh.pos=")
+    ]
+    require(
+        len(jh_pos_matches) == 1,
+        f"Position dino gauche self.jh.pos: {len(jh_pos_matches)} occurrence(s), 1 attendue.",
+    )
+    jh_pos_index = jh_pos_matches[0]
+    jh_line = lines[jh_pos_index]
+    jh_indent = jh_line[: len(jh_line) - len(jh_line.lstrip(" \t"))]
+    jh_rhs = jh_line.strip().split("=", 1)[1]
+    lines[jh_pos_index:jh_pos_index + 1] = [
+        jh_indent + "_jt_jh_render_pos=" + jh_rhs + newline,
+        jh_indent + "if indexa==0:" + newline,
+        jh_indent + "\t_jt_jh_max_x=self.x-self.width*JT_SELECTION_LEFT_OVERHANG_RATIO" + newline,
+        jh_indent + "\tself.jh.pos=(min(_jt_jh_render_pos[0],_jt_jh_max_x),_jt_jh_render_pos[1])" + newline,
+        jh_indent + "else:" + newline,
+        jh_indent + "\tself.jh.pos=_jt_jh_render_pos" + newline,
+    ]
 
     # Bound the intentionally cropped right selection dinosaur before rendering.
     # The historical renderer owns self.jb.pos outside screen_up; patch the one

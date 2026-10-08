@@ -84,3 +84,12 @@ JT-SETS-001 techniquement complet côté code/CI.
 - [x] Garde CI et test de contrat mis à jour.
 - [ ] CI Android fraîche.
 - [ ] Validation téléphone Fab.
+
+## JT-SETS-UI-006 — séparation des dinosaures menu
+- [x] Analyser la capture : les deux sprites sont à droite, côté gauche vide.
+- [x] Repérer la correction manquante : borne droite déjà présente sur `jb`, borne MAX gauche absente sur `jh`.
+- [x] Appliquer une borne gauche symétrique avant rendu, conserver Y et mouvement historique.
+- [x] Ajouter gardes du code généré et cas géométriques de séparation.
+- [ ] Vérifier préparation générée et tests CI de la branche dédiée.
+- [ ] APK 🟢 à essayer : dinosaures séparés dès la première frame, gauche/droite stables, transparence acceptable.
+- [ ] Validation explicite de Fab avant tout merge main, Release ou AAB.

@@ -121,6 +121,28 @@ class WorkshopUIContractTests(unittest.TestCase):
         verified = self.media.workshop_validate()
         self.assertEqual(verified.set_id, 'ui_dinos')
 
+    def test_left_selection_dinosaur_is_bounded_before_render(self):
+        generated = ROOT / 'app' / 'main.py'
+        if not generated.is_file():
+            self.skipTest('generated Android main.py is produced by the CI preparation step')
+        source = generated.read_text(encoding='utf-8')
+        self.assertIn('JT_SELECTION_LEFT_OVERHANG_RATIO=0.02', source)
+        self.assertIn('_jt_jh_render_pos=', source)
+        self.assertIn('_jt_jh_max_x=self.x-self.width*JT_SELECTION_LEFT_OVERHANG_RATIO', source)
+        self.assertIn(
+            'self.jh.pos=(min(_jt_jh_render_pos[0],_jt_jh_max_x),_jt_jh_render_pos[1])',
+            source,
+        )
+        self.assertIn('self.jh.pos=_jt_jh_render_pos', source)
+
+    def test_selection_dinosaurs_bounded_on_opposite_screen_edges(self):
+        for screen_w, dino_w in ((800, 220), (1536, 320), (2400, 600)):
+            left_max_x = -screen_w * 0.02
+            right_min_x = 1.02 * screen_w - dino_w * (174.0 / 320.0)
+            self.assertLess(left_max_x + dino_w, right_min_x)
+            self.assertLessEqual(min(screen_w / 2, left_max_x), left_max_x)
+            self.assertGreaterEqual(max(screen_w / 2, right_min_x), right_min_x)
+
     def test_right_selection_dinosaur_uses_parent_right_visual_edge_geometry(self):
         generated = ROOT / 'app' / 'main.py'
         if not generated.is_file():

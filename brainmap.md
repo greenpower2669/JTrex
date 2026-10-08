@@ -48,3 +48,6 @@ Validation téléphone réelle du candidat. Pas de merge/main Release/AAB automa
 
 ## UI téléphone — JT-SETS-UI-005
 `prepare_android.py` injecte deux constantes : `JT_SELECTION_RIGHT_VISUAL_EDGE_RATIO=174/320` et `JT_SELECTION_RIGHT_OVERHANG_RATIO=0.02`. `self.jb.pos` est borné avant rendu à partir de `self.x+self.width`, pas depuis le centre ni depuis un pourcentage de la largeur du dinosaure.
+
+## UI téléphone — JT-SETS-UI-006
+Deux bornages en MENU : `jh` MAX depuis bord gauche parent, `jb` MIN depuis bord droit parent. Les affectations historiques restent les sources du Y et du mouvement vers l'extérieur. Modifications `prepare_android.py` + gardes CI.

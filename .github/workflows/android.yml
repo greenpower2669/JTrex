@@ -355,6 +355,10 @@ jobs:
           assert "self._wait_resume_fraction = (position % duration) / duration" in runtime
           assert "player.seek(resume, precise=True)" in runtime
           assert "self.root._jt_power_video_hold = False" in runtime
+          assert "JT_SELECTION_LEFT_OVERHANG_RATIO=0.02" in main
+          assert "_jt_jh_render_pos=" in main
+          assert "_jt_jh_max_x=self.x-self.width*JT_SELECTION_LEFT_OVERHANG_RATIO" in main
+          assert "self.jh.pos=(min(_jt_jh_render_pos[0],_jt_jh_max_x),_jt_jh_render_pos[1])" in main
           assert "JT_SELECTION_RIGHT_VISUAL_EDGE_RATIO=174.0/320.0" in main
           assert "JT_SELECTION_RIGHT_OVERHANG_RATIO=0.02" in main
           assert "_jt_jb_render_pos=" in main

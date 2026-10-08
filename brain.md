@@ -48,3 +48,6 @@ Le clamp pré-rendu fonctionne sans saut. Ajustement téléphone : le dino droit
 
 ## JT-SETS-UI-005
 Bornage droit désormais géométrique : `parent_right=self.x+self.width`, bord visuel `g` compensé par le ratio 174/320 issu de l'audit alpha des 31 frames, dépassement configurable = 2 % de la largeur parent. Gauche, médias, taille et gameplay inchangés.
+
+## JT-SETS-UI-006
+Capture Fab : dinosaures `jh` et `jb` affichés ensemble à droite. Borne MAX gauche ajoutée à `jh.pos` lors du rendu MENU ; borne MIN `jb` inchangée. Validation téléphone requise.
