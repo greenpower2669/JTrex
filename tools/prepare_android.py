@@ -5,6 +5,7 @@ import argparse
 import configparser
 import hashlib
 import json
+import re
 import shutil
 import tempfile
 import zipfile
@@ -189,6 +190,35 @@ def method_bounds(lines, method_name):
     return start, end
 
 
+def swap_menu_dinosaur_frame_sources(source):
+    """Correct mirrored selection PNGs while keeping historical non-MENU animations.
+
+    jh is left and historically uses d/d_*; jb is right and uses g/g_*.
+    g/g_* has visible pixels against its left edge, d/d_* against its right.
+    """
+    pattern = re.compile(r"""(?P<q>['"])(?P<path>g/g_0\.png|d/d_0\.png|g/g_|d/d_)(?P=q)""")
+    counts = {"g/g_0.png": 0, "d/d_0.png": 0, "g/g_": 0, "d/d_": 0}
+
+    def switch(match):
+        path, quote = match.group("path"), match.group("q")
+        counts[path] += 1
+        if path == "g/g_0.png":
+            return quote + "d/d_0.png" + quote
+        if path == "d/d_0.png":
+            return quote + "g/g_0.png" + quote
+        if path == "g/g_":
+            return "('d/d_' if indexa==0 else 'g/g_')"
+        return "('g/g_' if indexa==0 else 'd/d_')"
+
+    patched = pattern.sub(switch, source)
+    require(
+        all(value == 1 for value in counts.values()),
+        "Animation selection dinosaures: exactement une occurrence par "
+        "litteral initial/dynamique requise; " + repr(counts),
+    )
+    return patched
+
+
 def adapt_main(source, power_paths=None, power_parameters=None):
     newline = "\r\n" if "\r\n" in source else "\n"
     power_paths = power_paths or _canonical_power_path_table()
@@ -227,7 +257,7 @@ def adapt_main(source, power_paths=None, power_parameters=None):
         + newline
         + "JT_SELECTION_LEFT_OVERHANG_RATIO=0.02"
         + newline
-        + "JT_SELECTION_RIGHT_VISUAL_EDGE_RATIO=174.0/320.0"
+        + "JT_SELECTION_RIGHT_VISUAL_EDGE_RATIO=1.0"
         + newline
         + "JT_SELECTION_RIGHT_OVERHANG_RATIO=0.02"
         + newline
@@ -321,6 +351,7 @@ def adapt_main(source, power_paths=None, power_parameters=None):
         1,
     )
 
+    source = swap_menu_dinosaur_frame_sources(source)
     source = rewrite_power_effects(source)
 
     human_power_guards = {

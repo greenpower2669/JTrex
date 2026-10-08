@@ -63,3 +63,6 @@ Le candidat CI était fonctionnel mais le bouton DINOSAURES 520dp et plusieurs B
 
 ## 2026-10-08 — capture : deux dinosaures collés à droite
 Capture Fab : aucune animation à gauche ; deux silhouettes à droite. Les quatre push précédents changeaient exclusivement la borne droite `jb`, sans borne du `jh`. Correctif ciblé sur l'autre affectation de position, limité au MENU : `min(x_historique, bord_gauche - 2% largeur_parent)`. Hypothèse de réparation nécessitant validation graphique réelle ; CI statique seule insuffisante.
+
+## 2026-10-08 — sprites inverses sur capture UI-006
+Preuve APK : ga alimente jb avec g/g_* et da alimente jh avec d/d_*. g/g_* a pixels opaques a gauche ; d/d_* a pixels opaques a droite. La tete de jh est donc vers la gauche et jb vers la droite. UI-007 inverse les sources MENU, les images initiales et corrige le ratio de bornage droit de 174/320 a 1.0. Test reel telephone encore indispensable.

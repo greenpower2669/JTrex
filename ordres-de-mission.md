@@ -84,3 +84,10 @@ Dernière Release : `v1.0.15-main`.
 - Correction : borner la X visuelle du rectangle `jh` à `min(x_historique, self.x-0.02*self.width)` dans le MENU seulement. Garder la borne MIN du `jb` inchangée.
 - Préserver la X historique quand elle est déjà à gauche, Y, taille, frames, vitesse, gameplay, toutes autres phases.
 - Validation source générée/CI puis APK téléphone. Pas de merge main, Release ni AAB sans autorisation.
+
+## JT-SETS-UI-007 — sens des sprites MENU
+- Retour Fab capture UI-006 : gauche/droite separes mais visuels tournes vers l'exterieur.
+- jh gauche doit recevoir g/g_*, jb droite doit recevoir d/d_* en MENU. Les PNG sont deja des miroirs ; ne pas modifier les medias, seulement les sources.
+- Corriger aussi le chargement des premieres images. Hors MENU : conserver ga/da canoniques, gameplay inchange.
+- Borne droite du sprite d/d_* calculable avec ratio alpha 1.0. Gauche, Y, tailles inchanges.
+- Tests CI, puis APK telephone a valider par Fab. Aucun merge main/Release/AAB.

@@ -138,17 +138,25 @@ class WorkshopUIContractTests(unittest.TestCase):
     def test_selection_dinosaurs_bounded_on_opposite_screen_edges(self):
         for screen_w, dino_w in ((800, 220), (1536, 320), (2400, 600)):
             left_max_x = -screen_w * 0.02
-            right_min_x = 1.02 * screen_w - dino_w * (174.0 / 320.0)
+            right_min_x = 1.02 * screen_w - dino_w
             self.assertLess(left_max_x + dino_w, right_min_x)
             self.assertLessEqual(min(screen_w / 2, left_max_x), left_max_x)
             self.assertGreaterEqual(max(screen_w / 2, right_min_x), right_min_x)
+
+    def test_menu_dinosaur_animations_face_inward(self):
+        generated = ROOT / 'app' / 'main.py'
+        if not generated.is_file():
+            self.skipTest('generated Android main.py is produced by CI')
+        source = generated.read_text(encoding='utf-8')
+        self.assertIn("('g/g_' if indexa==0 else 'd/d_')", source)
+        self.assertIn("('d/d_' if indexa==0 else 'g/g_')", source)
 
     def test_right_selection_dinosaur_uses_parent_right_visual_edge_geometry(self):
         generated = ROOT / 'app' / 'main.py'
         if not generated.is_file():
             self.skipTest('generated Android main.py is produced by the CI preparation step')
         source = generated.read_text(encoding='utf-8')
-        self.assertIn('JT_SELECTION_RIGHT_VISUAL_EDGE_RATIO=174.0/320.0', source)
+        self.assertIn('JT_SELECTION_RIGHT_VISUAL_EDGE_RATIO=1.0', source)
         self.assertIn('JT_SELECTION_RIGHT_OVERHANG_RATIO=0.02', source)
         self.assertIn('_jt_jb_render_pos=', source)
         self.assertIn('if indexa==0:', source)

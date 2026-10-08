@@ -51,3 +51,6 @@ Validation téléphone réelle du candidat. Pas de merge/main Release/AAB automa
 
 ## UI téléphone — JT-SETS-UI-006
 Deux bornages en MENU : `jh` MAX depuis bord gauche parent, `jb` MIN depuis bord droit parent. Les affectations historiques restent les sources du Y et du mouvement vers l'extérieur. Modifications `prepare_android.py` + gardes CI.
+
+## JT-SETS-UI-007
+prepare_android.py echange g/g_0 et d/d_0 initialement, puis le prefixe g/g_ -> d/d_ pour jb et d/d_ -> g/g_ pour jh seulement au MENU. Borne droite ratio opaque devient 1.0. Pas de changement gameplay.

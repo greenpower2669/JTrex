@@ -51,3 +51,6 @@ Bornage droit désormais géométrique : `parent_right=self.x+self.width`, bord 
 
 ## JT-SETS-UI-006
 Capture Fab : dinosaures `jh` et `jb` affichés ensemble à droite. Borne MAX gauche ajoutée à `jh.pos` lors du rendu MENU ; borne MIN `jb` inchangée. Validation téléphone requise.
+
+## JT-SETS-UI-007
+Fab confirme capture UI-006 : les deux dinos sont separes mais regardent vers l'exterieur. Correctif : jh (gauche) recoit g/g_* et jb (droite) d/d_* en MENU seulement ; premiers PNG inverses, hors MENU animations conservees ; borne droite d/d_* alpha=1.0. Validation telephone requise.

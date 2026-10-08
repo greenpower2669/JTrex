@@ -93,3 +93,12 @@ JT-SETS-001 techniquement complet côté code/CI.
 - [ ] Vérifier préparation générée et tests CI de la branche dédiée.
 - [ ] APK 🟢 à essayer : dinosaures séparés dès la première frame, gauche/droite stables, transparence acceptable.
 - [ ] Validation explicite de Fab avant tout merge main, Release ou AAB.
+
+## JT-SETS-UI-007 — orientation menu
+- [x] Confirmer inversion de ga/jb et da/jh avec le bytecode Android.
+- [x] Comparer images g/g_* et d/d_* reelles ; miroirs verifies.
+- [x] Coder le choix de source MENU seulement, les PNG initiaux, borne droite alpha 1.0.
+- [x] Ajouter gardes et tests unitaires des quatre substitutions.
+- [ ] CI Android et generation APK de test.
+- [ ] Validation telephone : les dinos se regardent, bonne position stable.
+- [ ] Validation Fab avant main, Release ou AAB.
