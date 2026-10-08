@@ -631,7 +631,7 @@ def _jt_log_new_stops(self, observer):
     lines[jb_pos_index:jb_pos_index + 1] = [
         jb_indent + "_jt_jb_render_pos=" + jb_rhs + newline,
         jb_indent + "if indexa==0:" + newline,
-        jb_indent + "\t_jt_jb_safety=min(44.0,max(18.0,self.jb.size[0]*0.08))" + newline,
+        jb_indent + "\t_jt_jb_safety=max(24.0,self.jb.size[0]*0.40)" + newline,
         jb_indent + "\t_jt_jb_min_x=self.x+self.width+_jt_jb_safety-self.jb.size[0]" + newline,
         jb_indent + "\tself.jb.pos=(max(_jt_jb_render_pos[0],_jt_jb_min_x),_jt_jb_render_pos[1])" + newline,
         jb_indent + "else:" + newline,
