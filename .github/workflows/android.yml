@@ -356,7 +356,7 @@ jobs:
           assert "player.seek(resume, precise=True)" in runtime
           assert "self.root._jt_power_video_hold = False" in runtime
           assert "_jt_jb_render_pos=" in main
-          assert "_jt_jb_safety=min(44.0,max(18.0,self.jb.size[0]*0.08))" in main
+          assert "_jt_jb_safety=max(24.0,self.jb.size[0]*0.40)" in main
           assert "_jt_jb_min_x=self.x+self.width+_jt_jb_safety-self.jb.size[0]" in main
           assert "self.jb.pos=(max(_jt_jb_render_pos[0],_jt_jb_min_x),_jt_jb_render_pos[1])" in main
           assert "_guard_menu_right_dinosaur_crop" not in runtime
