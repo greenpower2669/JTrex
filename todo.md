@@ -63,3 +63,11 @@ JT-SETS-001 techniquement complet côté code/CI.
 - [x] Tests du moteur généré #100 verts.
 - [ ] Build APK #100 terminé.
 - [ ] Validation téléphone Fab : absence totale de saut.
+
+
+## JT-SETS-UI-004 — position droite finale
+- [x] Retour téléphone : saut supprimé, position encore trop à gauche.
+- [x] Marge du dino droit augmentée à 40 % de sa largeur.
+- [x] Dinosaure gauche et logique historique inchangés.
+- [x] Garde CI mise à jour.
+- [ ] APK Android fraîche à valider sur téléphone.

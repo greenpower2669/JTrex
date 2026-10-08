@@ -40,3 +40,7 @@ Finition téléphone : sélecteur centré/compact ASCII, boutons moins larges et
 
 ## JT-SETS-UI-003
 Le saut du dinosaure droit venait d'un timer post-rendu. Timer supprimé. `prepare_android.py` injecte désormais la borne dans l'affectation visuelle canonique `self.jb.pos`, avant affichage et seulement en menu (`indexa==0`). Logique `xb/yb`, taille et asset inchangés.
+
+
+## JT-SETS-UI-004
+Le clamp pré-rendu fonctionne sans saut. Ajustement téléphone : le dino droit doit être plus décalé hors écran. Seule la marge visuelle passe à 40 % de sa largeur ; logique, taille et asset inchangés.

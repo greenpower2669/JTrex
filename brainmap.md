@@ -40,3 +40,7 @@ Validation téléphone réelle du candidat. Pas de merge/main Release/AAB automa
 
 ## UI téléphone — JT-SETS-UI-003
 `prepare_android.py` repère l'unique `self.jb.pos` historique et remplace son rendu par `_jt_jb_render_pos` + minimum X menu. `jtrex_media_runtime.py` ne possède plus de timer de rattrapage du dinosaure.
+
+
+## UI téléphone — JT-SETS-UI-004
+`prepare_android.py` : `_jt_jb_safety=max(24.0,self.jb.size[0]*0.40)`. Même point d'injection pré-rendu, seulement plus à droite.

@@ -63,3 +63,9 @@ Dernière Release : `v1.0.15-main`.
 - Correction canonique : supprimer le timer runtime et borner l'unique affectation `self.jb.pos` directement dans le `main.py` généré, uniquement quand `indexa==0`.
 - Ne pas modifier `xb/yb`, la taille du widget, l'asset volontairement tronqué, ni le dinosaure gauche.
 - Aucun gameplay modifié.
+
+
+## JT-SETS-UI-004 — décalage droit final (2026-10-08)
+- Retour téléphone #100 : le bornage pré-rendu est stable, mais le dinosaure droit reste visuellement trop à gauche.
+- Correction : conserver le même clamp avant rendu et augmenter uniquement la marge hors écran à `max(24, 40 % de la largeur du widget)`.
+- Ne pas toucher au dinosaure gauche, à `xb/yb`, à la taille, à l'asset ou au gameplay.

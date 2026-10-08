@@ -46,3 +46,9 @@ Le candidat CI était fonctionnel mais le bouton DINOSAURES 520dp et plusieurs B
 - Diagnostic CI a confirmé que `screen_up` ne contient que la logique `xb/yb/xbs/ybs`.
 - Correctif final : rechercher l'unique affectation `self.jb.pos` dans le source généré complet et la borner directement avant rendu ; condition menu `indexa==0`.
 - La préparation CI #100 passe désormais ce patch et les tests moteur généré sont verts.
+
+
+## 2026-10-08 — dino droit encore trop à gauche
+- #100 confirme que le saut a disparu avec le clamp pré-rendu.
+- La position restait trop intérieure : l'ancienne marge était plafonnée à 44 et seulement 8 % de la largeur.
+- Ajustement ciblé : marge hors écran = 40 % de la largeur du widget, minimum 24. Aucun autre calcul historique modifié.
