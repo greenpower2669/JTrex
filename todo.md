@@ -71,3 +71,16 @@ JT-SETS-001 techniquement complet côté code/CI.
 - [x] Dinosaure gauche et logique historique inchangés.
 - [x] Garde CI mise à jour.
 - [ ] APK Android fraîche à valider sur téléphone.
+
+
+## JT-SETS-UI-005 — bornage géométrique
+- [x] Contrat géométrique Fab reçu.
+- [x] Gauche laissé strictement inchangé.
+- [x] Audit alpha des 31 frames `d` et `g`.
+- [x] Marge transparente droite de `g` identifiée : 21..146 px.
+- [x] Bord visuel droit conservateur fixé à 174/320.
+- [x] Dépassement droit configurable fixé initialement à 2 % de la largeur parent.
+- [x] Borne calculée depuis `self.x+self.width` avant `self.jb.pos`.
+- [x] Garde CI et test de contrat mis à jour.
+- [ ] CI Android fraîche.
+- [ ] Validation téléphone Fab.

@@ -225,6 +225,10 @@ def adapt_main(source, power_paths=None, power_parameters=None):
         + newline
         + "JT_POWER_EFFECT_FRACTIONS=" + repr(power_parameters)
         + newline
+        + "JT_SELECTION_RIGHT_VISUAL_EDGE_RATIO=174.0/320.0"
+        + newline
+        + "JT_SELECTION_RIGHT_OVERHANG_RATIO=0.02"
+        + newline
         + "def jt_apply_power_parameters(values):"
         + newline
         + "\tglobal JT_POWER_EFFECT_FRACTIONS"
@@ -631,8 +635,10 @@ def _jt_log_new_stops(self, observer):
     lines[jb_pos_index:jb_pos_index + 1] = [
         jb_indent + "_jt_jb_render_pos=" + jb_rhs + newline,
         jb_indent + "if indexa==0:" + newline,
-        jb_indent + "\t_jt_jb_safety=max(24.0,self.jb.size[0]*0.40)" + newline,
-        jb_indent + "\t_jt_jb_min_x=self.x+self.width+_jt_jb_safety-self.jb.size[0]" + newline,
+        jb_indent + "\t_jt_jb_parent_right=self.x+self.width" + newline,
+        jb_indent + "\t_jt_jb_target_visual_right=_jt_jb_parent_right+self.width*JT_SELECTION_RIGHT_OVERHANG_RATIO" + newline,
+        jb_indent + "\t_jt_jb_visual_right_in_rect=self.jb.size[0]*JT_SELECTION_RIGHT_VISUAL_EDGE_RATIO" + newline,
+        jb_indent + "\t_jt_jb_min_x=_jt_jb_target_visual_right-_jt_jb_visual_right_in_rect" + newline,
         jb_indent + "\tself.jb.pos=(max(_jt_jb_render_pos[0],_jt_jb_min_x),_jt_jb_render_pos[1])" + newline,
         jb_indent + "else:" + newline,
         jb_indent + "\tself.jb.pos=_jt_jb_render_pos" + newline,

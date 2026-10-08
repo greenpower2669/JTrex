@@ -52,3 +52,11 @@ Le candidat CI était fonctionnel mais le bouton DINOSAURES 520dp et plusieurs B
 - #100 confirme que le saut a disparu avec le clamp pré-rendu.
 - La position restait trop intérieure : l'ancienne marge était plafonnée à 44 et seulement 8 % de la largeur.
 - Ajustement ciblé : marge hors écran = 40 % de la largeur du widget, minimum 24. Aucun autre calcul historique modifié.
+
+
+## 2026-10-08 — audit transparence / géométrie droite
+- APK #102 : `self.jh.pos ... #d`, `self.jb ... #g`.
+- 31 frames `d` : 320×240, alpha union (21,29)-(320,240), bord droit toujours opaque.
+- 31 frames `g` : 320×240, alpha union (0,29)-(299,240), bord droit frame par frame de 174 à 299 ; marge transparente droite 21..146 px.
+- Le clamp 40 % de UI-004 bornait le rectangle complet et ne compensait donc pas correctement la marge transparente variable de `g`.
+- UI-005 utilise le bord visuel droit conservateur 174/320 et le bord droit du parent, avec 2 % de dépassement parent. Le calcul reste pré-rendu.

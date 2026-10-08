@@ -69,3 +69,11 @@ Dernière Release : `v1.0.15-main`.
 - Retour téléphone #100 : le bornage pré-rendu est stable, mais le dinosaure droit reste visuellement trop à gauche.
 - Correction : conserver le même clamp avant rendu et augmenter uniquement la marge hors écran à `max(24, 40 % de la largeur du widget)`.
 - Ne pas toucher au dinosaure gauche, à `xb/yb`, à la taille, à l'asset ou au gameplay.
+
+
+## JT-SETS-UI-005 — géométrie par bords réels (2026-10-08)
+- Contrat Fab : gauche inchangé ; droite calculée depuis le bord droit du parent et le bord visuel droit réel, avant rendu.
+- Audit des frames : `g/g_*.png` (utilisé par `self.jb`) contient 21..146 px de transparence à droite ; bord opaque droit conservateur = 174/320.
+- Borne droite : bord parent + dépassement réglable de 2 % de la largeur parent, moins le bord visuel interne du rectangle.
+- Le correctif 40 % de UI-004 est remplacé par cette géométrie explicite.
+- Aucun média, taille, `xb/yb`, dinosaure gauche ou gameplay modifié.

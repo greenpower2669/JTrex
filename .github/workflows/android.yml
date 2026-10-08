@@ -355,9 +355,13 @@ jobs:
           assert "self._wait_resume_fraction = (position % duration) / duration" in runtime
           assert "player.seek(resume, precise=True)" in runtime
           assert "self.root._jt_power_video_hold = False" in runtime
+          assert "JT_SELECTION_RIGHT_VISUAL_EDGE_RATIO=174.0/320.0" in main
+          assert "JT_SELECTION_RIGHT_OVERHANG_RATIO=0.02" in main
           assert "_jt_jb_render_pos=" in main
-          assert "_jt_jb_safety=max(24.0,self.jb.size[0]*0.40)" in main
-          assert "_jt_jb_min_x=self.x+self.width+_jt_jb_safety-self.jb.size[0]" in main
+          assert "_jt_jb_parent_right=self.x+self.width" in main
+          assert "_jt_jb_target_visual_right=_jt_jb_parent_right+self.width*JT_SELECTION_RIGHT_OVERHANG_RATIO" in main
+          assert "_jt_jb_visual_right_in_rect=self.jb.size[0]*JT_SELECTION_RIGHT_VISUAL_EDGE_RATIO" in main
+          assert "_jt_jb_min_x=_jt_jb_target_visual_right-_jt_jb_visual_right_in_rect" in main
           assert "self.jb.pos=(max(_jt_jb_render_pos[0],_jt_jb_min_x),_jt_jb_render_pos[1])" in main
           assert "_guard_menu_right_dinosaur_crop" not in runtime
           assert "_menu_right_dino_event" not in runtime

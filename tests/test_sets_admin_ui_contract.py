@@ -121,14 +121,28 @@ class WorkshopUIContractTests(unittest.TestCase):
         verified = self.media.workshop_validate()
         self.assertEqual(verified.set_id, 'ui_dinos')
 
-    def test_right_selection_dinosaur_is_bounded_in_generated_screen_up(self):
+    def test_right_selection_dinosaur_uses_parent_right_visual_edge_geometry(self):
         generated = ROOT / 'app' / 'main.py'
         if not generated.is_file():
             self.skipTest('generated Android main.py is produced by the CI preparation step')
         source = generated.read_text(encoding='utf-8')
+        self.assertIn('JT_SELECTION_RIGHT_VISUAL_EDGE_RATIO=174.0/320.0', source)
+        self.assertIn('JT_SELECTION_RIGHT_OVERHANG_RATIO=0.02', source)
         self.assertIn('_jt_jb_render_pos=', source)
         self.assertIn('if indexa==0:', source)
-        self.assertIn('_jt_jb_min_x=self.x+self.width+_jt_jb_safety-self.jb.size[0]', source)
+        self.assertIn('_jt_jb_parent_right=self.x+self.width', source)
+        self.assertIn(
+            '_jt_jb_target_visual_right=_jt_jb_parent_right+self.width*JT_SELECTION_RIGHT_OVERHANG_RATIO',
+            source,
+        )
+        self.assertIn(
+            '_jt_jb_visual_right_in_rect=self.jb.size[0]*JT_SELECTION_RIGHT_VISUAL_EDGE_RATIO',
+            source,
+        )
+        self.assertIn(
+            '_jt_jb_min_x=_jt_jb_target_visual_right-_jt_jb_visual_right_in_rect',
+            source,
+        )
         self.assertIn(
             'self.jb.pos=(max(_jt_jb_render_pos[0],_jt_jb_min_x),_jt_jb_render_pos[1])',
             source,

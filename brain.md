@@ -44,3 +44,7 @@ Le saut du dinosaure droit venait d'un timer post-rendu. Timer supprimé. `prepa
 
 ## JT-SETS-UI-004
 Le clamp pré-rendu fonctionne sans saut. Ajustement téléphone : le dino droit doit être plus décalé hors écran. Seule la marge visuelle passe à 40 % de sa largeur ; logique, taille et asset inchangés.
+
+
+## JT-SETS-UI-005
+Bornage droit désormais géométrique : `parent_right=self.x+self.width`, bord visuel `g` compensé par le ratio 174/320 issu de l'audit alpha des 31 frames, dépassement configurable = 2 % de la largeur parent. Gauche, médias, taille et gameplay inchangés.

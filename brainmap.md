@@ -44,3 +44,7 @@ Validation téléphone réelle du candidat. Pas de merge/main Release/AAB automa
 
 ## UI téléphone — JT-SETS-UI-004
 `prepare_android.py` : `_jt_jb_safety=max(24.0,self.jb.size[0]*0.40)`. Même point d'injection pré-rendu, seulement plus à droite.
+
+
+## UI téléphone — JT-SETS-UI-005
+`prepare_android.py` injecte deux constantes : `JT_SELECTION_RIGHT_VISUAL_EDGE_RATIO=174/320` et `JT_SELECTION_RIGHT_OVERHANG_RATIO=0.02`. `self.jb.pos` est borné avant rendu à partir de `self.x+self.width`, pas depuis le centre ni depuis un pourcentage de la largeur du dinosaure.
