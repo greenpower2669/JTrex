@@ -885,7 +885,7 @@ def _jt_log_new_stops(self, observer):
     start, end = method_bounds(lines, "on_touch_down")
     ud_positions = [
         idx for idx in range(start, end)
-        if lines[idx].strip() == "ud = touch.ud"
+        if re.fullmatch(r"ud\s*=\s*touch\.ud", lines[idx].strip())
     ]
     require(len(ud_positions)==1, "MENU touch-down: ud = touch.ud not found once")
     ud_at = ud_positions[0]
