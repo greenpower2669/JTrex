@@ -131,7 +131,7 @@ class WorkshopUIContractTests(unittest.TestCase):
         self.assertIn("self.vb.pos=(xb-mdhb*2,yb-mdhb*2)", source)
         self.assertNotIn("_jt_vh_render_pos=", source)
         self.assertNotIn("_jt_vb_render_pos=", source)
-        self.assertIn("ud['_jt_menu_half']='left' if touch.x<Window.width/2.0 else 'right'", source)
+        self.assertIn("touch.ud['_jt_menu_half']='left' if touch.x<Window.width/2.0 else 'right'", source)
         self.assertIn("jt_menu_touch_left(touch)", source)
         self.assertIn("jt_menu_touch_right(touch)", source)
         self.assertIn("xh,yh=jt_menu_aim_x(touch, 'left'),float(touch.y)", source)
