@@ -362,7 +362,7 @@ jobs:
           assert "def jt_menu_touch_left(touch):" in main
           assert "def jt_menu_touch_right(touch):" in main
           assert "def jt_menu_aim_x(touch, side):" in main
-          assert "ud['_jt_menu_half']='left' if touch.x<Window.width/2.0 else 'right'" in main
+          assert "touch.ud['_jt_menu_half']='left' if touch.x<Window.width/2.0 else 'right'" in main
           assert "xh,yh=jt_menu_aim_x(touch, 'left'),float(touch.y)" in main
           assert "xb,yb=jt_menu_aim_x(touch, 'right'),float(touch.y)" in main
           assert "JT_SELECTION_LEFT_OVERHANG_RATIO=0.02" in main
