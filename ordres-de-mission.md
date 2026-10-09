@@ -91,3 +91,10 @@ Dernière Release : `v1.0.15-main`.
 - Corriger aussi le chargement des premieres images. Hors MENU : conserver ga/da canoniques, gameplay inchange.
 - Borne droite du sprite d/d_* calculable avec ratio alpha 1.0. Gauche, Y, tailles inchanges.
 - Tests CI, puis APK telephone a valider par Fab. Aucun merge main/Release/AAB.
+
+## JT-SETS-UI-008 — corriger les deux viseurs rouges de menu (2026-10-09)
+- Demande Fab : viseur gauche associe au cote droit et viseur droit associe au cote gauche ; corriger les deux simultanement.
+- Audit APK UI-007 : `vh` et `vb` utilisent tous deux `viseur.png`, rendus par `screen_up` depuis (xh,yh) et (xb,yb).
+- Corriger l'association X des deux rectangles de visee seulement si `indexa==0` : `vh` recoit X visuel de `vb` et inversement, sans echanger leurs Y.
+- Ne pas changer xh/yh/xb/yb, mouvement tactile, calcul d'impact, sprites dinos, tailles, gameplay et rendu hors MENU.
+- Garde CI, tests du main.py genere, APK debug pour validation telephone. Pas de merge main, Release, ni AAB sans accord Fab.

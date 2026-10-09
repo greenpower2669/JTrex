@@ -66,3 +66,6 @@ Capture Fab : aucune animation à gauche ; deux silhouettes à droite. Les quatr
 
 ## 2026-10-08 — sprites inverses sur capture UI-006
 Preuve APK : ga alimente jb avec g/g_* et da alimente jh avec d/d_*. g/g_* a pixels opaques a gauche ; d/d_* a pixels opaques a droite. La tete de jh est donc vers la gauche et jb vers la droite. UI-007 inverse les sources MENU, les images initiales et corrige le ratio de bornage droit de 174/320 a 1.0. Test reel telephone encore indispensable.
+
+## 2026-10-09 — affectation des viseurs rouges gauche/droite
+Preuve dans l'APK UI-007 : deux rectangles `viseur.png`, `vh` rendu selon `(xh,yh)` et `vb` selon `(xb,yb)` dans `screen_up`, tandis que les dinos sont desormais orientes vers l'interieur. Retour Fab : les associations des viseurs sont inversees. UI-008 echange uniquement les positions X des deux viseurs en MENU, sans changer les coordonnees de touche xh/xb ni les autres phases. Les sprites de viseur sont identiques : l'effet d'association peut ne pas se distinguer sur une capture statique. Tester leur suivi en mouvement sur telephone.

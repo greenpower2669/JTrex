@@ -102,3 +102,12 @@ JT-SETS-001 techniquement complet côté code/CI.
 - [ ] CI Android et generation APK de test.
 - [ ] Validation telephone : les dinos se regardent, bonne position stable.
 - [ ] Validation Fab avant main, Release ou AAB.
+
+## JT-SETS-UI-008 — viseurs rouges MENU
+- [x] Lire le code actif UI-007 et les memoires vivantes JTrex.
+- [x] Inspecter le bytecode `main.pyc` reel du dernier APK et identifier les rectangles `vh`, `vb` (`viseur.png`).
+- [x] Correction X d'affichage des deux viseurs uniquement au MENU, preserving Y et logique tactiles.
+- [x] Ajouter gardes de code genere et test de separation MENU/combat.
+- [ ] CI Android et APK debug nouvelle branche.
+- [ ] Validation telephone de Fab : suivi des bons viseurs par rapport aux dinos et commandes.
+- [ ] Validation avant tout merge main/Release/AAB.

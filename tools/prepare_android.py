@@ -650,6 +650,45 @@ def _jt_log_new_stops(self, observer):
     ]
     lines[start:end] = replacement
 
+    # The red MENU aiming reticles are two identical "viseur.png" rectangles:
+    # vh follows historical (xh, yh), vb follows (xb, yb). Their visual
+    # assignment is reversed with respect to the selection dinosaurs.
+    # Swap ONLY their rendered horizontal tracking while indexa == 0.
+    # Do not swap global xh/xb or their touch/collision/gameplay roles.
+    vh_pos_matches = [
+        index for index, line in enumerate(lines)
+        if line.strip().replace(" ", "").startswith("self.vh.pos=")
+    ]
+    vb_pos_matches = [
+        index for index, line in enumerate(lines)
+        if line.strip().replace(" ", "").startswith("self.vb.pos=")
+    ]
+    require(
+        len(vh_pos_matches) == len(vb_pos_matches) == 1,
+        "Viseurs menu : affectation unique self.vh.pos et self.vb.pos requise.",
+    )
+    vh_pos_index, vb_pos_index = vh_pos_matches[0], vb_pos_matches[0]
+    require(
+        vb_pos_index == vh_pos_index + 1,
+        "Viseurs menu : affectations historiques non consecutives.",
+    )
+    vh_line, vb_line = lines[vh_pos_index], lines[vb_pos_index]
+    vh_indent = vh_line[:len(vh_line) - len(vh_line.lstrip(" \t"))]
+    vb_indent = vb_line[:len(vb_line) - len(vb_line.lstrip(" \t"))]
+    require(vh_indent == vb_indent, "Viseurs menu : indentation incoherente.")
+    vh_rhs = vh_line.strip().split("=", 1)[1]
+    vb_rhs = vb_line.strip().split("=", 1)[1]
+    lines[vh_pos_index:vb_pos_index + 1] = [
+        vh_indent + "_jt_vh_render_pos=" + vh_rhs + newline,
+        vh_indent + "_jt_vb_render_pos=" + vb_rhs + newline,
+        vh_indent + "if indexa==0:" + newline,
+        vh_indent + "\tself.vh.pos=(_jt_vb_render_pos[0],_jt_vh_render_pos[1])" + newline,
+        vh_indent + "\tself.vb.pos=(_jt_vh_render_pos[0],_jt_vb_render_pos[1])" + newline,
+        vh_indent + "else:" + newline,
+        vh_indent + "\tself.vh.pos=_jt_vh_render_pos" + newline,
+        vh_indent + "\tself.vb.pos=_jt_vb_render_pos" + newline,
+    ]
+
     # The left selection dinosaur has a valid left stop historically, but no
     # rightward MENU stop. Keep its natural X when farther left, and otherwise
     # clamp its rectangle LEFT edge to the viewport LEFT edge minus 2%.

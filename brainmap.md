@@ -54,3 +54,6 @@ Deux bornages en MENU : `jh` MAX depuis bord gauche parent, `jb` MIN depuis bord
 
 ## JT-SETS-UI-007
 prepare_android.py echange g/g_0 et d/d_0 initialement, puis le prefixe g/g_ -> d/d_ pour jb et d/d_ -> g/g_ pour jh seulement au MENU. Borne droite ratio opaque devient 1.0. Pas de changement gameplay.
+
+## JT-SETS-UI-008
+Dans `tools/prepare_android.py`, le patch des deux affectations `self.vh.pos` et `self.vb.pos` intervient avant le bornage de `jh/jb`. Au MENU : X visuels echanges et Y preserves. Hors MENU : affectations originales conservees. Tests statiques du main.py genere et garde CI.

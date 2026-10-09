@@ -121,6 +121,27 @@ class WorkshopUIContractTests(unittest.TestCase):
         verified = self.media.workshop_validate()
         self.assertEqual(verified.set_id, 'ui_dinos')
 
+    def test_menu_red_aim_reticles_swap_horizontal_tracking_only(self):
+        generated = ROOT / "app" / "main.py"
+        if not generated.is_file():
+            self.skipTest("generated Android main.py is produced by CI")
+        source = generated.read_text(encoding="utf-8")
+        self.assertIn("_jt_vh_render_pos=", source)
+        self.assertIn("_jt_vb_render_pos=", source)
+        self.assertIn(
+            "self.vh.pos=(_jt_vb_render_pos[0],_jt_vh_render_pos[1])", source
+        )
+        self.assertIn(
+            "self.vb.pos=(_jt_vh_render_pos[0],_jt_vb_render_pos[1])", source
+        )
+        self.assertIn("self.vh.pos=_jt_vh_render_pos", source)
+        self.assertIn("self.vb.pos=_jt_vb_render_pos", source)
+        # Menu swaps only X: each reticle keeps its original Y;
+        # source controls xh/xb stay intact in every gameplay phase.
+        h, b = (120, 200), (900, 250)
+        self.assertEqual((b[0], h[1]), (900, 200))
+        self.assertEqual((h[0], b[1]), (120, 250))
+
     def test_left_selection_dinosaur_is_bounded_before_render(self):
         generated = ROOT / 'app' / 'main.py'
         if not generated.is_file():

@@ -54,3 +54,6 @@ Capture Fab : dinosaures `jh` et `jb` affichés ensemble à droite. Borne MAX ga
 
 ## JT-SETS-UI-007
 Fab confirme capture UI-006 : les deux dinos sont separes mais regardent vers l'exterieur. Correctif : jh (gauche) recoit g/g_* et jb (droite) d/d_* en MENU seulement ; premiers PNG inverses, hors MENU animations conservees ; borne droite d/d_* alpha=1.0. Validation telephone requise.
+
+## JT-SETS-UI-008 — viseurs rouges de selection
+Retour Fab : les viseurs rouge gauche/droit sont associes au cote oppose. Correction uniquement au MENU (`indexa==0`) : `vh` suit horizontalement l'ancienne coordonnee visuelle de `vb`, `vb` celle de `vh` ; chaque Y reste propre, les coordonnees logiques xh/xb et le gameplay inchanges. Les viseurs identiques ont le meme PNG `viseur.png`. Validation telephone requise.
