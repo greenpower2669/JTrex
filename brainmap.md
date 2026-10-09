@@ -60,3 +60,5 @@ Dans `tools/prepare_android.py`, le patch des deux affectations `self.vh.pos` et
 
 ## UI telephone — JT-SETS-UI-009
 `prepare_android.py` injecte JT_TOUCH_ROUTING_HELPERS avant `jah` ; adapte les cinq comparaisons X des handlers on_touch_down et on_touch_move et borne xh/xb en mode MENU, avec fail-closed si archive modifiee. Viseurs natifs vh=xh et vb=xb. Tests purs et CI validee apres build.
+
+UI-009 : screen_up MENU doit aussi recaler xhs (suivi dinosaure jh) sur la coordonnee xh gauche et xbs (suivi dinosaure jb) sur xb droite ; ajout juste avant le rendu pavé. Sources d'origine en combat preservees.

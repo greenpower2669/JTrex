@@ -134,6 +134,14 @@ class WorkshopUIContractTests(unittest.TestCase):
         self.assertIn("touch.ud['_jt_menu_half']='left' if touch.x<Window.width/2.0 else 'right'", source)
         self.assertIn("jt_menu_touch_left(touch)", source)
         self.assertIn("jt_menu_touch_right(touch)", source)
+        self.assertIn(
+            "xhs=min(max(float(xh),0.0),max(0.0,Window.width/2.0-0.001))",
+            source,
+        )
+        self.assertIn(
+            "xbs=max(min(float(xb),float(Window.width)),Window.width/2.0)",
+            source,
+        )
         self.assertIn("xh,yh=jt_menu_aim_x(touch, 'left'),float(touch.y)", source)
         self.assertIn("xb,yb=jt_menu_aim_x(touch, 'right'),float(touch.y)", source)
 

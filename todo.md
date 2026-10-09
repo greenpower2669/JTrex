@@ -121,3 +121,6 @@ JT-SETS-001 techniquement complet côté code/CI.
 - [ ] CI Android et APK debug frais.
 - [ ] Validation telephone par Fab (glissement, deux doigts, interaction chacun avec son dino).
 - [ ] Pas de merge main, Release ou AAB sans accord.
+
+- [x] Audit screen_up : anciens verrous xbs/xb gauche, xhs/xh droite identifiés via APK.
+- [x] Recaler xhs et xbs sur leurs cibles de moitie correspondantes uniquement au MENU, conserver le combat.

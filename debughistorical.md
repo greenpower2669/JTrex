@@ -72,3 +72,5 @@ Preuve dans l'APK UI-007 : deux rectangles `viseur.png`, `vh` rendu selon `(xh,y
 
 ## 2026-10-09 — inversion tactiles/viseurs MENU
 Le bytecode de l'APK UI-007 a revele : on_touch_down/on_touch_move selectionnaient historiquement `choixidh` et `xh` via touch.x > xmax/2 (droite), et `choixidb` et `xb` via touch.x < xmax/2 (gauche), tandis que les dinos actuels sont jh GAUCHE et jb DROITE. UI-008 a inverse seulement vh/vb a l'ecran, amplifiant la confusion. UI-009 rectifie le routage des deux moities en MENU, annule le swap affiche, verrouille les doigts par touch.ud, et borne la cible a sa moitie. Tests/validation telephone requis.
+
+Complement preuve bytecode screen_up : xbs=xb historiquement si xb<xmax/3 ; xhs=xh historiquement seulement dans la zone droite (xmax/3*2.1). Ces gardes contredisent le contrat MENU actuel. UI-009 force xhs/xbs sur leurs cibles bornees juste avant rendu uniquement quand indexa==0.

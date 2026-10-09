@@ -735,6 +735,24 @@ def _jt_log_new_stops(self, observer):
         jb_indent + "\tself.jb.pos=_jt_jb_render_pos" + newline,
     ]
 
+    # The legacy screen_up gates xbs (xb) into the LEFT third and xhs (xh)
+    # into the RIGHT third. MENU has the opposite canonical side mapping now.
+    # Keep those gameplay gates as-is, but synchronize the tracked sprite
+    # coordinates with their own half-screen targets just before MENU render.
+    start, end = method_bounds(lines, "screen_up")
+    before_render = [
+        idx for idx in range(start, end)
+        if lines[idx].strip().replace(" ", "").startswith("self.pavé.pos=")
+    ]
+    require(len(before_render) == 1, "MENU screen_up: expected one pavé render")
+    render_index = before_render[0]
+    render_indent = lines[render_index][:len(lines[render_index]) - len(lines[render_index].lstrip(" \t"))]
+    lines[render_index:render_index] = [
+        render_indent + "if indexa==0:" + newline,
+        render_indent + "\txhs=min(max(float(xh),0.0),max(0.0,Window.width/2.0-0.001))" + newline,
+        render_indent + "\txbs=max(min(float(xb),float(Window.width)),Window.width/2.0)" + newline,
+    ]
+
     # Synchronize video after all historical transitions in mc1.
     start, end = method_bounds(lines, "mc1")
     global_index = None

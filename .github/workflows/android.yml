@@ -362,6 +362,8 @@ jobs:
           assert "def jt_menu_touch_left(touch):" in main
           assert "def jt_menu_touch_right(touch):" in main
           assert "def jt_menu_aim_x(touch, side):" in main
+          assert "xhs=min(max(float(xh),0.0),max(0.0,Window.width/2.0-0.001))" in main
+          assert "xbs=max(min(float(xb),float(Window.width)),Window.width/2.0)" in main
           assert "touch.ud['_jt_menu_half']='left' if touch.x<Window.width/2.0 else 'right'" in main
           assert "xh,yh=jt_menu_aim_x(touch, 'left'),float(touch.y)" in main
           assert "xb,yb=jt_menu_aim_x(touch, 'right'),float(touch.y)" in main

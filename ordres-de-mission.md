@@ -106,3 +106,5 @@ Dernière Release : `v1.0.15-main`.
 - Retirer la permutation graphique UI-008 (retablir rendu vh=xh et vb=xb) ; modifier tests de zones d'on_touch_down et d'on_touch_move uniquement en MENU.
 - Aucun changement de phase de combat, scores, boutons ou gameplay ; garder orientation/bornage des dinos de UI-007.
 - Branch de correctif uniquement, tests du moteur genere et APK debug, validation telephone Fab avant main/Release/AAB.
+
+UI-009 complet : remapper aussi dans screen_up les coordinations xhs<-xh et xbs<-xb pour le MENU, car les vieux gardes historiques xbs gauche / xhs droite bloquent l'interaction; aucun changement en combat.

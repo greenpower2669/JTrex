@@ -60,3 +60,5 @@ Retour Fab : les viseurs rouge gauche/droit sont associes au cote oppose. Correc
 
 ## JT-SETS-UI-009 — routage tactile par moitie d'ecran
 Les commandes MENU suivent strictement les moities du viewport : gauche -> xh/yh -> vh -> jh, droite -> xb/yb -> vb -> jb. Supprimer le swap purement visuel UI-008. Empreinte de chaque doigt conservee dans touch.ud et reticule borne dans sa moitie pendant glissement ; deux doigts simultanes. Hors MENU, chemins historiques preserves.
+
+Complement UI-009 : screen_up conservait deux verrous X historiques inverses pour xhs et xbs. Synchroniser xhs avec xh (gauche) et xbs avec xb (droite) avant affichage MENU, sans modifier les verrous hors menu.
