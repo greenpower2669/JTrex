@@ -904,7 +904,7 @@ def _jt_log_new_stops(self, observer):
                 # Historical >mid selected xh/left-dinosaur, <mid selected xb.
                 return "jt_menu_touch_left(touch)" if match.group(1)==">" else "jt_menu_touch_right(touch)"
             lines[idx] = zone_pattern.sub(transform_zone, lines[idx])
-        require(replacements == 5, "MENU {}: expected five original half-screen tests, got {}".format(name, replacements))
+        require(replacements == (6 if name=="on_touch_down" else 5), "MENU {}: zone tests mismatch, got {}".format(name, replacements))
 
     aim_pattern = re.compile(r"(xh\s*,\s*yh|xb\s*,\s*yb)(\s*=\s*)float\s*\(\s*touch\.x\s*\)(\s*,\s*float\s*\(\s*touch\.y\s*\))")
     for name in ("on_touch_down", "on_touch_move"):
