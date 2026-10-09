@@ -739,12 +739,11 @@ def _jt_log_new_stops(self, observer):
     # into the RIGHT third. MENU has the opposite canonical side mapping now.
     # Keep those gameplay gates as-is, but synchronize the tracked sprite
     # coordinates with their own half-screen targets just before MENU render.
-    start, end = method_bounds(lines, "screen_up")
     before_render = [
-        idx for idx in range(start, end)
-        if lines[idx].strip().replace(" ", "").startswith("self.pavé.pos=")
+        idx for idx, line in enumerate(lines)
+        if line.strip().replace(" ", "").startswith("self.vh.pos=")
     ]
-    require(len(before_render) == 1, "MENU screen_up: expected one pavé render")
+    require(len(before_render) == 1, "MENU screen_up: expected one left reticle render")
     render_index = before_render[0]
     render_indent = lines[render_index][:len(lines[render_index]) - len(lines[render_index].lstrip(" \t"))]
     lines[render_index:render_index] = [
