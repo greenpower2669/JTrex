@@ -883,16 +883,14 @@ def _jt_log_new_stops(self, observer):
     # relative to the current visual assignment. Correct the five zone tests
     # in both touch_down and touch_move, without changing combat controls.
     start, end = method_bounds(lines, "on_touch_down")
-    ud_positions = [
-        idx for idx in range(start, end)
-        if re.fullmatch(r"ud\s*=\s*touch\.ud", lines[idx].strip())
-    ]
-    require(len(ud_positions)==1, "MENU touch-down: ud = touch.ud not found once")
-    ud_at = ud_positions[0]
-    ud_indent = lines[ud_at][:len(lines[ud_at]) - len(lines[ud_at].lstrip(" \t"))]
-    lines[ud_at+1:ud_at+1] = [
-        ud_indent + "if indexa==0:" + newline,
-        ud_indent + "\tud['_jt_menu_half']='left' if touch.x<Window.width/2.0 else 'right'" + newline,
+    insert_at = start + 1
+    while insert_at < end and lines[insert_at].lstrip().startswith("global "):
+        insert_at += 1
+    require(insert_at < end, "MENU touch-down: method body not found")
+    indent = lines[insert_at][:len(lines[insert_at]) - len(lines[insert_at].lstrip(" \t"))]
+    lines[insert_at:insert_at] = [
+        indent + "if indexa==0:" + newline,
+        indent + "\ttouch.ud['_jt_menu_half']='left' if touch.x<Window.width/2.0 else 'right'" + newline,
     ]
 
     zone_pattern = re.compile(r"touch\.x\s*([<>])\s*xmax\s*/\s*2\b")
