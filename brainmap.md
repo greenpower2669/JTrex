@@ -57,3 +57,6 @@ prepare_android.py echange g/g_0 et d/d_0 initialement, puis le prefixe g/g_ -> 
 
 ## JT-SETS-UI-008
 Dans `tools/prepare_android.py`, le patch des deux affectations `self.vh.pos` et `self.vb.pos` intervient avant le bornage de `jh/jb`. Au MENU : X visuels echanges et Y preserves. Hors MENU : affectations originales conservees. Tests statiques du main.py genere et garde CI.
+
+## UI telephone — JT-SETS-UI-009
+`prepare_android.py` injecte JT_TOUCH_ROUTING_HELPERS avant `jah` ; adapte les cinq comparaisons X des handlers on_touch_down et on_touch_move et borne xh/xb en mode MENU, avec fail-closed si archive modifiee. Viseurs natifs vh=xh et vb=xb. Tests purs et CI validee apres build.

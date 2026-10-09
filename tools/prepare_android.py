@@ -219,6 +219,35 @@ def swap_menu_dinosaur_frame_sources(source):
     return patched
 
 
+JT_TOUCH_ROUTING_HELPERS = r'''
+def jt_menu_touch_left(touch):
+    """Left half controls jh/xh in MENU; preserve historical mapping elsewhere."""
+    if indexa==0:
+        return touch.ud.get('_jt_menu_half', 'left' if touch.x < Window.width/2.0 else 'right')=='left'
+    return touch.x > xmax/2.0
+
+
+def jt_menu_touch_right(touch):
+    """Right half controls jb/xb in MENU; preserve historical mapping elsewhere."""
+    if indexa==0:
+        return touch.ud.get('_jt_menu_half', 'left' if touch.x < Window.width/2.0 else 'right')=='right'
+    return touch.x < xmax/2.0
+
+
+def jt_menu_aim_x(touch, side):
+    """Only MENU aims are restricted to their half; two touches stay independent."""
+    x = float(touch.x)
+    if indexa != 0:
+        return x
+    width = float(Window.width)
+    middle = width * 0.5
+    if side == 'left':
+        return min(max(x, 0.0), max(0.0, middle-0.001))
+    return max(min(x, width), middle)
+
+'''
+
+
 def adapt_main(source, power_paths=None, power_parameters=None):
     newline = "\r\n" if "\r\n" in source else "\n"
     power_paths = power_paths or _canonical_power_path_table()
@@ -571,7 +600,7 @@ def _jt_log_new_stops(self, observer):
     source = replace_exact(
         source,
         "class jah(FloatLayout):",
-        diagnostic_helpers + newline + "class jah(FloatLayout):",
+        diagnostic_helpers + newline + JT_TOUCH_ROUTING_HELPERS + newline + "class jah(FloatLayout):",
         1,
     )
 
@@ -650,44 +679,9 @@ def _jt_log_new_stops(self, observer):
     ]
     lines[start:end] = replacement
 
-    # The red MENU aiming reticles are two identical "viseur.png" rectangles:
-    # vh follows historical (xh, yh), vb follows (xb, yb). Their visual
-    # assignment is reversed with respect to the selection dinosaurs.
-    # Swap ONLY their rendered horizontal tracking while indexa == 0.
-    # Do not swap global xh/xb or their touch/collision/gameplay roles.
-    vh_pos_matches = [
-        index for index, line in enumerate(lines)
-        if line.strip().replace(" ", "").startswith("self.vh.pos=")
-    ]
-    vb_pos_matches = [
-        index for index, line in enumerate(lines)
-        if line.strip().replace(" ", "").startswith("self.vb.pos=")
-    ]
-    require(
-        len(vh_pos_matches) == len(vb_pos_matches) == 1,
-        "Viseurs menu : affectation unique self.vh.pos et self.vb.pos requise.",
-    )
-    vh_pos_index, vb_pos_index = vh_pos_matches[0], vb_pos_matches[0]
-    require(
-        vb_pos_index == vh_pos_index + 1,
-        "Viseurs menu : affectations historiques non consecutives.",
-    )
-    vh_line, vb_line = lines[vh_pos_index], lines[vb_pos_index]
-    vh_indent = vh_line[:len(vh_line) - len(vh_line.lstrip(" \t"))]
-    vb_indent = vb_line[:len(vb_line) - len(vb_line.lstrip(" \t"))]
-    require(vh_indent == vb_indent, "Viseurs menu : indentation incoherente.")
-    vh_rhs = vh_line.strip().split("=", 1)[1]
-    vb_rhs = vb_line.strip().split("=", 1)[1]
-    lines[vh_pos_index:vb_pos_index + 1] = [
-        vh_indent + "_jt_vh_render_pos=" + vh_rhs + newline,
-        vh_indent + "_jt_vb_render_pos=" + vb_rhs + newline,
-        vh_indent + "if indexa==0:" + newline,
-        vh_indent + "\tself.vh.pos=(_jt_vb_render_pos[0],_jt_vh_render_pos[1])" + newline,
-        vh_indent + "\tself.vb.pos=(_jt_vh_render_pos[0],_jt_vb_render_pos[1])" + newline,
-        vh_indent + "else:" + newline,
-        vh_indent + "\tself.vh.pos=_jt_vh_render_pos" + newline,
-        vh_indent + "\tself.vb.pos=_jt_vb_render_pos" + newline,
-    ]
+    # Native renderer already maps vh to xh (left) and vb to xb (right).
+    # UI-008 swapped only their drawings, causing a touch/dinosaur mismatch.
+    # Keep the TWO original visual assignments; fix touch ownership instead.
 
     # The left selection dinosaur has a valid left stop historically, but no
     # rightward MENU stop. Keep its natural X when farther left, and otherwise
@@ -883,6 +877,49 @@ def _jt_log_new_stops(self, observer):
         body_indent + "\tjt_hide_finishing_hud(self)" + newline,
     ]
     lines[end:end] = aura_block
+
+    # UI-009: On selection MENU, lock each finger to the half where it began.
+    # Historical touch logic used >mid for xh/jh and <mid for xb/jb: inverted
+    # relative to the current visual assignment. Correct the five zone tests
+    # in both touch_down and touch_move, without changing combat controls.
+    start, end = method_bounds(lines, "on_touch_down")
+    ud_positions = [
+        idx for idx in range(start, end)
+        if lines[idx].strip() == "ud = touch.ud"
+    ]
+    require(len(ud_positions)==1, "MENU touch-down: ud = touch.ud not found once")
+    ud_at = ud_positions[0]
+    ud_indent = lines[ud_at][:len(lines[ud_at]) - len(lines[ud_at].lstrip(" \t"))]
+    lines[ud_at+1:ud_at+1] = [
+        ud_indent + "if indexa==0:" + newline,
+        ud_indent + "\tud['_jt_menu_half']='left' if touch.x<Window.width/2.0 else 'right'" + newline,
+    ]
+
+    zone_pattern = re.compile(r"touch\.x\s*([<>])\s*xmax\s*/\s*2\b")
+    for name in ("on_touch_down", "on_touch_move"):
+        start, end = method_bounds(lines, name)
+        replacements = 0
+        for idx in range(start, end):
+            def transform_zone(match):
+                nonlocal replacements
+                replacements += 1
+                # Historical >mid selected xh/left-dinosaur, <mid selected xb.
+                return "jt_menu_touch_left(touch)" if match.group(1)==">" else "jt_menu_touch_right(touch)"
+            lines[idx] = zone_pattern.sub(transform_zone, lines[idx])
+        require(replacements == 5, "MENU {}: expected five original half-screen tests, got {}".format(name, replacements))
+
+    aim_pattern = re.compile(r"(xh\s*,\s*yh|xb\s*,\s*yb)(\s*=\s*)float\s*\(\s*touch\.x\s*\)(\s*,\s*float\s*\(\s*touch\.y\s*\))")
+    for name in ("on_touch_down", "on_touch_move"):
+        start, end = method_bounds(lines, name)
+        count = {"left": 0, "right": 0}
+        for idx in range(start, end):
+            def clamp_aim(match):
+                side = "left" if match.group(1).replace(" ", "").replace("\t", "")=="xh,yh" else "right"
+                count[side] += 1
+                return match.group(1) + match.group(2) + "jt_menu_aim_x(touch, '" + side + "')" + match.group(3)
+            lines[idx] = aim_pattern.sub(clamp_aim, lines[idx])
+        require(count == {"left": 1, "right": 1},
+                "MENU {}: cannot identify both xh/yh and xb/yb aiming assignments: {}".format(name, count))
 
     # Touch safety: power/finishing cinematics swallow gameplay touches.
     # Orb stop controls are active only in the real orb phase and only after the

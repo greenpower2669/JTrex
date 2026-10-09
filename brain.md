@@ -57,3 +57,6 @@ Fab confirme capture UI-006 : les deux dinos sont separes mais regardent vers l'
 
 ## JT-SETS-UI-008 — viseurs rouges de selection
 Retour Fab : les viseurs rouge gauche/droit sont associes au cote oppose. Correction uniquement au MENU (`indexa==0`) : `vh` suit horizontalement l'ancienne coordonnee visuelle de `vb`, `vb` celle de `vh` ; chaque Y reste propre, les coordonnees logiques xh/xb et le gameplay inchanges. Les viseurs identiques ont le meme PNG `viseur.png`. Validation telephone requise.
+
+## JT-SETS-UI-009 — routage tactile par moitie d'ecran
+Les commandes MENU suivent strictement les moities du viewport : gauche -> xh/yh -> vh -> jh, droite -> xb/yb -> vb -> jb. Supprimer le swap purement visuel UI-008. Empreinte de chaque doigt conservee dans touch.ud et reticule borne dans sa moitie pendant glissement ; deux doigts simultanes. Hors MENU, chemins historiques preserves.

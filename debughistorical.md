@@ -69,3 +69,6 @@ Preuve APK : ga alimente jb avec g/g_* et da alimente jh avec d/d_*. g/g_* a pix
 
 ## 2026-10-09 — affectation des viseurs rouges gauche/droite
 Preuve dans l'APK UI-007 : deux rectangles `viseur.png`, `vh` rendu selon `(xh,yh)` et `vb` selon `(xb,yb)` dans `screen_up`, tandis que les dinos sont desormais orientes vers l'interieur. Retour Fab : les associations des viseurs sont inversees. UI-008 echange uniquement les positions X des deux viseurs en MENU, sans changer les coordonnees de touche xh/xb ni les autres phases. Les sprites de viseur sont identiques : l'effet d'association peut ne pas se distinguer sur une capture statique. Tester leur suivi en mouvement sur telephone.
+
+## 2026-10-09 — inversion tactiles/viseurs MENU
+Le bytecode de l'APK UI-007 a revele : on_touch_down/on_touch_move selectionnaient historiquement `choixidh` et `xh` via touch.x > xmax/2 (droite), et `choixidb` et `xb` via touch.x < xmax/2 (gauche), tandis que les dinos actuels sont jh GAUCHE et jb DROITE. UI-008 a inverse seulement vh/vb a l'ecran, amplifiant la confusion. UI-009 rectifie le routage des deux moities en MENU, annule le swap affiche, verrouille les doigts par touch.ud, et borne la cible a sa moitie. Tests/validation telephone requis.

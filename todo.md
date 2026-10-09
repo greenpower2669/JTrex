@@ -111,3 +111,13 @@ JT-SETS-001 techniquement complet côté code/CI.
 - [ ] CI Android et APK debug nouvelle branche.
 - [ ] Validation telephone de Fab : suivi des bons viseurs par rapport aux dinos et commandes.
 - [ ] Validation avant tout merge main/Release/AAB.
+
+## JT-SETS-UI-009 — commande des moities d'ecran
+- [x] Audit APK : historique `xh` commande par droite et `xb` par gauche, inverse des nouveaux dinos.
+- [x] Restaurer vh(xh) et vb(xb) visuels sans permutation UI-008.
+- [x] Rerouter les touches MENU : gauche xh, droite xb, doigts captures independamment.
+- [x] Limiter le curseur au demi-ecran d'origine pendant glissement.
+- [x] Ajouter gardes sur le source genere et tests multidoigts + isolation combat.
+- [ ] CI Android et APK debug frais.
+- [ ] Validation telephone par Fab (glissement, deux doigts, interaction chacun avec son dino).
+- [ ] Pas de merge main, Release ou AAB sans accord.

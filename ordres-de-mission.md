@@ -98,3 +98,11 @@ Dernière Release : `v1.0.15-main`.
 - Corriger l'association X des deux rectangles de visee seulement si `indexa==0` : `vh` recoit X visuel de `vb` et inversement, sans echanger leurs Y.
 - Ne pas changer xh/yh/xb/yb, mouvement tactile, calcul d'impact, sprites dinos, tailles, gameplay et rendu hors MENU.
 - Garde CI, tests du main.py genere, APK debug pour validation telephone. Pas de merge main, Release, ni AAB sans accord Fab.
+
+## JT-SETS-UI-009 — contrat Fab tactile gauche/droite (2026-10-09)
+- Zone X [0,W/2[ -> doigt gauche -> coordonnees xh/yh -> viseur vh -> dinosaure jh (GAUCHE).
+- Zone X [W/2,W] -> doigt droit -> xb/yb -> viseur vb -> dinosaure jb (DROITE).
+- Capture de side au touch_down dans touch.ud, deux doigts simultanes independants, maintien de leur camp pendant les mouvements, X borne a leur moitie.
+- Retirer la permutation graphique UI-008 (retablir rendu vh=xh et vb=xb) ; modifier tests de zones d'on_touch_down et d'on_touch_move uniquement en MENU.
+- Aucun changement de phase de combat, scores, boutons ou gameplay ; garder orientation/bornage des dinos de UI-007.
+- Branch de correctif uniquement, tests du moteur genere et APK debug, validation telephone Fab avant main/Release/AAB.
